@@ -125,14 +125,6 @@ export const MODULE_PERMISSIONS: readonly PermissionModule[] = [
   // ──────────────────────────────────────────────────────────────────────
   // GESTIÓN DE CAMPAÑA
   // ──────────────────────────────────────────────────────────────────────
-  defineModule('campana', 'indicadores_precampana', 'indicadores de precampaña', [
-    'view',
-    'export',
-    'create',
-    'update',
-  ]),
-  defineModule('campana', 'promovidos', 'promovidos', ['view', 'create', 'update', 'delete']),
-  defineModule('campana', 'lideres', 'líderes', ['view', 'create', 'update', 'delete']),
   defineModule('campana', 'eventos', 'eventos', ['view', 'create', 'update', 'delete']),
 
   // ──────────────────────────────────────────────────────────────────────
@@ -154,18 +146,6 @@ export const MODULE_PERMISSIONS: readonly PermissionModule[] = [
   ]),
   defineModule('configuracion', 'barrios', 'barrios', ['view', 'create', 'update', 'delete']),
   defineModule('configuracion', 'etiquetas', 'etiquetas', ['view', 'create', 'update', 'delete']),
-  defineModule('configuracion', 'coordinadores', 'coordinadores', [
-    'view',
-    'create',
-    'update',
-    'delete',
-  ]),
-  defineModule('configuracion', 'catalogo_electoral', 'catálogo electoral', [
-    'view',
-    'create',
-    'update',
-    'delete',
-  ]),
   defineModule('configuracion', 'ai', 'canales e IA', ['view', 'create', 'update', 'delete']),
   defineModule('configuracion', 'analytics', 'analítica transversal', ['view']),
   defineModule('configuracion', 'roles', 'roles', ['view', 'create', 'update', 'delete', 'assign']),
@@ -209,11 +189,7 @@ export function slugsForModule(module: string): readonly string[] {
   );
 }
 
-/**
- * Devuelve los slugs de un módulo filtrando por acciones concretas.
- * Útil para asignar a un rol solo un subconjunto de acciones de un módulo
- * (p. ej. LIDER/CAPTURISTA solo lectura de indicadores_precampana).
- */
+/** Devuelve los slugs de un módulo filtrando por acciones concretas. */
 export function slugsForModuleActions(
   module: string,
   actions: readonly PermissionAction[],

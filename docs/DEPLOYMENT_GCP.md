@@ -1105,7 +1105,7 @@ La imagen `nexo-tools` usa `ENTRYPOINT /usr/local/bin/nexo-prod-migrate.sh`, que
 - `--command=pnpm` y `--args=run,prisma:seed:core` / `prisma:seed:dev` en cada `jobs deploy`.
 - Imagen `nexo-tools:sha-…` **igual** a la de `nexo-migrator` (mismo SHA que el release aplicado).
 - `SUPERADMIN_*` desde Secret Manager. El upsert del superadmin **no** rota `hashedPassword` si el usuario ya existe.
-- Los seeds no recrean datos de negocio (promovidos, conversaciones, tickets).
+- Los seeds no recrean datos de negocio (conversaciones, tickets).
 
 ### 1. Tomar el SHA de la imagen ya desplegada
 
@@ -1211,7 +1211,7 @@ export DOCUMENT_AI_LOCATION="<document-ai-location>"
 
 export BACKEND_SECRETS="DATABASE_URL=DATABASE_URL:latest,CLOUDSQL_DB_USER=DB_USER:latest,CLOUDSQL_DB_PASS=DB_PASS:latest,CLOUDSQL_DB_NAME=DB_NAME:latest,CLOUDSQL_INSTANCE_CONNECTION_NAME=INSTANCE_CONNECTION_NAME:latest,JWT_SECRET=JWT_SECRET:latest,JWT_REFRESH_SECRET=JWT_REFRESH_SECRET:latest,ENCRYPTION_KEY=ENCRYPTION_KEY:latest,WHATSAPP_VERIFY_TOKEN=WHATSAPP_VERIFY_TOKEN:latest,WHATSAPP_APP_ID=WHATSAPP_APP_ID:latest,WHATSAPP_APP_SECRET=WHATSAPP_APP_SECRET:latest,WHATSAPP_ACCESS_TOKEN=WHATSAPP_ACCESS_TOKEN:latest,WHATSAPP_PHONE_NUMBER_ID=WHATSAPP_PHONE_NUMBER_ID:latest,WHATSAPP_BUSINESS_ACCOUNT_ID=WHATSAPP_BUSINESS_ACCOUNT_ID:latest,MAILTRAP_API_TOKEN=MAILTRAP_API_TOKEN:latest,MAILTRAP_API_URL=MAILTRAP_API_URL:latest,MAIL_FROM_ADDRESS=MAIL_FROM_ADDRESS:latest,MAIL_REPLY_TO_ADDRESS=MAIL_REPLY_TO_ADDRESS:latest,MAIL_SUPPORT_EMAIL=MAIL_SUPPORT_EMAIL:latest,OPENAI_API_KEY=OPENAI_API_KEY:latest,NVIDIA_API_KEY=NVIDIA_API_KEY:latest,ANTHROPIC_API_KEY=ANTHROPIC_API_KEY:latest,GOOGLE_DRIVE_FOLDER_ID=GOOGLE_DRIVE_FOLDER_ID:latest,GOOGLE_OAUTH_CLIENT_ID=GOOGLE_OAUTH_CLIENT_ID:latest,GOOGLE_OAUTH_CLIENT_SECRET=GOOGLE_OAUTH_CLIENT_SECRET:latest,GOOGLE_DRIVE_REFRESH_TOKEN=GOOGLE_DRIVE_REFRESH_TOKEN:latest,DOCUMENT_AI_PROCESSOR_ID=DOCUMENT_AI_PROCESSOR_ID:latest"
 
-export COMMON_ENV="NODE_ENV=production,BASE_URL=${API_URL},FRONTEND_URL=${FRONTEND_URL},CORS_ORIGIN=${FRONTEND_URL},GOOGLE_CLOUD_PROJECT_ID=${PROJECT_ID},DOCUMENT_AI_LOCATION=${DOCUMENT_AI_LOCATION},INE_OCR_ENABLED=true,ENABLE_XLSX_EXPORT=true,REALTIME_DURABLE_ENABLED=true,MAIL_PROVIDER=mailtrap,MAIL_FROM_NAME=Nexo Comercial,MAIL_PLATFORM_NAME=Nexo Comercial,MAIL_TIME_ZONE=America/Mexico_City,MAIL_SEND_TIMEOUT_MS=10000"
+export COMMON_ENV="NODE_ENV=production,BASE_URL=${API_URL},FRONTEND_URL=${FRONTEND_URL},CORS_ORIGIN=${FRONTEND_URL},GOOGLE_CLOUD_PROJECT_ID=${PROJECT_ID},DOCUMENT_AI_LOCATION=${DOCUMENT_AI_LOCATION},ENABLE_XLSX_EXPORT=true,REALTIME_DURABLE_ENABLED=true,MAIL_PROVIDER=mailtrap,MAIL_FROM_NAME=Nexo Comercial,MAIL_PLATFORM_NAME=Nexo Comercial,MAIL_TIME_ZONE=America/Mexico_City,MAIL_SEND_TIMEOUT_MS=10000"
 ```
 
 ### API
@@ -1531,19 +1531,13 @@ Leyenda: **SM** = Secret Manager; **GH var/secret** = GitHub Actions; **env** = 
 | `ANTHROPIC_API_KEY`                | API/worker       | SM             | Opcional en código; referenciada por workflow | No frontend                  |
 | `AI_TIMEOUT_MS`                    | API/worker       | env            | 30000                                         | Milisegundos                 |
 | `AI_DUPLICATE_TOOL_LOOP_THRESHOLD` | API/worker       | env            | 3                                             | Mínimo 2                     |
-| `INE_OCR_ENABLED`                  | API/worker       | env            | `false`; prod true                            | Exige configuración Google   |
-| `INE_UPLOAD_MAX_BYTES`             | API              | env            | 10485760                                      | Máximo 10 MiB                |
-| `INE_UPLOAD_ALLOWED_MIME_TYPES`    | API              | env            | JPEG, PNG, PDF                                | Lista exacta validada        |
-| `GOOGLE_CLOUD_PROJECT_ID`          | API/worker       | env            | Si OCR activo                                 | Normalmente `PROJECT_ID`     |
-| `DOCUMENT_AI_LOCATION`             | API/worker       | GH var -> env  | Si OCR activo                                 | Debe coincidir con processor |
-| `DOCUMENT_AI_PROCESSOR_ID`         | API/worker       | SM             | Si OCR activo                                 | No GH variable               |
+| `GOOGLE_CLOUD_PROJECT_ID`          | API/worker       | env            | Si Document AI está activo                    | Normalmente `PROJECT_ID`     |
+| `DOCUMENT_AI_LOCATION`             | API/worker       | GH var -> env  | Si Document AI está activo                    | Debe coincidir con processor |
+| `DOCUMENT_AI_PROCESSOR_ID`         | API/worker       | SM             | Si Document AI está activo                    | No GH variable               |
 | `GOOGLE_DRIVE_FOLDER_ID`           | API/worker       | SM             | Si Drive activo                               | Runtime                      |
 | `GOOGLE_OAUTH_CLIENT_ID`           | API/worker       | SM             | Si Drive activo                               | Runtime                      |
 | `GOOGLE_OAUTH_CLIENT_SECRET`       | API/worker       | SM             | Si Drive activo                               | Runtime                      |
 | `GOOGLE_DRIVE_REFRESH_TOKEN`       | API/worker       | SM             | Si Drive activo                               | Runtime                      |
-| `INE_OCR_JOB_POLL_INTERVAL_MS`     | worker           | env            | 2000                                          | Mínimo 250                   |
-| `INE_OCR_JOB_BATCH_SIZE`           | worker           | env            | 5                                             | 1-50                         |
-| `INE_OCR_JOB_MAX_ATTEMPTS`         | worker           | env            | 3                                             | 1-10                         |
 
 ### Export XLSX
 

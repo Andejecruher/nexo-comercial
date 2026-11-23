@@ -491,7 +491,7 @@ if (loading && rows.length === 0) {
 </div>
 ```
 
-Alturas observadas: `h-16` (`UsersTable`, `LeadersTable`, `StructuresTable`, `CoordinatorsTable`, `promovido-table`, `RolesTable`), `h-14` (`PermissionsTable`), `h-20` (`RolePermissionsManager`), `h-40` (`promovido-card`).
+Alturas observadas: `h-16` (`UsersTable`, `RolesTable`), `h-14` (`PermissionsTable`) y `h-20` (`RolePermissionsManager`).
 
 > **Elige un patrón por tabla, no ambos.** El patrón A es superior (preserva columnas y evita salto de layout).
 
@@ -999,7 +999,7 @@ Y un diccionario único de etiquetas (p. ej. `IN_PROGRESS = "En proceso"` para t
 
 ### 5.9 🟠 Radio y familia tipográfica inconsistentes por superficie
 
-- **Actual:** `Card` = `rounded-xl`, `Dialog` = `rounded-lg`, dashboards usan `rounded-2xl` ad-hoc (`dashboard-view-precampana.tsx`), y el sitio público usa `rounded-xl`/`rounded-full` con `font-bold`/`font-black`.
+- **Actual:** `Card` = `rounded-xl`, `Dialog` = `rounded-lg`, algunos dashboards usan `rounded-2xl` ad-hoc, y el sitio público usa `rounded-xl`/`rounded-full` con `font-bold`/`font-black`.
 - **Propuesta:** documentar la regla: **admin/CRM** → `rounded-lg` (modales) / `rounded-xl` (tarjetas y contenedores de tabla); **público/editorial** → `rounded-xl` y `rounded-full` con `font-bold`+. Eliminar `rounded-2xl` ad-hoc salvo en dashboards de KPI, donde debe ser una constante.
 
 ### 5.10 🟡 Tokens y archivos muertos o divergentes
