@@ -28,7 +28,7 @@ export function proxy(request: NextRequest) {
 
   // Si pathname es /admin, retornar a la página de inicio del panel.
   if (pathname === '/admin') {
-    return NextResponse.redirect(new URL('/admin/indicadores/precampana', request.url));
+    return NextResponse.redirect(new URL('/admin/indicadores/atencion', request.url));
   }
 
   return NextResponse.next();

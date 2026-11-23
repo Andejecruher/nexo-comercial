@@ -19,9 +19,9 @@ export function TerminosContent() {
     <>
       <h2 id="aceptacion">1. Aceptación de los Términos</h2>
       <p>
-        El uso de la plataforma &quot;Nexo Comercial&quot; implica la aceptación plena y sin reservas
-        de todos los términos aquí establecidos. Si no está de acuerdo, no deberá registrarse ni
-        utilizar el sitio.
+        El uso de la plataforma &quot;Nexo Comercial&quot; implica la aceptación plena y sin
+        reservas de todos los términos aquí establecidos. Si no está de acuerdo, no deberá
+        registrarse ni utilizar el sitio.
       </p>
 
       <h2 id="registro">2. Registro de Usuario</h2>
@@ -42,7 +42,7 @@ export function TerminosContent() {
         El usuario otorga su consentimiento para el tratamiento de sus datos personales conforme a
         lo establecido en el <Link href={legalRoutes.privacy}>Aviso de Privacidad</Link> de la
         plataforma. Los datos capturados (CURP, Clave de Elector, etc.) serán utilizados
-        exclusivamente para los fines de vinculación y comunicación de la precampaña.
+        exclusivamente para los fines de vinculación y comunicación ciudadana.
       </p>
 
       <h2 id="propiedad-intelectual">5. Propiedad Intelectual</h2>

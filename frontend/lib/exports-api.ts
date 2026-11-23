@@ -1,6 +1,6 @@
 import { apiClient, type ApiResponse } from '@/lib/api-client';
 
-export type ExportModule = 'promoted' | 'leaders' | 'coordinators' | 'citizens';
+export type ExportModule = 'citizens';
 export type ExportJobStatus = 'queued' | 'processing' | 'ready' | 'failed' | 'expired';
 export type ExportJob = {
   id: string;

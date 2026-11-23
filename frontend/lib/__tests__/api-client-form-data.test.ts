@@ -35,7 +35,7 @@ describe('apiClient FormData transport', () => {
     const form = new FormData();
     form.append('front', new File(['synthetic'], 'front.png', { type: 'image/png' }));
 
-    const response = await apiClient.post<{ upload: { id: string } }>('/ine-ocr/uploads', form);
+    const response = await apiClient.post<{ upload: { id: string } }>('/uploads', form);
 
     expect(response).toEqual({ ok: true, data: { upload: { id: 'upload-1' } } });
     expect(fetchMock.mock.calls[0]?.[1]?.body).toBe(form);

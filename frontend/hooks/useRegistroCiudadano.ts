@@ -2,7 +2,7 @@
 
 import { publicRegistroApi, type PublicBarrio } from '@/lib/public-registro-api';
 import { mapRegistroApiError } from '@/lib/registro-errors';
-import { isValidPhoneNumber, toDigitsE164 } from '@/lib/promovido-schema';
+import { isValidPhoneNumber, toDigitsE164 } from '@/lib/phone-utils';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;

@@ -34,6 +34,7 @@ describe('SettingsView', () => {
     render(<SettingsView />);
 
     expect(screen.getByText('Centro de administración')).toBeInTheDocument();
+    expect(screen.getAllByRole('link')).toHaveLength(7);
     expect(screen.getByRole('link', { name: /equipo/i })).toHaveAttribute('href', '/admin/equipo');
     expect(screen.getByRole('link', { name: /administración de roles/i })).toHaveAttribute(
       'href',
@@ -62,7 +63,6 @@ describe('SettingsView', () => {
       screen.queryByRole('link', { name: /administración de roles/i }),
     ).not.toBeInTheDocument();
     expect(screen.queryByRole('link', { name: /catálogo de permisos/i })).not.toBeInTheDocument();
-    expect(screen.queryByRole('link', { name: /catálogo electoral/i })).not.toBeInTheDocument();
     expect(screen.getByRole('link', { name: /departamentos/i })).toBeInTheDocument();
   });
 

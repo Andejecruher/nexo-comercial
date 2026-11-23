@@ -27,7 +27,7 @@ import { useCustomerWindow } from '@/hooks/useCustomerWindow';
 import type { PanelUserDto } from '@/lib/admin-users-api';
 import type { Department } from '@/lib/catalog-api';
 import type { InboxConversation, InboxStatus, MessageApi } from '@/lib/messaging-api';
-import { formatPhoneDisplay } from '@/lib/promovido-schema';
+import { formatPhoneDisplay } from '@/lib/phone-utils';
 import { cn } from '@/lib/utils';
 import { ArrowLeft, Loader2, Send } from 'lucide-react';
 import { useState, type ReactNode } from 'react';

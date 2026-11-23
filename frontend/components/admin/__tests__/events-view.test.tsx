@@ -32,7 +32,7 @@ vi.mock('@/hooks/useEvents', () => ({
   }),
 }));
 
-vi.mock('@/components/admin/electoral-catalog/BarrioSelectCombobox', () => ({
+vi.mock('@/components/domain/catalogs/BarrioSelectCombobox', () => ({
   formatBarrioLabel: (name: string, municipality?: string | null) =>
     municipality ? `${name}, ${municipality}` : name,
   BarrioSelectCombobox: ({ id }: { id?: string }) => (

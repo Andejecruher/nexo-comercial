@@ -77,8 +77,7 @@ describe('access-control utils', () => {
 
   it('traduce claves de módulo a etiquetas legibles', () => {
     expect(permissionModuleLabel('ai')).toBe('Canales e IA');
-    expect(permissionModuleLabel('catalogo_electoral')).toBe('Catálogo Electoral');
-    expect(permissionModuleLabel('lideres')).toBe('Líderes');
+    expect(permissionModuleLabel('legacy_module')).toBe('Legacy Module');
     expect(permissionModuleLabel('modulo_nuevo')).toBe('Modulo Nuevo');
   });
 

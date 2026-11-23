@@ -12,7 +12,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { isValidPhoneNumber } from '@/lib/promovido-schema';
+import { isValidPhoneNumber } from '@/lib/phone-utils';
 import { cn } from '@/lib/utils';
 import { motion } from 'framer-motion';
 import { CheckCircle2, Loader2, MapPin, Phone, User } from 'lucide-react';

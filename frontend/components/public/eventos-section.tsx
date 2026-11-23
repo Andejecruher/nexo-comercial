@@ -16,7 +16,7 @@ import {
 import { useCallback, useEffect, useMemo, useState } from 'react';
 
 import { PhoneInputWithCountry } from '@/components/ui/phone-input-with-country';
-import { toDigitsE164 } from '@/lib/promovido-schema';
+import { toDigitsE164 } from '@/lib/phone-utils';
 import type { PublicEventoItem } from '@/lib/public-eventos-api';
 import { publicEventosApi } from '@/lib/public-eventos-api';
 

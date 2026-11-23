@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useCitizenProfile } from '@/hooks/useCitizenProfile';
 import type { Citizen, CitizenRecentTicketStatus } from '@/lib/citizens-api';
-import { formatPhoneDisplay } from '@/lib/promovido-schema';
+import { formatPhoneDisplay } from '@/lib/phone-utils';
 import { motion } from 'framer-motion';
 import { ArrowUpRight, Loader2, Mail, MapPin, Phone, Plus, Tag, Ticket, X } from 'lucide-react';
 import Link from 'next/link';

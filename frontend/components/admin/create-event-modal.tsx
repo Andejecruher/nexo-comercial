@@ -3,7 +3,7 @@
 import {
   BarrioSelectCombobox,
   formatBarrioLabel,
-} from '@/components/admin/electoral-catalog/BarrioSelectCombobox';
+} from '@/components/domain/catalogs/BarrioSelectCombobox';
 import { Button } from '@/components/ui/button';
 import { DateTimePicker } from '@/components/ui/date-time-picker';
 import {

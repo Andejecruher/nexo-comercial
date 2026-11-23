@@ -44,13 +44,6 @@ const SETTINGS_LINKS: SettingsLink[] = [
     icon: Tag,
   },
   {
-    href: '/admin/catalogo-electoral',
-    title: 'Catálogo electoral',
-    description: 'Secciones, casillas y estructura electoral del municipio.',
-    icon: MapPin,
-    requiredRoles: ['SUPER_ADMIN'],
-  },
-  {
     href: '/admin/ai',
     title: 'Canales e IA avanzada',
     description: 'Líneas de comunicación, agentes, prompts, topics y tools existentes.',

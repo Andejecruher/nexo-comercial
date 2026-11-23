@@ -17,7 +17,7 @@ import {
   type InboxConversation,
   type InboxStatus,
 } from '@/lib/messaging-api';
-import { formatPhoneDisplay } from '@/lib/promovido-schema';
+import { formatPhoneDisplay } from '@/lib/phone-utils';
 import { cn } from '@/lib/utils';
 import { motion } from 'framer-motion';
 import { Bot, Building2, Loader2, PhoneCall, Search, SquarePen, UserRound } from 'lucide-react';

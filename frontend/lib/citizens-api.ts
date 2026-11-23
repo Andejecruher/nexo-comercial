@@ -62,28 +62,11 @@ export interface CitizenParticipationHistoryItem {
   checkedInAt?: string;
 }
 
-/**
- * Vinculación del ciudadano con un promovido (FK `promovidos.citizen_id`).
- * Solo datos en claro: el perfil no expone CURP ni clave de elector.
- */
-export interface CitizenPromovidoInfo {
-  id: string;
-  isActive: boolean;
-  leaderName: string;
-  sectionCode: string;
-  districtCode: string;
-  stateName: string;
-  origin: 'ocr' | 'manual';
-  createdAt: string;
-  updatedAt: string;
-}
-
 export interface CitizenProfileResponse {
   citizen: Citizen;
   tags: CitizenTagInfo[];
   conversationSummary: CitizenConversationSummary;
   participationHistory: CitizenParticipationHistoryItem[];
-  promovido: CitizenPromovidoInfo | null;
 }
 
 export type CitizenRecentTicketStatus = 'OPEN' | 'IN_PROGRESS' | 'RESOLVED' | 'CLOSED';

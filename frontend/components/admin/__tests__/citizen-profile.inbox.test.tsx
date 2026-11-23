@@ -31,7 +31,6 @@ const profile: CitizenProfileResponse = {
     lastConversation: null,
   },
   participationHistory: [],
-  promovido: null,
 };
 
 const tickets: CitizenRecentTicket[] = [

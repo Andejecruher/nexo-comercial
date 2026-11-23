@@ -48,7 +48,7 @@ describe('useExportJob download flow', () => {
 
     const { result } = renderHook(() => useExportJob());
     await act(async () => {
-      await result.current.start('promoted', { q: 'x' });
+      await result.current.start('citizens', { q: 'x' });
     });
 
     (getExportJob as ReturnType<typeof vi.fn>).mockResolvedValueOnce(polls[1]);
@@ -81,7 +81,7 @@ describe('useExportJob download flow', () => {
 
     const { result } = renderHook(() => useExportJob());
     await act(async () => {
-      await result.current.start('promoted', { q: 'x' });
+      await result.current.start('citizens', { q: 'x' });
     });
     // El poll ve `ready` e inicia la solicitud de token. El token (un POST
     // real de red) tarda; mientras tanto React flushea el re-render y el
@@ -106,7 +106,7 @@ describe('useExportJob download flow', () => {
 
     const { result } = renderHook(() => useExportJob());
     await act(async () => {
-      await result.current.start('promoted', { q: 'x' });
+      await result.current.start('citizens', { q: 'x' });
     });
     await act(async () => {
       await vi.runAllTimersAsync();
@@ -128,7 +128,7 @@ describe('useExportJob download flow', () => {
 
     const { result } = renderHook(() => useExportJob());
     await act(async () => {
-      await result.current.start('promoted', { q: 'x' });
+      await result.current.start('citizens', { q: 'x' });
     });
     await act(async () => {
       await vi.runAllTimersAsync();
@@ -146,7 +146,7 @@ describe('useExportJob download flow', () => {
 
     const { result } = renderHook(() => useExportJob());
     await act(async () => {
-      await result.current.start('promoted', { q: 'x' });
+      await result.current.start('citizens', { q: 'x' });
     });
     await act(async () => {
       await vi.runAllTimersAsync();
@@ -169,7 +169,7 @@ describe('useExportJob download flow', () => {
 
     const { result } = renderHook(() => useExportJob());
     await act(async () => {
-      await result.current.start('promoted', { q: 'x' });
+      await result.current.start('citizens', { q: 'x' });
     });
     await act(async () => {
       await vi.runAllTimersAsync();
@@ -194,7 +194,7 @@ describe('useExportJob download flow', () => {
 
     const { result } = renderHook(() => useExportJob());
     await act(async () => {
-      await result.current.start('promoted', { q: 'x' });
+      await result.current.start('citizens', { q: 'x' });
     });
     await act(async () => {
       await vi.runAllTimersAsync();

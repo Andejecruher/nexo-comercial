@@ -65,27 +65,12 @@ export function createGuards(roles: UserRole[], permissions: string[]) {
     canCreatePermissions: () => can('permissions.create'),
     canUpdatePermissions: () => can('permissions.update'),
     canDeactivatePermissions: () => can('permissions.update'),
-    /** Puede ver el módulo de coordinadores (catálogo + gestión) */
-    canViewCoordinators: () => can('coordinadores.view'),
-    /** Puede crear coordinadores */
-    canCreateCoordinators: () => can('coordinadores.create'),
-    /** Puede editar coordinadores */
-    canUpdateCoordinators: () => can('coordinadores.update'),
-    /** Puede eliminar coordinadores */
-    canDeleteCoordinators: () => can('coordinadores.delete'),
-    /** Puede ver el módulo de líderes (gestión de campaña) */
-    canViewLeaders: () => can('lideres.view'),
-    canCreateLeaders: () => can('lideres.create'),
-    canUpdateLeaders: () => can('lideres.update'),
-    canDeleteLeaders: () => can('lideres.delete'),
     /** Es super admin */
     isSuperAdmin: () => roles.includes('SUPER_ADMIN'),
-    /** Es coordinador (alcance cargo-only: sus líderes y los promovidos de ellos) */
+    /** Es coordinador; conserva el comportamiento supervisor de tickets y bandeja. */
     isCoordinator: () => roles.includes('COORDINADOR'),
-    /** Es líder (alcance: sus propios promovidos) */
+    /** Es líder; el rol se conserva para flujos operativos compartidos. */
     isLeader: () => roles.includes('LIDER'),
-    /** Puede ver promovidos de forma global (sin filtro de alcance) */
-    canViewGlobalPromovidos: () => can('promovidos.view'),
     /** Verificación genérica de permiso */
     check: can,
   };

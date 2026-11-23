@@ -2,7 +2,6 @@
 
 import { KPIGrid, type KPIItem } from '@/components/dashboard/KPIGrid';
 import { CitizenProfile } from '@/components/domain/citizens/CitizenProfile';
-import { CitizenPromovidoPanel } from '@/components/domain/citizens/CitizenPromovidoPanel';
 import { CitizenTagsPanel } from '@/components/domain/citizens/CitizenTagsPanel';
 import { CitizenTimelineSummary } from '@/components/domain/citizens/CitizenTimelineSummary';
 import { TICKET_STATUS_CONFIG } from '@/components/tickets/TicketStatusBadge';
@@ -130,8 +129,6 @@ export function CitizenProfilePageView({ citizenId }: CitizenProfilePageViewProp
       <CitizenProfile citizen={profile.citizen} />
 
       <KPIGrid items={kpiItems} loading={tickets.loading && tickets.items.length === 0} />
-
-      <CitizenPromovidoPanel promovido={profile.promovido} />
 
       <section className="space-y-3">
         <h2 className="text-base font-black text-foreground">Historial de Tickets</h2>

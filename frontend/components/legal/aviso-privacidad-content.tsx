@@ -46,15 +46,15 @@ export function AvisoPrivacidadContent() {
         </li>
         <li>
           <strong>Vinculación Ciudadana:</strong> Para registrar tu apoyo y simpatía hacia el
-          candidato en su precampaña.
+          proyecto de participación ciudadana.
         </li>
         <li>
           <strong>Comunicación Política:</strong> Para enviarte información sobre las actividades,
-          propuestas y eventos de la precampaña.
+          propuestas y eventos de participación ciudadana.
         </li>
         <li>
-          <strong>Segmentación y Análisis:</strong> Para entender mejor el perfil de los
-          simpatizantes y enfocar las estrategias de la campaña.
+          <strong>Segmentación y Análisis:</strong> Para entender mejor el perfil de los ciudadanos
+          registrados y enfocar las estrategias de comunicación.
         </li>
       </ol>
       <p>

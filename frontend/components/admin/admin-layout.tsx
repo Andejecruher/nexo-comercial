@@ -94,33 +94,9 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
       title: 'Plantillas — Nexo Comercial',
       subtitle: 'Gestión de whatsapp · Plantillas de whatsapp',
     },
-    '/admin/indicadores/precampana': {
-      title: 'Indicadores — Precampaña — Nexo Comercial',
-      subtitle: 'Gestión de campaña · Métricas y seguimiento de la fase de precampaña',
-    },
     '/admin/eventos': {
       title: 'Eventos — Nexo Comercial',
       subtitle: 'Gestión de campaña · Eventos de la campaña',
-    },
-    '/admin/catalogo-electoral': {
-      title: 'Catálogo electoral — Nexo Comercial',
-      subtitle: 'Gestión de campaña · Catálogo electoral',
-    },
-    '/admin/estructuras': {
-      title: 'Estructuras — Nexo Comercial',
-      subtitle: 'Gestión de campaña · Catálogo de estructuras operativas',
-    },
-    '/admin/coordinadores': {
-      title: 'Coordinadores — Nexo Comercial',
-      subtitle: 'Gestión de campaña · Coordinadores de sección',
-    },
-    '/admin/lideres': {
-      title: 'Líderes — Nexo Comercial',
-      subtitle: 'Gestión de campaña · Líderes territoriales',
-    },
-    '/admin/promovidos': {
-      title: 'Promovidos — Nexo Comercial',
-      subtitle: 'Gestión de campaña · Promovidos de la campaña',
     },
     '/admin/configuracion': {
       title: 'Configuraciones — Nexo Comercial',

@@ -6,7 +6,6 @@ import { Eye, MapPin, Megaphone, Search } from 'lucide-react';
 import Link from 'next/link';
 
 const AUTHENTICATED_LINKS = [
-  { href: '/admin/indicadores/precampana', label: 'Indicadores de precampaña' },
   { href: '/admin/indicadores/atencion', label: 'Indicadores de atención' },
   { href: '/admin/configuracion', label: 'Configuración' },
 ] as const;

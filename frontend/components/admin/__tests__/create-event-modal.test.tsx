@@ -2,7 +2,7 @@ import { CreateEventModal } from '@/components/admin/create-event-modal';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 
-vi.mock('@/components/admin/electoral-catalog/BarrioSelectCombobox', () => ({
+vi.mock('@/components/domain/catalogs/BarrioSelectCombobox', () => ({
   formatBarrioLabel: (name: string, municipality?: string | null) =>
     municipality ? `${name}, ${municipality}` : name,
   BarrioSelectCombobox: ({

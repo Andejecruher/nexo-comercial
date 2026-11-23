@@ -6,9 +6,6 @@ import type { ExportModule } from '@/lib/exports-api';
 import { FileSpreadsheet, Loader2 } from 'lucide-react';
 
 const MODULE_LABELS: Record<ExportModule, string> = {
-  promoted: 'Promovidos',
-  leaders: 'Líderes',
-  coordinators: 'Coordinadores',
   citizens: 'Ciudadanos',
 };
 

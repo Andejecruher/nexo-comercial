@@ -5,7 +5,8 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import type { Citizen } from '@/lib/citizens-api';
-import { formatDateTime, whatsappHref } from '@/lib/promovido-mapper';
+import { formatDateTime } from '@/lib/date-utils';
+import { whatsappHref } from '@/lib/phone-utils';
 import { Mail, MapPin, Phone } from 'lucide-react';
 import { WhatsAppIcon } from './citizen-whatsapp-actions';
 
