@@ -82,7 +82,6 @@ export function CitizenFilters({
         <BarrioSelectCombobox
           value={neighborhood}
           selectedLabel={neighborhoodLabel}
-          requireSection={false}
           placeholder="Todos los barrios"
           noneLabel="Todos los barrios"
           emptyLabel="No se encontraron barrios"

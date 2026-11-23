@@ -379,7 +379,6 @@ export function CreateEventModal({
                           id="create-event-neighborhood"
                           value={field.value || null}
                           selectedLabel={neighborhoodLabel || null}
-                          requireSection={false}
                           allowNone
                           placeholder="Buscar barrio o colonia..."
                           noneLabel="Sin barrio / colonia"

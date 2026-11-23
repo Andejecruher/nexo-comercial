@@ -12,7 +12,6 @@ import { apiClient } from '@/lib/api-client';
 export interface Neighborhood {
   id: string;
   name: string;
-  sectionId?: string;
   zone?: string;
   postalCode?: string;
   municipality?: string;
@@ -100,7 +99,6 @@ export interface NeighborhoodQueryParams {
   zone?: string;
   cursor?: string;
   limit?: number;
-  sectionId?: string;
   municipality?: string;
   postalCode?: string;
 }
@@ -208,7 +206,6 @@ export const neighborhoodsApi = {
     if (params?.zone) query.set('zone', params.zone);
     if (params?.cursor) query.set('cursor', params.cursor);
     if (params?.limit) query.set('limit', params.limit.toString());
-    if (params?.sectionId) query.set('sectionId', params.sectionId);
     if (params?.municipality) query.set('municipality', params.municipality);
     if (params?.postalCode) query.set('postalCode', params.postalCode);
 

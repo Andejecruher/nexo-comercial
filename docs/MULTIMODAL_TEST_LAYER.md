@@ -33,7 +33,7 @@ Source: `backend/src/services/multimodal-test/` (contracts, pipeline-runner, pro
 
 ## Endpoints
 
-All mounted under the existing `/api/v1` router (JWT + role `SUPER_ADMIN|COORDINADOR`, same criterion as the INE OCR workflow). All accept ONE file via `multipart/form-data` (any field name; first file wins). Options come from the query string. Responses always include the full trace, even on failure.
+All mounted under the existing `/api/v1` router with JWT and role `SUPER_ADMIN|COORDINADOR`. All accept ONE file via `multipart/form-data` (any field name; first file wins). Options come from the query string. Responses always include the full trace, even on failure.
 
 | Endpoint | Purpose |
 | --- | --- |

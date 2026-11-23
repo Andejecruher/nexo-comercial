@@ -6070,14 +6070,22 @@ export async function seedNeighborhoods(prisma: PrismaClient): Promise<void> {
     // seeder would overwrite the first entry with the last one that shares
     // the same normalized name.
     const existing = await prisma.neighborhood.findFirst({
-      where: { matchKey, municipality, sectionId: null },
+      where: { matchKey, municipality },
       select: { id: true },
     });
 
     if (existing) {
       await prisma.neighborhood.update({
         where: { id: existing.id },
-        data: { name, zone, matchKey, postalCode, municipality, state: 'Chiapas', stateCode: 'CHP' },
+        data: {
+          name,
+          zone,
+          matchKey,
+          postalCode,
+          municipality,
+          state: 'Chiapas',
+          stateCode: 'CHP',
+        },
       });
       continue;
     }

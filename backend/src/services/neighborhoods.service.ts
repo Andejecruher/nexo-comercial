@@ -4,11 +4,13 @@ import type { NeighborhoodRecord, NeighborhoodRepository } from '../repositories
 import { AppError } from '../utils/app-error';
 import { neighborhoodMatchKey, normalizeNeighborhoodName } from '../utils/neighborhood-match-key';
 
-export const CreateNeighborhoodSchema = z.object({
-  name: z.string().trim().min(2).max(255),
-  postalCode: z.string().trim().max(10).optional(),
-  municipality: z.string().trim().max(100).optional(),
-});
+export const CreateNeighborhoodSchema = z
+  .object({
+    name: z.string().trim().min(2).max(255),
+    postalCode: z.string().trim().max(10).optional(),
+    municipality: z.string().trim().max(100).optional(),
+  })
+  .strict();
 
 export const UpdateNeighborhoodSchema = z
   .object({
@@ -16,26 +18,29 @@ export const UpdateNeighborhoodSchema = z
     postalCode: z.string().trim().max(10).optional(),
     municipality: z.string().trim().max(100).optional(),
   })
+  .strict()
   .refine(
     (data) =>
-      data.name !== undefined ||
-      data.postalCode !== undefined ||
-      data.municipality !== undefined,
+      data.name !== undefined || data.postalCode !== undefined || data.municipality !== undefined,
     {
       message: 'Al menos un campo debe ser enviado',
     },
   );
 
-export const NeighborhoodIdParamSchema = z.object({
-  id: z.string().uuid(),
-});
+export const NeighborhoodIdParamSchema = z
+  .object({
+    id: z.string().uuid(),
+  })
+  .strict();
 
-export const NeighborhoodListFiltersSchema = z.object({
-  search: z.string().trim().min(1).max(255).optional(),
-  zone: z.string().trim().min(1).max(100).optional(),
-  municipality: z.string().trim().min(1).max(100).optional(),
-  postalCode: z.string().trim().min(1).max(10).optional(),
-});
+export const NeighborhoodListFiltersSchema = z
+  .object({
+    search: z.string().trim().min(1).max(255).optional(),
+    zone: z.string().trim().min(1).max(100).optional(),
+    municipality: z.string().trim().min(1).max(100).optional(),
+    postalCode: z.string().trim().min(1).max(10).optional(),
+  })
+  .strict();
 
 type CreateNeighborhoodInput = z.infer<typeof CreateNeighborhoodSchema>;
 type UpdateNeighborhoodInput = z.infer<typeof UpdateNeighborhoodSchema>;

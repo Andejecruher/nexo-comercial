@@ -12,7 +12,6 @@ vi.mock('@/lib/catalog-api', () => ({
   },
 }));
 
-const SECTION_ID = '11111111-1111-1111-1111-111111111111';
 const list = vi.mocked(neighborhoodsApi.list);
 
 function page(neighborhoods: BarrioOption[]) {
@@ -33,35 +32,20 @@ beforeEach(() => {
 });
 
 describe('BarrioSelectCombobox', () => {
-  it('loads the section-scoped catalog only after opening', async () => {
-    render(<BarrioSelectCombobox seccionId={SECTION_ID} onChange={vi.fn()} />);
-
-    expect(list).not.toHaveBeenCalled();
-    fireEvent.click(screen.getByRole('combobox'));
-
-    await waitFor(() => expect(list).toHaveBeenCalledWith({ sectionId: SECTION_ID, limit: 20 }));
-    expect(await screen.findByText('Centro')).toBeInTheDocument();
-    expect(screen.getByText('Tuxtla Gutiérrez')).toBeInTheDocument();
-  });
-
-  it('keeps the selector disabled when a required section is missing', () => {
+  it('loads the neighborhood catalog only after opening', async () => {
     render(<BarrioSelectCombobox onChange={vi.fn()} />);
 
-    expect(screen.getByRole('combobox')).toBeDisabled();
     expect(list).not.toHaveBeenCalled();
-  });
-
-  it('loads all neighborhoods for CitizenFilters when section scoping is disabled', async () => {
-    render(<BarrioSelectCombobox requireSection={false} onChange={vi.fn()} />);
     fireEvent.click(screen.getByRole('combobox'));
 
     await waitFor(() => expect(list).toHaveBeenCalledWith({ limit: 20 }));
     expect(await screen.findByText('Centro')).toBeInTheDocument();
+    expect(screen.getByText('Tuxtla Gutiérrez')).toBeInTheDocument();
   });
 
   it('preserves the selected option callback used by event creation', async () => {
     const onChange = vi.fn();
-    render(<BarrioSelectCombobox seccionId={SECTION_ID} onChange={onChange} />);
+    render(<BarrioSelectCombobox onChange={onChange} />);
     fireEvent.click(screen.getByRole('combobox'));
     fireEvent.click(await screen.findByText('Centro'));
 
@@ -74,12 +58,7 @@ describe('BarrioSelectCombobox', () => {
 
   it('keeps an assigned label visible before its catalog page loads', () => {
     render(
-      <BarrioSelectCombobox
-        seccionId={SECTION_ID}
-        value="barrio-9"
-        selectedLabel="Barrio Nuevo"
-        onChange={vi.fn()}
-      />,
+      <BarrioSelectCombobox value="barrio-9" selectedLabel="Barrio Nuevo" onChange={vi.fn()} />,
     );
 
     expect(screen.getByRole('combobox')).toHaveTextContent('Barrio Nuevo');

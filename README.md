@@ -229,9 +229,9 @@ NEXT_PUBLIC_WS_PATH=/socket.io
 NEXT_PUBLIC_WS_ENABLED=true
 ```
 
-### Credenciales Google para INE OCR
+### Credenciales Google
 
-La configuracion segura de Document AI por ADC y Google Drive personal por OAuth 2.0 esta en [backend/docs/ine-ocr-google-credentials.md](backend/docs/ine-ocr-google-credentials.md). No se guardan valores de credenciales en archivos versionados.
+Document AI usa ADC y las integraciones de Google Drive usan OAuth 2.0. Consulta las variables requeridas en [`backend/.env.example`](backend/.env.example); no guardes credenciales en archivos versionados.
 
 ### 3) Levantar stack de desarrollo completo con Docker
 

@@ -71,7 +71,7 @@ worker: WS_ENABLED=false  REALTIME_DURABLE_ENABLED=false  INBOX_POLLING=false  O
 
 **Por qué está repartido así** (comentarios del propio compose): el "orquestador" (la
 lógica de negocio que reacciona a mensajes) vive dentro de `InboxProcessorService`. En
-dev, ese polling corre **en la API** para que el puente legacy `eventBus → WebSocket gateway` funcione sin Pub/Sub. El worker se queda con el outbox de WhatsApp, INE OCR y
+dev, ese polling corre **en la API** para que el puente legacy `eventBus → WebSocket gateway` funcione sin Pub/Sub. El worker se queda con el outbox de WhatsApp y
 exports, para no competir por el claim del inbox.
 
 ```text
@@ -111,7 +111,7 @@ exports, para no competir por el claim del inbox.
                                  └──────────────────────────────────────────────────────┘
 
   WORKER (contenedor): NO toca sockets. Solo hace polling de outbox_events
-  (envía a WhatsApp), INE OCR y exports. En dev NO publica nada de realtime.
+  (envía a WhatsApp) y exports. En dev NO publica nada de realtime.
 ```
 
 ### Respuestas explícitas al cuestionario (modo local)

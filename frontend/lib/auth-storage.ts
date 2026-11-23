@@ -18,19 +18,14 @@ const KEYS = {
 
 export type UserRole = 'SUPER_ADMIN' | 'COORDINADOR' | 'CAPTURISTA' | 'OPERADOR_CHAT' | 'LIDER';
 
-export type ScopeKind = 'admin' | 'coordinator' | 'leader' | 'none';
+export type ScopeKind = 'admin' | 'none';
 
 /**
- * Espejo de ScopeContext del backend (auth.types.ts). NUNCA se construye en el
- * cliente: viaja en la respuesta de login/me decidido por el servidor (D4,
- * F3). El alcance gobierna qué datos puede ver el usuario (cargo-only para
- * COORDINADOR, propios para LIDER).
+ * Espejo de ScopeContext del backend (auth.types.ts). El servidor decide si la
+ * sesión tiene alcance administrativo o no tiene alcance de exportación.
  */
 export interface ScopeContext {
   kind: ScopeKind;
-  sectionId?: string;
-  coordinatorId?: string;
-  leaderId?: string;
 }
 
 export interface StoredUser {

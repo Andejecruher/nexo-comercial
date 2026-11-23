@@ -31,11 +31,10 @@ describe('scope-aware guards', () => {
     expect(hasPermission([], 'tickets.view')).toBe(false);
   });
 
-  it('scope context survives typing so UI can branch on scope.kind', () => {
-    const scoped: ScopeContext = { kind: 'coordinator', sectionId: 'sec-1', coordinatorId: 'c-1' };
+  it('scope context mirrors the retained backend scope kinds', () => {
     const admin: ScopeContext = { kind: 'admin' };
-    // El browser colabora: super admin no filtra, coordinador sí.
-    expect(scoped.kind).toBe('coordinator');
+    const none: ScopeContext = { kind: 'none' };
     expect(admin.kind).toBe('admin');
+    expect(none.kind).toBe('none');
   });
 });

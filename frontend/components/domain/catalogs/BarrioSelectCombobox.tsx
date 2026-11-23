@@ -33,13 +33,6 @@ export interface BarrioSelectComboboxProps {
   /** Nombre del barrio ya asignado, para edición cuando no viene en la primera página. */
   selectedLabel?: string | null;
   onChange: (option: BarrioOption | null) => void;
-  /** El catálogo se acota a la sección; el backend incluye los barrios sin sección. */
-  seccionId?: string;
-  /**
-   * Si es true, el combobox queda deshabilitado sin `seccionId` (alta/edición territorial).
-   * En filtros globales pasar false para listar todo el catálogo.
-   */
-  requireSection?: boolean;
   /** En false el barrio es obligatorio: desaparece el item para desasignarlo. */
   allowNone?: boolean;
   placeholder?: string;
@@ -64,8 +57,6 @@ export function BarrioSelectCombobox({
   value,
   selectedLabel,
   onChange,
-  seccionId,
-  requireSection = true,
   allowNone = true,
   placeholder = 'Buscar barrio o colonia...',
   noneLabel = 'Sin barrio asignado',
@@ -94,10 +85,8 @@ export function BarrioSelectCombobox({
   // Las respuestas de páginas y búsquedas viejas se descartan por generación.
   const requestRef = useRef(0);
 
-  const emptyCopy =
-    emptyLabel ??
-    (seccionId ? 'No se encontraron barrios en esta sección' : 'No se encontraron barrios');
-  const disabled = Boolean(isDisabled) || (requireSection && !seccionId);
+  const emptyCopy = emptyLabel ?? 'No se encontraron barrios';
+  const disabled = Boolean(isDisabled);
 
   useEffect(() => {
     const trigger = triggerRef.current;
@@ -111,29 +100,14 @@ export function BarrioSelectCombobox({
     return () => clearTimeout(timer);
   }, [query]);
 
-  // Un barrio de otra sección no aplica acá: la lista y la búsqueda arrancan de cero.
-  useEffect(() => {
-    requestRef.current += 1;
-    setItems([]);
-    setNextCursor(undefined);
-    setHasNextPage(false);
-    setLoadingFirstPage(false);
-    setLoadingMore(false);
-    setLoadError(null);
-    setQuery('');
-    setDebouncedQuery('');
-  }, [seccionId]);
-
   const fetchPage = useCallback(
     async (cursor?: string) => {
-      if (requireSection && !seccionId) return;
       const request = ++requestRef.current;
       if (cursor) setLoadingMore(true);
       else setLoadingFirstPage(true);
       setLoadError(null);
 
       const result = await neighborhoodsApi.list({
-        ...(seccionId ? { sectionId: seccionId } : {}),
         limit: PAGE_SIZE,
         ...(debouncedQuery ? { search: debouncedQuery } : {}),
         ...(cursor ? { cursor } : {}),
@@ -159,7 +133,7 @@ export function BarrioSelectCombobox({
       setLoadingFirstPage(false);
       setLoadingMore(false);
     },
-    [debouncedQuery, requireSection, seccionId],
+    [debouncedQuery],
   );
 
   // Carga diferida: solo se consulta el catálogo con el desplegable abierto.
