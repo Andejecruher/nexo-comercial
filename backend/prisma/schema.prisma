@@ -1,0 +1,2052 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum SourceChannel {
+  whatsapp
+  web
+  event
+  referral
+  other
+
+  @@map("source_channel")
+}
+
+enum ExportModule {
+  promoted
+  leaders
+  coordinators
+  citizens
+
+  @@map("export_module")
+}
+
+enum ExportJobStatus {
+  queued
+  processing
+  ready
+  failed
+  expired
+
+  @@map("export_job_status")
+}
+
+enum LeadStatus {
+  new
+  contacted
+  engaged
+  converted
+  unsubscribed
+
+  @@map("lead_status")
+}
+
+/// Estado de la entidad Conversación (vida continua del canal con el ciudadano).
+/// NO se cierra cuando se cierra un ticket: los tickets se cierran por caso y la
+/// conversación permanece 'open' (reutilizable) hasta un cierre manual del agente
+/// o por inactividad (cron). La FSM del flujo vive en ConversationMeta.
+enum ConversationStatus {
+  open
+  in_progress
+  resolved
+  closed
+
+  @@map("conversation_status")
+}
+
+enum ConversationChannel {
+  whatsapp
+  web_chat
+  email
+  sms
+  other
+
+  @@map("conversation_channel")
+}
+
+enum AttendanceMode {
+  bot
+  human
+
+  @@map("attendance_mode")
+}
+
+enum MessageDirection {
+  inbound
+  outbound
+
+  @@map("message_direction")
+}
+
+enum MessageType {
+  text
+  image
+  audio
+  video
+  document
+  location
+  template
+  interactive
+  sticker
+  contacts
+  unsupported
+  system
+
+  @@map("message_type")
+}
+
+enum UserInvitationStatus {
+  pending
+  sent
+  failed
+  accepted
+  expired
+  revoked
+
+  @@map("user_invitation_status")
+}
+
+model User {
+  campaigns Campaign[]
+  id             String   @id @default(uuid()) @db.Uuid
+  email          String   @unique @db.VarChar(255)
+  hashedPassword String   @map("hashed_password") @db.VarChar(255)
+  fullName       String?  @map("full_name") @db.VarChar(255)
+  phone          String?  @db.VarChar(30)
+  isActive       Boolean  @default(true) @map("is_active")
+  isSuperuser    Boolean  @default(false) @map("is_superuser")
+  createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt      DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  userRoles      UserRole[]
+  invitations    UserInvitation[]
+  passwordResets PasswordReset[]
+  coordinator    Coordinator? @relation("CoordinatorUser")
+  leader         Leader?      @relation("LeaderUser")
+  refreshSessions RefreshSession[]
+
+  auditLogs AuditLog[] @relation("AuditLogActor")
+
+  assignedConversations Conversation[] @relation("ConversationAssignedUser")
+  assignedCitizenTags   CitizenTag[]   @relation("CitizenTagAssignedBy")
+  uploadedAttachments   Attachment[]   @relation("AttachmentUploadedBy")
+  assignments           Assignment[]   @relation("AssignmentUser")
+  organizedEvents       Event[]        @relation("EventOrganizer")
+  eventCheckins         EventCheckin[] @relation("EventCheckinByUser")
+  assignedTickets       Ticket[]       @relation("TicketAssignedUser")
+  createdUploads        UploadRecord[] @relation("UploadCreatedBy")
+  reviewedUploads       UploadRecord[] @relation("UploadReviewedBy")
+  createdPromovidos     Promovido[]    @relation("PromovidoCreatedBy")
+  sentMessages          Message[]      @relation("MessageSendBy")
+  conversationReads     ConversationRead[] @relation("ConversationReadUser")
+  notificationPreferences UserNotificationPreference? @relation("UserNotificationPreferences")
+
+  @@index([email])
+  @@map("users")
+}
+
+model UserNotificationPreference {
+  id            String   @id @default(uuid()) @db.Uuid
+  userId        String   @unique @map("user_id") @db.Uuid
+  preferences   Json     @map("preferences") @db.JsonB
+  createdAt     DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt     DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  user User @relation("UserNotificationPreferences", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("user_notification_preferences")
+}
+
+model ExportJob {
+  id                String          @id @default(uuid()) @db.Uuid
+  module            ExportModule    @map("module")
+  filtersJson       Json            @default("{}") @map("filters_json") @db.JsonB
+  scopeSnapshot     Json            @map("scope_snapshot") @db.JsonB
+  status            ExportJobStatus @default(queued)
+  driveFileId       String?         @map("drive_file_id") @db.VarChar(255)
+  /// Relative GCS object name. Signed URLs are generated only for HTTP responses.
+  filePath          String?         @map("file_path") @db.Text
+  driveFolderId     String?         @map("drive_folder_id") @db.VarChar(255)
+  driveFilename     String?         @map("drive_filename") @db.VarChar(255)
+  downloadTokenHash      String?    @map("download_token_hash") @db.VarChar(64)
+  downloadTokenExpiresAt DateTime?  @map("download_token_expires_at") @db.Timestamptz(6)
+  downloadTokenConsumedAt DateTime? @map("download_token_consumed_at") @db.Timestamptz(6)
+  rowCount          Int?            @map("row_count")
+  errorCode         String?         @map("error_code") @db.VarChar(80)
+  lastError         String?         @map("last_error") @db.Text
+  requestedByUserId String          @map("requested_by_user_id") @db.Uuid
+  requestedAt       DateTime        @default(now()) @map("requested_at") @db.Timestamptz(6)
+  expiresAt         DateTime        @map("expires_at") @db.Timestamptz(6)
+  completedAt       DateTime?       @map("completed_at") @db.Timestamptz(6)
+  createdAt         DateTime        @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt         DateTime        @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@index([requestedByUserId, createdAt])
+  @@index([status, expiresAt])
+  @@index([status, completedAt])
+  @@map("export_jobs")
+}
+
+model UserInvitation {
+  id                   String               @id @default(uuid()) @db.Uuid
+  userId               String               @map("user_id") @db.Uuid
+  tokenHash            String               @map("token_hash") @db.VarChar(128)
+  status               UserInvitationStatus @default(pending)
+  expiresAt            DateTime             @map("expires_at") @db.Timestamptz(6)
+  sentAt               DateTime?            @map("sent_at") @db.Timestamptz(6)
+  acceptedAt           DateTime?            @map("accepted_at") @db.Timestamptz(6)
+  revokedAt            DateTime?            @map("revoked_at") @db.Timestamptz(6)
+  provider             String?              @db.VarChar(40)
+  providerMessageId    String?              @map("provider_message_id") @db.VarChar(255)
+  lastErrorCode        String?              @map("last_error_code") @db.VarChar(80)
+  deliveryAttemptCount Int                  @default(0) @map("delivery_attempt_count")
+  createdById          String?              @map("created_by_id") @db.Uuid
+  createdAt            DateTime             @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt            DateTime             @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([tokenHash], map: "uq_user_invitations_token_hash")
+  @@index([userId, status])
+  @@index([expiresAt])
+  @@map("user_invitations")
+}
+
+/// Token de restablecimiento de contraseña. Se guarda solo el hash SHA-256;
+/// el token en claro únicamente viaja en el correo.
+model PasswordReset {
+  id            String    @id @default(uuid()) @db.Uuid
+  userId        String    @map("user_id") @db.Uuid
+  tokenHash     String    @map("token_hash") @db.VarChar(128)
+  expiresAt     DateTime  @map("expires_at") @db.Timestamptz(6)
+  usedAt        DateTime? @map("used_at") @db.Timestamptz(6)
+  invalidatedAt DateTime? @map("invalidated_at") @db.Timestamptz(6)
+  requestedIp   String?   @map("requested_ip") @db.VarChar(45)
+  createdAt     DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt     DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([tokenHash], map: "uq_password_resets_token_hash")
+  @@index([userId])
+  @@index([expiresAt])
+  @@map("password_resets")
+}
+
+model Role {
+  id          String   @id @default(uuid()) @db.Uuid
+  name        String   @unique @db.VarChar(50)
+  slug        String   @unique @db.VarChar(80)
+  description String?  @db.VarChar(255)
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt   DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  userRoles       UserRole[]
+  rolePermissions RolePermission[]
+
+  @@index([name])
+  @@index([slug])
+  @@map("roles")
+}
+
+model Permission {
+  id          String   @id @default(uuid()) @db.Uuid
+  name        String   @db.VarChar(100)
+  slug        String   @unique @db.VarChar(120)
+  module      String   @db.VarChar(80)
+  description String?  @db.VarChar(255)
+  isActive    Boolean  @default(true) @map("is_active")
+  isSystem    Boolean  @default(false) @map("is_system")
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt   DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  rolePermissions RolePermission[]
+
+  @@index([module])
+  @@index([slug])
+  @@index([isActive])
+  @@index([isSystem])
+  @@map("permissions")
+}
+
+model UserRole {
+  id         String   @id @default(uuid()) @db.Uuid
+  userId     String   @map("user_id") @db.Uuid
+  roleId     String   @map("role_id") @db.Uuid
+  assignedAt DateTime @default(now()) @map("assigned_at") @db.Timestamptz(6)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role Role @relation(fields: [roleId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, roleId], map: "uq_user_roles_user_role")
+  @@index([userId])
+  @@index([roleId])
+  @@map("user_roles")
+}
+
+model RolePermission {
+  roleId       String   @map("role_id") @db.Uuid
+  permissionId String   @map("permission_id") @db.Uuid
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  role       Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  permission Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+  @@id([roleId, permissionId])
+  @@index([roleId])
+  @@index([permissionId])
+  @@map("role_permissions")
+}
+
+model Neighborhood {
+  id           String   @id @default(uuid()) @db.Uuid
+  name         String   @db.VarChar(255)
+  matchKey     String   @map("match_key") @db.VarChar(255)
+  sectionId    String?  @map("section_id") @db.Uuid
+  zone         String?  @db.VarChar(100)
+  postalCode   String?  @map("postal_code") @db.VarChar(10)
+  municipality String?  @db.VarChar(100)
+  state        String   @default("Chiapas") @db.VarChar(100)
+  stateCode    String   @default("CHP") @map("state_code") @db.VarChar(5)
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt    DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  citizens Citizen[]
+  leaders  Leader[]
+  section  Section?  @relation(fields: [sectionId], references: [id], onDelete: SetNull)
+
+  @@unique([sectionId, matchKey, municipality], map: "uq_neighborhoods_section_match_key")
+  @@index([name])
+  @@index([sectionId])
+  @@index([postalCode])
+  @@index([municipality])
+  @@index([state])
+  @@map("neighborhoods")
+}
+
+model Citizen {
+  campaignRecipients CampaignRecipient[]
+  id                  String        @id @default(uuid()) @db.Uuid
+  phone               String?       @unique @db.VarChar(30)
+  voterKeyFingerprint String?       @unique @map("voter_key_fingerprint") @db.VarChar(32)
+  curpFingerprint     String?       @unique @map("curp_fingerprint") @db.VarChar(32)
+  name                String?       @db.VarChar(255)
+  lastName            String?       @map("last_name") @db.VarChar(255)
+  email               String?       @db.VarChar(255)
+  sourceChannel       SourceChannel @default(whatsapp) @map("source_channel")
+  leadStatus          LeadStatus    @default(new) @map("lead_status")
+  consentGiven        Boolean       @default(false) @map("consent_given")
+  consentAt           DateTime?     @map("consent_at") @db.Timestamptz(6)
+  neighborhood        String?       @db.VarChar(255)
+  neighborhoodId      String?       @map("neighborhood_id") @db.Uuid
+  interests           String[]      @default([]) @db.Text
+  createdAt           DateTime      @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt           DateTime      @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  neighborhoodRef Neighborhood? @relation(fields: [neighborhoodId], references: [id], onDelete: SetNull)
+
+  conversations      Conversation[]
+  citizenTags        CitizenTag[]
+  attachments        Attachment[]
+  eventRegistrations EventRegistration[]
+  aiRuns             AiRun[]
+  tickets            Ticket[]
+  promovido          Promovido?
+
+  @@index([phone])
+  @@index([voterKeyFingerprint])
+  @@index([curpFingerprint])
+  @@index([email])
+  @@map("citizens")
+}
+
+/// Conversación = entidad continua por ciudadano (historial completo del canal).
+/// Un ciudadano mantiene UNA conversación canónica de por vida: si llega con una
+/// FSM CLOSED o status no-open, la próxima interacción la reactiva (CLOSED→BOT_FLOW)
+/// en lugar de crear otra. Los tickets (1:N vía `tickets`) agrupan los trámites
+/// por caso. La semántica operativa del inbox ("Activa/Inactiva") se resuelve por
+/// tickets activos (OPEN | IN_PROGRESS), no por `status`.
+model Conversation {
+  /// Indexed conversation scope; synchronized with meta by a database trigger.
+  communicationLineId String? @map("communication_line_id") @db.Uuid
+  realtimeVersion Int                 @default(0) @map("realtime_version")
+  id             String              @id @default(uuid()) @db.Uuid
+  citizenId      String              @map("citizen_id") @db.Uuid
+  status         ConversationStatus  @default(open)
+  channel        ConversationChannel @default(whatsapp)
+  isCanonical    Boolean             @default(true) @map("is_canonical")
+  assignedDept   String?             @map("assigned_dept") @db.VarChar(100)
+  assignedUserId String?             @map("assigned_user_id") @db.Uuid
+  /// Quién atiende la conversación: bot (IA activa) o human (agente/departamento).
+  /// Fuente de verdad para silenciar la IA, independiente de flowState.
+  attendanceMode AttendanceMode      @default(bot) @map("attendance_mode")
+  /// Kill-switch operativo del bot por conversación. false silencia la IA.
+  botEnabled     Boolean             @default(true) @map("bot_enabled")
+  /// Trazabilidad del último handoff a departamento (auditoría + alertas de
+  /// handoffs que quedaron con la IA activa).
+  transferredAt  DateTime?           @map("transferred_at") @db.Timestamptz(6)
+  transferredBy  String?             @map("transferred_by") @db.VarChar(100)
+  transferReason String?             @map("transfer_reason") @db.VarChar(255)
+  /// Ticket abierto actualmente (OPEN | IN_PROGRESS). null si no hay ninguno.
+  /// Denormalización de uq_tickets_one_active_per_conversation para lectura directa.
+  activeTicketId String?             @map("active_ticket_id") @db.Uuid
+  createdAt      DateTime            @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt      DateTime            @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  citizen Citizen @relation(fields: [citizenId], references: [id], onDelete: Cascade)
+
+  assignedUser User? @relation("ConversationAssignedUser", fields: [assignedUserId], references: [id], onDelete: SetNull)
+
+  activeTicket Ticket? @relation("ConversationActiveTicket", fields: [activeTicketId], references: [id], onDelete: SetNull)
+
+  messages    Message[]
+  assignments Assignment[]
+  meta        ConversationMeta?
+  aiRuns      AiRun[]
+  tickets     Ticket[]
+  reads       ConversationRead[] @relation("ConversationReadConversation")
+
+  @@index([transferredAt])
+  @@index([assignedUserId])
+  @@index([citizenId, status])
+  @@index([activeTicketId])
+  @@map("conversations")
+}
+
+model ConversationRead {
+  userId         String   @map("user_id") @db.Uuid
+  conversationId String   @map("conversation_id") @db.Uuid
+  lastReadAt     DateTime @map("last_read_at") @db.Timestamptz(6)
+  createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt      DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  user         User         @relation("ConversationReadUser", fields: [userId], references: [id], onDelete: Cascade)
+  conversation Conversation @relation("ConversationReadConversation", fields: [conversationId], references: [id], onDelete: Cascade)
+
+  @@id([userId, conversationId])
+  @@index([conversationId])
+  @@map("conversation_reads")
+}
+
+model Message {
+  id                String           @id @default(uuid()) @db.Uuid
+  conversationId    String           @map("conversation_id") @db.Uuid
+  /// Ticket al que pertenece el mensaje. Fuente de lectura para la vista de detalle
+  /// por ticket. Nullable a nivel DB solo por mensajes históricos; la capa de
+  /// aplicación garantiza que todo mensaje nuevo tenga ticket.
+  ticketId          String?          @map("ticket_id") @db.Uuid
+  body              String           @db.Text
+  direction         MessageDirection
+  messageType       MessageType      @default(text) @map("message_type")
+  externalMessageId String?          @map("external_message_id") @db.VarChar(255)
+  idempotencyKey   String?          @unique @map("idempotency_key") @db.VarChar(255)
+  attachmentId      String?          @map("attachment_id") @db.Uuid
+  sendByUserId      String?          @map("send_by_user_id") @db.Uuid
+  meta              Json             @default("{}") @db.JsonB
+  createdAt         DateTime         @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+
+  ticket Ticket? @relation("MessageTicket", fields: [ticketId], references: [id], onDelete: SetNull)
+
+  sender User? @relation("MessageSendBy", fields: [sendByUserId], references: [id], onDelete: SetNull)
+
+  attachment Attachment? @relation("MessageAttachmentByAttachmentId", fields: [attachmentId], references: [id], onDelete: SetNull)
+
+  attachmentsViaMessageId Attachment[]    @relation("AttachmentBelongsToMessage")
+  statuses                MessageStatus[]
+  ticketMessages          TicketMessage[] @relation("MessageTickets")
+
+  @@index([conversationId, createdAt, id])
+  @@index([conversationId, direction, createdAt])
+  @@index([ticketId, createdAt, id])
+  @@index([externalMessageId])
+  @@index([sendByUserId])
+  @@index([ticketId])
+  @@map("messages")
+}
+
+model Attachment {
+  communicationLineId String? @map("communication_line_id") @db.Uuid
+  checksumMd5 String? @map("checksum_md5") @db.VarChar(32)
+  providerMediaId String? @map("provider_media_id") @db.VarChar(255)
+  providerPhoneNumberId String? @map("provider_phone_number_id") @db.VarChar(100)
+  processingState String @default("legacy") @map("processing_state") @db.VarChar(24)
+  driveFileId String? @map("drive_file_id") @db.VarChar(255)
+  driveFolderId String? @map("drive_folder_id") @db.VarChar(255)
+  checksumSha256 String? @map("checksum_sha256") @db.VarChar(64)
+  attempts Int @default(0)
+  nextAttemptAt DateTime @default(now()) @map("next_attempt_at") @db.Timestamptz(6)
+  lockedAt DateTime? @map("locked_at") @db.Timestamptz(6)
+  lastErrorCode String? @map("last_error_code") @db.VarChar(80)
+  storedAt DateTime? @map("stored_at") @db.Timestamptz(6)
+
+  id               String   @id @default(uuid()) @db.Uuid
+  /// Relative GCS name: conversations/<line>/<conversation>/<filename>. Pending rows may contain a Meta media ID.
+  storageKey       String   @map("storage_key") @db.VarChar(1024)
+  mimeType         String   @map("mime_type") @db.VarChar(127)
+  fileSizeBytes    BigInt   @map("file_size_bytes")
+  originalFilename String?  @map("original_filename") @db.VarChar(512)
+  cdnUrl           String?  @map("cdn_url") @db.Text
+  messageId        String?  @map("message_id") @db.Uuid
+  citizenId        String?  @map("citizen_id") @db.Uuid
+  uploadedBy       String?  @map("uploaded_by") @db.Uuid
+  createdAt        DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  message Message? @relation("AttachmentBelongsToMessage", fields: [messageId], references: [id], onDelete: SetNull)
+
+  citizen  Citizen? @relation(fields: [citizenId], references: [id], onDelete: SetNull)
+  uploader User?    @relation("AttachmentUploadedBy", fields: [uploadedBy], references: [id], onDelete: SetNull)
+
+  messagesViaAttachmentId Message[] @relation("MessageAttachmentByAttachmentId")
+
+  @@index([messageId])
+  @@index([citizenId])
+  @@unique([messageId, providerMediaId])
+  @@index([providerMediaId])
+  @@index([processingState, nextAttemptAt])
+  @@map("attachments")
+}
+
+model Tag {
+  id          String   @id @default(uuid()) @db.Uuid
+  name        String   @unique @db.VarChar(100)
+  description String?  @db.Text
+  color       String?  @db.VarChar(20)
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  citizenTags CitizenTag[]
+
+  @@index([name])
+  @@map("tags")
+}
+
+// ── Auditoría de acciones administrativas ─────────────────────────────────────
+
+/// Registro inmutable de acciones sensibles realizadas por usuarios admin.
+/// No se eliminan ni modifican — append-only por diseño.
+model AuditLog {
+  id         String   @id @default(uuid()) @db.Uuid
+  actorId    String?  @map("actor_id") @db.Uuid // null si la acción fue del sistema
+  action     String   @db.VarChar(100) // ej: "user.create", "user.deactivate"
+  targetType String   @map("target_type") @db.VarChar(50) // ej: "User", "Role"
+  targetId   String?  @map("target_id") @db.VarChar(255)
+  metadata   Json     @default("{}") @db.JsonB // datos adicionales de la acción
+  ip         String?  @db.VarChar(45) // IPv4 o IPv6
+  userAgent  String?  @map("user_agent") @db.VarChar(512)
+  createdAt  DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  actor User? @relation("AuditLogActor", fields: [actorId], references: [id], onDelete: SetNull)
+
+  @@index([actorId])
+  @@index([action])
+  @@index([targetType, targetId])
+  @@index([createdAt])
+  @@map("audit_logs")
+}
+
+model CitizenTag {
+  id           String   @id @default(uuid()) @db.Uuid
+  citizenId    String   @map("citizen_id") @db.Uuid
+  tagId        String   @map("tag_id") @db.Uuid
+  assignedById String?  @map("assigned_by_id") @db.Uuid
+  assignedAt   DateTime @default(now()) @map("assigned_at") @db.Timestamptz(6)
+
+  citizen Citizen @relation(fields: [citizenId], references: [id], onDelete: Cascade)
+  tag     Tag     @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  assignedBy User? @relation("CitizenTagAssignedBy", fields: [assignedById], references: [id], onDelete: SetNull)
+
+  @@unique([citizenId, tagId], map: "uq_citizen_tags_citizen_tag")
+  @@index([citizenId])
+  @@index([tagId])
+  @@map("citizen_tags")
+}
+
+// ── Messaging Core ────────────────────────────────────────────────────────────
+
+enum ConversationFlowState {
+  BOT_FLOW
+  REGISTERING
+  DEPARTMENT_ROUTING
+  HUMAN_FLOW
+  ESCALATED
+  CLOSED
+
+  @@map("conversation_flow_state")
+}
+
+enum MessageStatusValue {
+  sent
+  delivered
+  read
+  failed
+
+  @@map("message_status_value")
+}
+
+enum InboxEventStatus {
+  pending
+  processing
+  processed
+  failed
+  dead_lettered
+
+  @@map("inbox_event_status")
+}
+
+enum OutboxEventStatus {
+  pending
+  sending
+  sent
+  failed
+  dead_lettered
+
+  @@map("outbox_event_status")
+}
+
+enum RealtimeOutboxStatus {
+  pending
+  publishing
+  published
+  failed
+  dead_lettered
+
+  @@map("realtime_outbox_status")
+}
+
+enum AIProvider {
+  openai
+  anthropic
+
+  @@map("ai_provider")
+}
+
+enum AIToolKind {
+  internal
+  external
+
+  @@map("ai_tool_kind")
+}
+
+enum AIPromptType {
+  system
+  tool
+  topic
+  fallback
+
+  @@map("ai_prompt_type")
+}
+
+enum AIToolExecutionType {
+  function
+  http
+
+  @@map("ai_tool_execution_type")
+}
+
+enum AIToolHttpMethod {
+  GET
+  POST
+  PUT
+  PATCH
+  DELETE
+
+  @@map("ai_tool_http_method")
+}
+
+enum AIRunStatus {
+  running
+  completed
+  failed
+  skipped
+
+  @@map("ai_run_status")
+}
+
+enum AIToolCallStatus {
+  running
+  completed
+  failed
+  blocked
+
+  @@map("ai_tool_call_status")
+}
+
+/// Extiende Conversation con estado de la máquina de estados de orquestación.
+/// Se agrega como modelo separado para no romper el modelo Conversation existente.
+model ConversationMeta {
+  id                  String                @id @default(uuid()) @db.Uuid
+  conversationId      String                @unique @map("conversation_id") @db.Uuid
+  communicationLineId String?               @map("communication_line_id") @db.Uuid
+  flowState           ConversationFlowState @default(BOT_FLOW) @map("flow_state")
+  lockedByUserId      String?               @map("locked_by_user_id") @db.Uuid
+  lockedAt            DateTime?             @map("locked_at") @db.Timestamptz(6)
+  version             Int                   @default(0) // optimistic locking
+  fsmLockToken        String?               @map("fsm_lock_token") @db.VarChar(64)
+  fsmLockedAt         DateTime?             @map("fsm_locked_at") @db.Timestamptz(6)
+  departmentSlug      String?               @map("department_slug") @db.VarChar(100)
+  handoverAt          DateTime?             @map("handover_at") @db.Timestamptz(6)
+  /// Trazabilidad del último handoff (escalate | agent_transfer | manual_handover | rule_handover | department_transfer | to_ai).
+  handoffKind         String?               @map("handoff_kind") @db.VarChar(50)
+  createdAt           DateTime              @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt           DateTime              @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  conversation      Conversation       @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  communicationLine CommunicationLine? @relation(fields: [communicationLineId], references: [id], onDelete: SetNull)
+
+  @@index([flowState])
+  @@index([lockedByUserId])
+  @@index([communicationLineId])
+  @@index([conversationId, flowState])
+  @@map("conversation_meta")
+}
+
+/// Registro de estado de entrega de mensajes outbound.
+model MessageStatus {
+  id         String             @id @default(uuid()) @db.Uuid
+  messageId  String             @map("message_id") @db.Uuid
+  wamid      String             @map("wamid") @db.VarChar(255)
+  status     MessageStatusValue
+  errorCode  Int?               @map("error_code")
+  errorTitle String?            @map("error_title") @db.VarChar(255)
+  timestamp  DateTime
+  createdAt  DateTime           @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  message Message @relation(fields: [messageId], references: [id], onDelete: Cascade)
+
+  @@index([wamid])
+  @@index([messageId])
+  @@map("message_statuses")
+}
+
+/// Eventos entrantes del webhook de Meta — inbox queue persistente.
+model InboxEvent {
+  batchGeneration Int?             @map("batch_generation")
+  ingestedAt      DateTime?        @map("ingested_at") @db.Timestamptz(6)
+  messageId       String?          @map("message_id") @db.Uuid
+  correlationId   String?          @map("correlation_id") @db.VarChar(255)
+  id             String           @id @default(uuid()) @db.Uuid
+  wamid          String           @unique @map("wamid") @db.VarChar(255) // dedupe key
+  phone          String           @db.VarChar(30)
+  payload        Json             @db.JsonB
+  status         InboxEventStatus @default(pending)
+  retryCount     Int              @default(0) @map("retry_count")
+  lastErrorAt    DateTime?        @map("last_error_at") @db.Timestamptz(6)
+  lastError      String?          @map("last_error") @db.Text
+  lockedAt       DateTime?        @map("locked_at") @db.Timestamptz(6)
+  lockedBy       String?          @map("locked_by") @db.VarChar(255)
+  idempotencyKey String?          @map("idempotency_key") @db.VarChar(255)
+  createdAt      DateTime         @default(now()) @map("created_at") @db.Timestamptz(6)
+  processedAt    DateTime?        @map("processed_at") @db.Timestamptz(6)
+
+  @@index([phone])
+  @@index([createdAt])
+  @@index([status, createdAt])
+  @@index([messageId])
+  @@index([phone, batchGeneration, status])
+  @@map("inbox_events")
+}
+
+/// Ventana de batching durable por teléfono.
+model BatchWindow {
+  phone           String    @id @db.VarChar(30)
+  batchGeneration Int       @default(0) @map("batch_generation")
+  batchReadyAt    DateTime? @map("batch_ready_at") @db.Timestamptz(6)
+  windowOpenedAt  DateTime? @map("window_opened_at") @db.Timestamptz(6)
+  createdAt       DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt       DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@index([batchReadyAt, batchGeneration])
+  @@map("batch_windows")
+}
+
+/// Historial de claims para ventanas de batching.
+model BatchWindowClaim {
+  phone             String    @map("phone") @db.VarChar(30)
+  batchGeneration   Int       @map("batch_generation")
+  claimToken        String?   @map("claim_token") @db.VarChar(64)
+  claimLeaseUntil   DateTime? @map("claim_lease_until") @db.Timestamptz(6)
+  drainBoundary     DateTime? @map("drain_boundary") @db.Timestamptz(6)
+  completedAt       DateTime? @map("completed_at") @db.Timestamptz(6)
+  createdAt         DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt         DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@id([phone, batchGeneration])
+  @@index([claimLeaseUntil, completedAt])
+  @@index([phone, completedAt, batchGeneration])
+  @@map("batch_window_claims")
+}
+
+/// Cola de eventos salientes — outbox pattern para garantizar entrega a Meta API.
+model OutboxEvent {
+  id             String            @id @default(uuid()) @db.Uuid
+  conversationId String?           @map("conversation_id") @db.Uuid
+  phone          String            @db.VarChar(30)
+  payload        Json              @db.JsonB
+  status         OutboxEventStatus @default(pending)
+  retryCount     Int               @default(0) @map("retry_count")
+  nextRetryAt    DateTime?         @map("next_retry_at") @db.Timestamptz(6)
+  lastError      String?           @map("last_error") @db.Text
+  lockedAt       DateTime?         @map("locked_at") @db.Timestamptz(6)
+  lockedBy       String?           @map("locked_by") @db.VarChar(255)
+  wamid          String?           @map("wamid") @db.VarChar(255) // id retornado por Meta
+  idempotencyKey String            @unique @map("idempotency_key") @db.VarChar(255)
+  createdAt      DateTime          @default(now()) @map("created_at") @db.Timestamptz(6)
+  sentAt         DateTime?         @map("sent_at") @db.Timestamptz(6)
+
+  @@index([phone])
+  @@index([status, nextRetryAt])
+  @@index([conversationId])
+  @@map("outbox_events")
+}
+
+/// Durable outbox for critical realtime events.
+/// Ensures the event is persisted in the same transaction as the domain change
+/// and that the relay delivers it at least once via Redis/Socket.IO.
+model RealtimeOutboxEvent {
+  id              String               @id @default(uuid()) @db.Uuid
+  eventType       String               @map("event_type") @db.VarChar(100)
+  socketEventName String               @map("socket_event_name") @db.VarChar(100)
+  payload         Json                 @db.JsonB
+  status          RealtimeOutboxStatus @default(pending)
+  attempts        Int                  @default(0)
+  nextRetryAt     DateTime?            @map("next_retry_at") @db.Timestamptz(6)
+  lockedAt        DateTime?            @map("locked_at") @db.Timestamptz(6)
+  lockedBy        String?              @map("locked_by") @db.VarChar(255)
+  publishedAt     DateTime?            @map("published_at") @db.Timestamptz(6)
+  lastError       String?              @map("last_error") @db.Text
+  createdAt       DateTime             @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt       DateTime             @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@index([status, nextRetryAt])
+  @@index([eventType])
+  @@index([createdAt])
+  @@map("realtime_outbox_events")
+}
+
+/// Notificaciones del centro de notificaciones del panel admin.
+/// Proyección del stream de eventos realtime durable (at-least-once):
+/// el subscriber de la API persiste una fila por evento que derivaría un
+/// `admin.notification`. Idempotente por `eventId` — los redeliveries de
+/// Pub/Sub no duplican filas.
+model Notification {
+  communicationLineId String? @map("communication_line_id") @db.Uuid
+  ticketId       String?  @map("ticket_id") @db.Uuid
+  id             String   @id @default(uuid()) @db.Uuid
+  eventId        String   @unique @map("event_id") @db.Uuid
+  type           String   @db.VarChar(100)
+  conversationId String?  @map("conversation_id") @db.Uuid
+  contactName    String?  @map("contact_name") @db.Text
+  phone          String?  @db.Text
+  messagePreview String?  @map("message_preview") @db.Text
+  flowState      String?  @map("flow_state") @db.Text
+  channel        String?  @db.Text
+  priority       String?  @db.Text
+  departmentSlug String?  @map("department_slug") @db.Text
+  assignedUserId String?  @map("assigned_user_id") @db.Uuid
+  occurredAt     DateTime @map("occurred_at") @db.Timestamptz(6)
+  createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  @@index([occurredAt])
+  @@index([createdAt, id])
+  @@map("notifications")
+}
+
+/// Log de todos los webhooks recibidos de Meta (para auditoría y replay).
+model WebhookEventLog {
+  id            String   @id @default(uuid()) @db.Uuid
+  correlationId String   @map("correlation_id") @db.VarChar(255)
+  rawPayload    Json     @map("raw_payload") @db.JsonB
+  signature     String?  @db.VarChar(255)
+  processedOk   Boolean  @default(false) @map("processed_ok")
+  errorMessage  String?  @map("error_message") @db.Text
+  ipAddress     String?  @map("ip_address") @db.VarChar(45)
+  createdAt     DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  @@index([correlationId])
+  @@index([createdAt])
+  @@index([processedOk, createdAt])
+  @@map("webhook_event_logs")
+}
+
+/// Departamentos disponibles para enrutamiento de conversaciones.
+model Department {
+  id              String   @id @default(uuid()) @db.Uuid
+  slug            String   @unique @db.VarChar(100)
+  name            String   @db.VarChar(255)
+  description     String?  @db.Text
+  serviceHours    String?  @map("service_hours") @db.VarChar(255) // horario legible (display)
+  serviceSchedule Json?    @map("service_schedule") // horario estructurado legacy/sincronizado para IA
+  isActive        Boolean  @default(true) @map("is_active")
+  keywords        String[] @default([]) @db.Text // para routing automático
+  createdAt       DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt       DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  schedules          DepartmentSchedule[]
+  scheduleExceptions DepartmentScheduleException[]
+
+  @@index([slug])
+  @@index([isActive])
+  @@map("departments")
+}
+
+enum DepartmentDayOfWeek {
+  MONDAY
+  TUESDAY
+  WEDNESDAY
+  THURSDAY
+  FRIDAY
+  SATURDAY
+  SUNDAY
+
+  @@map("department_day_of_week")
+}
+
+enum DepartmentScheduleExceptionType {
+  PARTIALLY_OPEN
+  PARTIALLY_CLOSED
+  FULLY_CLOSED
+
+  @@map("department_schedule_exception_type")
+}
+
+enum DepartmentExceptionRecurrenceType {
+  NONE
+  YEARLY
+  WEEKLY
+  SPECIFIC_WEEKDAYS
+
+  @@map("department_exception_recurrence_type")
+}
+
+model DepartmentSchedule {
+  id           String              @id @default(uuid()) @db.Uuid
+  departmentId String              @map("department_id") @db.Uuid
+  dayOfWeek    DepartmentDayOfWeek @map("day_of_week")
+  isOpen       Boolean             @default(false) @map("is_open")
+  createdAt    DateTime            @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt    DateTime            @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  department Department                   @relation(fields: [departmentId], references: [id], onDelete: Cascade)
+  intervals  DepartmentScheduleInterval[]
+
+  @@unique([departmentId, dayOfWeek], map: "uq_department_schedules_department_day")
+  @@index([departmentId])
+  @@index([dayOfWeek])
+  @@map("department_schedules")
+}
+
+model DepartmentScheduleInterval {
+  id         String   @id @default(uuid()) @db.Uuid
+  scheduleId String   @map("schedule_id") @db.Uuid
+  startTime  String   @map("start_time") @db.VarChar(5)
+  endTime    String   @map("end_time") @db.VarChar(5)
+  sortOrder  Int      @default(0) @map("sort_order")
+  createdAt  DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  schedule DepartmentSchedule @relation(fields: [scheduleId], references: [id], onDelete: Cascade)
+
+  @@unique([scheduleId, startTime, endTime], map: "uq_department_schedule_intervals_range")
+  @@index([scheduleId, sortOrder])
+  @@map("department_schedule_intervals")
+}
+
+model DepartmentScheduleException {
+  id                 String                            @id @default(uuid()) @db.Uuid
+  departmentId       String                            @map("department_id") @db.Uuid
+  type               DepartmentScheduleExceptionType
+  recurrenceType     DepartmentExceptionRecurrenceType @default(NONE) @map("recurrence_type")
+  startDate          DateTime?                         @map("start_date") @db.Date
+  endDate            DateTime?                         @map("end_date") @db.Date
+  recurrenceStartsOn DateTime?                         @map("recurrence_starts_on") @db.Date
+  recurrenceEndsOn   DateTime?                         @map("recurrence_ends_on") @db.Date
+  yearlyStartMonth   Int?                              @map("yearly_start_month")
+  yearlyStartDay     Int?                              @map("yearly_start_day")
+  yearlyEndMonth     Int?                              @map("yearly_end_month")
+  yearlyEndDay       Int?                              @map("yearly_end_day")
+  weeklyAnchorDate   DateTime?                         @map("weekly_anchor_date") @db.Date
+  weekdays           DepartmentDayOfWeek[]             @default([])
+  reason             String?                           @db.VarChar(500)
+  createdAt          DateTime                          @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt          DateTime                          @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  department Department                    @relation(fields: [departmentId], references: [id], onDelete: Cascade)
+  intervals  DepartmentExceptionInterval[]
+
+  @@index([departmentId])
+  @@index([departmentId, recurrenceType])
+  @@index([departmentId, startDate, endDate])
+  @@index([departmentId, recurrenceStartsOn, recurrenceEndsOn])
+  @@index([departmentId, yearlyStartMonth, yearlyStartDay, yearlyEndMonth, yearlyEndDay])
+  @@map("department_schedule_exceptions")
+}
+
+model DepartmentExceptionInterval {
+  id          String   @id @default(uuid()) @db.Uuid
+  exceptionId String   @map("exception_id") @db.Uuid
+  startTime   String   @map("start_time") @db.VarChar(5)
+  endTime     String   @map("end_time") @db.VarChar(5)
+  sortOrder   Int      @default(0) @map("sort_order")
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  exception DepartmentScheduleException @relation(fields: [exceptionId], references: [id], onDelete: Cascade)
+
+  @@unique([exceptionId, startTime, endTime], map: "uq_department_exception_intervals_range")
+  @@index([exceptionId, sortOrder])
+  @@map("department_exception_intervals")
+}
+
+// ── Eventos ciudadanos ────────────────────────────────────────────────────────
+
+enum EventStatus {
+  draft
+  published
+  completed
+  cancelled
+
+  @@map("event_status")
+}
+
+enum EventType {
+  townhall
+  community
+  volunteer
+  campaign
+  rally
+
+  @@map("event_type")
+}
+
+enum EventVisibility {
+  public
+  private
+
+  @@map("event_visibility")
+}
+
+enum RegistrationStatus {
+  invited
+  registered
+  confirmed
+  cancelled
+  waitlist
+
+  @@map("registration_status")
+}
+
+enum AttendanceStatus {
+  pending
+  attended
+  no_show
+
+  @@map("attendance_status")
+}
+
+/// Evento ciudadano organizado por el panel administrativo.
+model Event {
+  id              String      @id @default(uuid()) @db.Uuid
+  title           String      @db.VarChar(255)
+  slug            String      @unique @db.VarChar(255)
+  description     String?     @db.Text
+  eventType       EventType   @default(townhall) @map("event_type")
+  status          EventStatus @default(draft)
+  visibility      EventVisibility @default(public)
+  startsAt        DateTime    @map("starts_at") @db.Timestamptz(6)
+  endsAt          DateTime?   @map("ends_at") @db.Timestamptz(6)
+  locationName    String?     @map("location_name") @db.VarChar(255)
+  neighborhood    String?     @db.VarChar(255)
+  address         String?     @db.VarChar(500)
+  latitude        Decimal?    @db.Decimal(10, 7)
+  longitude       Decimal?    @db.Decimal(10, 7)
+  capacity        Int?
+  organizerUserId String?     @map("organizer_user_id") @db.Uuid
+  createdAt       DateTime    @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt       DateTime    @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  organizer     User?               @relation("EventOrganizer", fields: [organizerUserId], references: [id], onDelete: SetNull)
+  registrations EventRegistration[]
+  checkins      EventCheckin[]
+
+  @@index([status])
+  @@index([startsAt])
+  @@index([visibility, status, startsAt], map: "idx_events_visibility_status_starts_at")
+  @@index([visibility, startsAt], map: "idx_events_visibility_starts_at")
+  @@index([organizerUserId])
+  @@map("events")
+}
+
+/// Registro de un ciudadano a un evento (RSVP + asistencia).
+/// Un ciudadano solo puede tener un registro por evento.
+model EventRegistration {
+  id                 String             @id @default(uuid()) @db.Uuid
+  eventId            String             @map("event_id") @db.Uuid
+  citizenId          String             @map("citizen_id") @db.Uuid
+  registrationStatus RegistrationStatus @default(registered) @map("registration_status")
+  attendanceStatus   AttendanceStatus   @default(pending) @map("attendance_status")
+  checkedInAt        DateTime?          @map("checked_in_at") @db.Timestamptz(6)
+  sourceChannel      SourceChannel      @default(web) @map("source_channel")
+  notes              String?            @db.Text
+  createdAt          DateTime           @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt          DateTime           @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  event    Event          @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  citizen  Citizen        @relation(fields: [citizenId], references: [id], onDelete: Cascade)
+  checkins EventCheckin[]
+
+  @@unique([eventId, citizenId], map: "uq_event_registrations_event_citizen")
+  @@index([eventId])
+  @@index([citizenId])
+  @@index([registrationStatus])
+  @@map("event_registrations")
+}
+
+/// Trazabilidad de check-ins para un registro de evento.
+/// Permite múltiples check-ins por registro (reintentos/correcciones de staff).
+model EventCheckin {
+  id             String   @id @default(uuid()) @db.Uuid
+  eventId        String   @map("event_id") @db.Uuid
+  registrationId String   @map("registration_id") @db.Uuid
+  checkedInBy    String?  @map("checked_in_by") @db.Uuid
+  notes          String?  @db.Text
+  createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  event           Event             @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  registration    EventRegistration @relation(fields: [registrationId], references: [id], onDelete: Cascade)
+  checkedInByUser User?             @relation("EventCheckinByUser", fields: [checkedInBy], references: [id], onDelete: SetNull)
+
+  @@index([eventId])
+  @@index([registrationId])
+  @@map("event_checkins")
+}
+
+/// Asignaciones de conversaciones a agentes humanos.
+model Assignment {
+  id             String    @id @default(uuid()) @db.Uuid
+  conversationId String    @map("conversation_id") @db.Uuid
+  userId         String    @map("user_id") @db.Uuid
+  departmentSlug String?   @map("department_slug") @db.VarChar(100)
+  assignedAt     DateTime  @default(now()) @map("assigned_at") @db.Timestamptz(6)
+  releasedAt     DateTime? @map("released_at") @db.Timestamptz(6)
+  isActive       Boolean   @default(true) @map("is_active")
+
+  conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  user         User         @relation("AssignmentUser", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([conversationId])
+  @@index([userId])
+  @@index([isActive])
+  @@map("assignments")
+}
+
+model CommunicationLine {
+  campaigns Campaign[]
+  id                        String              @id @default(uuid()) @db.Uuid
+  channel                   ConversationChannel @default(whatsapp)
+  externalIdentifier        String              @map("external_identifier") @db.VarChar(255)
+  phoneNumber               String?             @map("phone_number") @db.VarChar(30)
+  provider                  String?             @db.VarChar(100)
+  displayName               String              @map("display_name") @db.VarChar(255)
+  isActive                  Boolean             @default(true) @map("is_active")
+  isDefault                 Boolean             @default(false) @map("is_default")
+  aiEnabled                 Boolean             @default(false) @map("ai_enabled")
+  agentId                   String?             @map("agent_id") @db.Uuid
+  aiAgentId                 String?             @map("ai_agent_id") @db.Uuid
+  metadata                  Json                @default("{}") @db.JsonB
+  createdAt                 DateTime            @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt                 DateTime            @updatedAt @map("updated_at") @db.Timestamptz(6)
+  whatsappAppSecret         String?             @map("whatsapp_app_secret") @db.VarChar(255)
+  whatsappAccessToken       String?             @map("whatsapp_access_token") @db.Text
+  whatsappBusinessAccountId String?             @map("whatsapp_business_account_id") @db.VarChar(100)
+  whatsappAppId             String?             @map("whatsapp_app_id") @db.VarChar(100)
+  whatsappPhoneNumberId     String?             @map("whatsapp_phone_number_id") @db.VarChar(100)
+
+  agent         AiAgent? @relation("CommunicationLineAgent", fields: [agentId], references: [id], onDelete: SetNull)
+  legacyAiAgent AiAgent? @relation("CommunicationLineLegacyAgent", fields: [aiAgentId], references: [id], onDelete: SetNull)
+
+  conversationMetas ConversationMeta[]
+  aiRuns            AiRun[]
+
+  @@unique([channel, externalIdentifier], map: "uq_communication_lines_channel_external")
+  @@index([phoneNumber])
+  @@index([agentId])
+  @@index([aiAgentId])
+  @@index([isActive, aiEnabled])
+  @@map("communication_lines")
+}
+
+model AiAgent {
+  id          String     @id @default(uuid()) @db.Uuid
+  slug        String     @unique @db.VarChar(100)
+  name        String     @db.VarChar(255)
+  description String?    @db.Text
+  provider    AIProvider
+  model       String     @db.VarChar(255)
+  temperature Decimal?   @db.Decimal(4, 2)
+  maxTokens   Int?       @map("max_tokens")
+  isActive    Boolean    @default(true) @map("is_active")
+  metadata    Json       @default("{}") @db.JsonB
+  createdAt   DateTime   @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt   DateTime   @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  topics                   AiAgentTopic[]
+  communicationLines       CommunicationLine[] @relation("CommunicationLineAgent")
+  legacyCommunicationLines CommunicationLine[] @relation("CommunicationLineLegacyAgent")
+  aiRuns                   AiRun[]
+
+  @@index([isActive])
+  @@map("ai_agents")
+}
+
+model AiTopic {
+  id              String   @id @default(uuid()) @db.Uuid
+  slug            String   @unique @db.VarChar(100)
+  name            String   @db.VarChar(255)
+  description     String?  @db.Text
+  systemPromptId  String?  @map("system_prompt_id") @db.Uuid
+  matcherKeywords String[] @default([]) @map("matcher_keywords") @db.Text
+  isActive        Boolean  @default(true) @map("is_active")
+  createdAt       DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt       DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  systemPrompt AiPrompt?      @relation("TopicSystemPrompt", fields: [systemPromptId], references: [id], onDelete: SetNull)
+  prompts      AiPrompt[]
+  tools        AiTopicTool[]
+  agentLinks   AiAgentTopic[]
+  aiRuns       AiRun[]
+
+  @@index([isActive])
+  @@index([systemPromptId])
+  @@map("ai_topics")
+}
+
+model AiPrompt {
+  id        String       @id @default(uuid()) @db.Uuid
+  topicId   String?      @map("topic_id") @db.Uuid
+  name      String       @db.VarChar(255)
+  type      AIPromptType @default(topic)
+  version   Int          @default(1)
+  content   String       @db.Text
+  isActive  Boolean      @default(true) @map("is_active")
+  metadata  Json         @default("{}") @db.JsonB
+  createdAt DateTime     @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime     @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  topic           AiTopic?       @relation(fields: [topicId], references: [id], onDelete: Cascade)
+  systemForTopics AiTopic[]      @relation("TopicSystemPrompt")
+  agentLinks      AiAgentTopic[]
+  aiRuns          AiRun[]
+
+  @@unique([topicId, version], map: "uq_ai_prompts_topic_version")
+  @@index([topicId, isActive])
+  @@map("ai_prompts")
+}
+
+model AiTool {
+  id                 String              @id @default(uuid()) @db.Uuid
+  name               String              @unique @db.VarChar(120)
+  description        String              @db.Text
+  type               AIToolKind          @default(internal)
+  executionType      AIToolExecutionType @default(function) @map("execution_type")
+  config             Json                @default("{}") @db.JsonB
+  kind               AIToolKind
+  internalKey        String?             @map("internal_key") @db.VarChar(120)
+  externalUrl        String?             @map("external_url") @db.Text
+  externalMethod     AIToolHttpMethod?   @map("external_method")
+  externalHeaders    Json?               @map("external_headers") @db.JsonB
+  externalAuthEnvKey String?             @map("external_auth_env_key") @db.VarChar(120)
+  timeoutMs          Int                 @default(8000) @map("timeout_ms")
+  allowlistDomains   String[]            @default([]) @map("allowlist_domains") @db.Text
+  inputSchema        Json?               @map("input_schema") @db.JsonB
+  outputSchema       Json?               @map("output_schema") @db.JsonB
+  isActive           Boolean             @default(true) @map("is_active")
+  createdAt          DateTime            @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt          DateTime            @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  topicLinks  AiTopicTool[]
+  aiToolCalls AiToolCall[]
+
+  @@index([kind, isActive])
+  @@map("ai_tools")
+}
+
+model AiTopicTool {
+  id         String   @id @default(uuid()) @db.Uuid
+  topicId    String   @map("topic_id") @db.Uuid
+  toolId     String   @map("tool_id") @db.Uuid
+  sortOrder  Int      @default(100) @map("sort_order")
+  isRequired Boolean  @default(false) @map("is_required")
+  isActive   Boolean  @default(true) @map("is_active")
+  createdAt  DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  topic AiTopic @relation(fields: [topicId], references: [id], onDelete: Cascade)
+  tool  AiTool  @relation(fields: [toolId], references: [id], onDelete: Cascade)
+
+  @@unique([topicId, toolId], map: "uq_ai_topic_tools_topic_tool")
+  @@index([topicId, isActive])
+  @@index([toolId])
+  @@map("ai_topic_tools")
+}
+
+model AiAgentTopic {
+  id        String   @id @default(uuid()) @db.Uuid
+  agentId   String   @map("agent_id") @db.Uuid
+  topicId   String   @map("topic_id") @db.Uuid
+  promptId  String   @map("prompt_id") @db.Uuid
+  priority  Int      @default(100)
+  isDefault Boolean  @default(false) @map("is_default")
+  isActive  Boolean  @default(true) @map("is_active")
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  agent  AiAgent  @relation(fields: [agentId], references: [id], onDelete: Cascade)
+  topic  AiTopic  @relation(fields: [topicId], references: [id], onDelete: Cascade)
+  prompt AiPrompt @relation(fields: [promptId], references: [id], onDelete: Cascade)
+
+  @@unique([agentId, topicId], map: "uq_ai_agent_topics_agent_topic")
+  @@index([agentId, isActive])
+  @@index([topicId, isActive])
+  @@index([promptId])
+  @@map("ai_agent_topics")
+}
+
+model AiRun {
+  id                  String      @id @default(uuid()) @db.Uuid
+  conversationId      String      @map("conversation_id") @db.Uuid
+  citizenId           String      @map("citizen_id") @db.Uuid
+  communicationLineId String      @map("communication_line_id") @db.Uuid
+  agentId             String      @map("agent_id") @db.Uuid
+  topicId             String      @map("topic_id") @db.Uuid
+  promptId            String      @map("prompt_id") @db.Uuid
+  provider            AIProvider
+  model               String      @db.VarChar(255)
+  status              AIRunStatus @default(running)
+  inputMessage        String      @map("input_message") @db.Text
+  promptSnapshot      String      @map("prompt_snapshot") @db.Text
+  modelResponse       String?     @map("model_response") @db.Text
+  errorMessage        String?     @map("error_message") @db.Text
+  steps               Int         @default(0)
+  maxSteps            Int         @default(4) @map("max_steps")
+  toolCallsCount      Int         @default(0) @map("tool_calls_count")
+  correlationId       String?     @map("correlation_id") @db.VarChar(255)
+  createdAt           DateTime    @default(now()) @map("created_at") @db.Timestamptz(6)
+  finishedAt          DateTime?   @map("finished_at") @db.Timestamptz(6)
+
+  conversation      Conversation      @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  citizen           Citizen           @relation(fields: [citizenId], references: [id], onDelete: Cascade)
+  communicationLine CommunicationLine @relation(fields: [communicationLineId], references: [id], onDelete: Cascade)
+  agent             AiAgent           @relation(fields: [agentId], references: [id], onDelete: Cascade)
+  topic             AiTopic           @relation(fields: [topicId], references: [id], onDelete: Cascade)
+  prompt            AiPrompt          @relation(fields: [promptId], references: [id], onDelete: Cascade)
+
+  toolCalls AiToolCall[]
+
+  @@index([conversationId, createdAt])
+  @@index([communicationLineId, createdAt])
+  @@index([agentId, topicId, createdAt])
+  @@map("ai_runs")
+}
+
+// ── Módulo de Tickets ciudadanos ──────────────────────────────────────────────
+
+/// Estado del caso (ticket). Un ticket se cierra/resuelve de forma independiente
+/// de la conversación: la entidad del ciudadano permanece abierta y reutilizable.
+enum TicketStatus {
+  OPEN
+  IN_PROGRESS
+  RESOLVED
+  CLOSED
+
+  @@map("ticket_status")
+}
+
+enum TicketPriority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+
+  @@map("ticket_priority")
+}
+
+enum TicketSource {
+  WHATSAPP
+  WEB
+  OTHER
+
+  @@map("ticket_source")
+}
+
+enum TicketActorType {
+  CITIZEN
+  AGENT
+  BOT
+  SYSTEM
+
+  @@map("ticket_actor_type")
+}
+
+enum NewsletterSubscriberStatus {
+  pending
+  active
+  unsubscribed
+
+  @@map("newsletter_subscriber_status")
+}
+
+/// Suscripciones al boletín (sitio público). Independiente del CRM Citizen.
+model NewsletterSubscriber {
+  id                    String                     @id @default(uuid()) @db.Uuid
+  email                 String                     @unique @db.VarChar(255)
+  name                  String?                    @db.VarChar(255)
+  status                NewsletterSubscriberStatus @default(pending)
+  source                String                     @db.VarChar(50)
+  subscribedAt          DateTime?                  @map("subscribed_at") @db.Timestamptz(6)
+  unsubscribedAt        DateTime?                  @map("unsubscribed_at") @db.Timestamptz(6)
+  ipAddress             String?                    @map("ip_address") @db.VarChar(45)
+  confirmTokenHash      String?                    @map("confirm_token_hash") @db.VarChar(64)
+  confirmTokenExpiresAt DateTime?                  @map("confirm_token_expires_at") @db.Timestamptz(6)
+  unsubscribeTokenHash  String?                    @map("unsubscribe_token_hash") @db.VarChar(64)
+  createdAt             DateTime                   @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt             DateTime                   @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@index([status])
+  @@index([confirmTokenHash])
+  @@index([unsubscribeTokenHash])
+  @@map("newsletter_subscribers")
+}
+
+/// Caso de atención ciudadana dentro de una Conversation.
+/// Una conversación puede tener múltiples tickets históricos pero solo 1 activo (OPEN | IN_PROGRESS).
+/// Ticket = caso/trámite dentro del historial de una conversación (1:N).
+/// Máximo UN ticket activo (OPEN | IN_PROGRESS) por conversación — árbito:
+/// índice único parcial uq_tickets_one_active_per_conversation. Al cerrarse, el
+/// siguiente mensaje del ciudadano abre un ticket nuevo. La asociación
+/// Message <-> Ticket se modela vía TicketMessage (aislamiento por ticket).
+model Ticket {
+  id               String         @id @default(uuid()) @db.Uuid
+  conversationId   String         @map("conversation_id") @db.Uuid
+  citizenId        String         @map("citizen_id") @db.Uuid
+  /// Folio legible único: YYYYMMDDHHMMSS_XXXX_YYYY (timestamp UTC + últimos 4 de
+  /// la línea de plataforma + últimos 4 del teléfono del ciudadano).
+  folio            String         @unique @db.VarChar(32)
+  status           TicketStatus   @default(OPEN)
+  priority         TicketPriority @default(MEDIUM)
+  source           TicketSource   @default(WHATSAPP)
+  title            String?        @db.VarChar(255)
+  description      String?        @db.Text
+  departmentSlug   String?        @map("department_slug") @db.VarChar(100)
+  assignedUserId   String?        @map("assigned_user_id") @db.Uuid
+  closeReason      String?        @map("close_reason") @db.VarChar(50)
+  closeSummary     String?        @map("close_summary") @db.Text
+  escalationReason String?        @map("escalation_reason") @db.VarChar(500)
+  closedAt         DateTime?      @map("closed_at") @db.Timestamptz(6)
+  createdAt        DateTime       @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt        DateTime       @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  citizen      Citizen      @relation(fields: [citizenId], references: [id], onDelete: Cascade)
+  assignedUser User?        @relation("TicketAssignedUser", fields: [assignedUserId], references: [id], onDelete: SetNull)
+
+  ticketMessages TicketMessage[]
+  messages       Message[]      @relation("MessageTicket")
+
+  /// Conversaciones que tienen este ticket como activo (a lo sumo una).
+  activeInConversation Conversation[] @relation("ConversationActiveTicket")
+
+  @@index([conversationId, status])
+  @@index([citizenId])
+  @@index([assignedUserId])
+  @@index([status])
+  /// Soporte de la paginación por offset del dashboard (orden determinista).
+  @@index([updatedAt, id])
+  @@index([status, updatedAt, id])
+  @@index([departmentSlug, updatedAt, id])
+  @@index([assignedUserId, updatedAt, id])
+  @@map("tickets")
+}
+
+/// Asociación entre un Ticket y un Message del historial de conversación.
+/// Permite rastrear qué mensajes pertenecen a cada ticket.
+/// Idempotente: única por (ticketId, messageId).
+model TicketMessage {
+  id        String          @id @default(uuid()) @db.Uuid
+  ticketId  String          @map("ticket_id") @db.Uuid
+  messageId String          @map("message_id") @db.Uuid
+  actorType TicketActorType @default(CITIZEN) @map("actor_type")
+  createdAt DateTime        @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  ticket  Ticket  @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  message Message @relation("MessageTickets", fields: [messageId], references: [id], onDelete: Cascade)
+
+  @@unique([ticketId, messageId], map: "uq_ticket_messages_ticket_message")
+  @@index([ticketId])
+  @@index([messageId])
+  @@map("ticket_messages")
+}
+
+model AiToolCall {
+  id            String           @id @default(uuid()) @db.Uuid
+  runId         String           @map("run_id") @db.Uuid
+  toolId        String           @map("tool_id") @db.Uuid
+  toolName      String           @map("tool_name") @db.VarChar(120)
+  status        AIToolCallStatus @default(running)
+  inputPayload  Json             @default("{}") @map("input_payload") @db.JsonB
+  outputPayload Json?            @map("output_payload") @db.JsonB
+  errorMessage  String?          @map("error_message") @db.Text
+  durationMs    Int?             @map("duration_ms")
+  createdAt     DateTime         @default(now()) @map("created_at") @db.Timestamptz(6)
+  finishedAt    DateTime?        @map("finished_at") @db.Timestamptz(6)
+
+  run  AiRun  @relation(fields: [runId], references: [id], onDelete: Cascade)
+  tool AiTool @relation(fields: [toolId], references: [id], onDelete: Cascade)
+
+  @@index([runId, createdAt])
+  @@index([toolId])
+  @@index([status])
+  @@map("ai_tool_calls")
+}
+
+enum IneAssetSide {
+  front
+  back
+
+  @@map("ine_asset_side")
+}
+
+enum IneUploadStatus {
+  uploading
+  queued
+  processing
+  review_ready
+  failed
+  confirmed
+
+  @@map("ine_upload_status")
+}
+
+enum IneOcrJobStatus {
+  queued
+  processing
+  retryable
+  completed
+  failed
+
+  @@map("ine_ocr_job_status")
+}
+
+model ElectoralState {
+  id        String   @id @default(uuid()) @db.Uuid
+  code      String   @unique @db.VarChar(10)
+  name      String   @db.VarChar(120)
+  isActive  Boolean  @default(true) @map("is_active")
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  districts ElectoralDistrict[]
+  sections  Section[]
+
+  @@index([isActive, name])
+  @@map("electoral_states")
+}
+
+model ElectoralDistrict {
+  id        String   @id @default(uuid()) @db.Uuid
+  stateId   String   @map("state_id") @db.Uuid
+  code      String   @db.VarChar(20)
+  name      String?  @db.VarChar(120)
+  isActive  Boolean  @default(true) @map("is_active")
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  state    ElectoralState @relation(fields: [stateId], references: [id], onDelete: Restrict)
+  sections Section[]
+
+  @@unique([stateId, code], map: "uq_electoral_districts_state_code")
+  @@index([isActive])
+  @@map("electoral_districts")
+}
+
+model Section {
+  id                  String   @id @default(uuid()) @db.Uuid
+  stateId             String   @map("state_id") @db.Uuid
+  districtId          String   @map("district_id") @db.Uuid
+  sectionCode         String   @map("section_code") @db.VarChar(20)
+  pollingStationCount Int?     @map("numero_casillas")
+  votesPerStation     Int?     @map("votos_por_casilla")
+  nominalList         Int?     @map("lista_nominal")
+  votesRequired       Int?     @map("votos_necesarios")
+  isActive            Boolean  @default(true) @map("is_active")
+  createdAt           DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt           DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  state            ElectoralState    @relation(fields: [stateId], references: [id], onDelete: Restrict)
+  district         ElectoralDistrict @relation(fields: [districtId], references: [id], onDelete: Restrict)
+  leaders          Leader[]
+  coordinators     Coordinator[]
+  uploads          UploadRecord[]
+  promovidos       Promovido[]
+  neighborhoods    Neighborhood[]
+  precampaignGoals PrecampaignGoal[]
+
+  @@unique([stateId, districtId, sectionCode], map: "uq_sections_state_district_code")
+  @@index([sectionCode, isActive])
+  @@map("sections")
+}
+
+enum LeaderRole {
+  PROMOTOR_BARRIO
+  ENLACE_TERRITORIAL
+
+  @@map("leader_role")
+}
+
+model OrganizationalStructure {
+  id               String   @id @default(uuid()) @db.Uuid
+  slug             String   @unique @db.VarChar(80)
+  name             String   @db.VarChar(120)
+  color            String   @default("#64748B") @db.VarChar(7)
+  managerFirstName String?  @map("nombre_encargado") @db.VarChar(120)
+  managerLastName  String?  @map("apellidos_encargado") @db.VarChar(120)
+  managerPhone     String?  @map("telefono_encargado") @db.VarChar(30)
+  isActive         Boolean  @default(true) @map("is_active")
+  createdAt        DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt        DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  coordinators Coordinator[]
+
+  @@index([isActive, name])
+  @@map("organizational_structures")
+}
+
+model Coordinator {
+  id          String   @id @default(uuid()) @db.Uuid
+  sectionId   String   @map("section_id") @db.Uuid
+  structureId String?  @map("structure_id") @db.Uuid
+  fullName    String   @map("full_name") @db.VarChar(255)
+  phone       String?  @db.VarChar(30)
+  email       String   @db.VarChar(255)
+  userId      String?  @unique @map("user_id") @db.Uuid
+  isActive    Boolean  @default(true) @map("is_active")
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt   DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  section   Section                   @relation(fields: [sectionId], references: [id], onDelete: Restrict)
+  structure OrganizationalStructure?  @relation(fields: [structureId], references: [id], onDelete: Restrict)
+  user      User?                     @relation("CoordinatorUser", fields: [userId], references: [id], onDelete: SetNull)
+  leaders   Leader[]
+
+  @@unique([id, sectionId], map: "uq_coordinators_id_section")
+  @@index([sectionId, isActive])
+  @@index([structureId, isActive])
+  @@map("coordinators")
+}
+
+model Leader {
+  id             String     @id @default(uuid()) @db.Uuid
+  sectionId      String     @map("section_id") @db.Uuid
+  coordinatorId  String     @map("coordinator_id") @db.Uuid
+  neighborhoodId String?    @map("neighborhood_id") @db.Uuid
+  fullName       String     @map("full_name") @db.VarChar(255)
+  phone          String?    @db.VarChar(30)
+  email          String?    @db.VarChar(255)
+  userId         String?    @unique @map("user_id") @db.Uuid
+  promovidoQuota Int?       @map("promovido_quota")
+  role           LeaderRole @default(PROMOTOR_BARRIO)
+  isActive       Boolean    @default(true) @map("is_active")
+  createdAt      DateTime   @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt      DateTime   @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  section      Section       @relation(fields: [sectionId], references: [id], onDelete: Restrict)
+  coordinator  Coordinator   @relation(fields: [coordinatorId, sectionId], references: [id, sectionId], onDelete: Restrict)
+  neighborhood Neighborhood? @relation(fields: [neighborhoodId], references: [id], onDelete: SetNull)
+  user         User?         @relation("LeaderUser", fields: [userId], references: [id], onDelete: SetNull)
+  uploads      UploadRecord[] @relation("UploadReviewedLeader")
+  promovidos   Promovido[]
+  precampaignGoals PrecampaignGoal[]
+
+  @@index([sectionId, isActive])
+  @@index([coordinatorId, isActive])
+  @@index([neighborhoodId])
+  @@map("leaders")
+}
+
+model UploadRecord {
+  id                    String          @id @default(uuid()) @db.Uuid
+  status                IneUploadStatus @default(uploading)
+  createdByUserId       String          @map("created_by_user_id") @db.Uuid
+  sectionId             String?         @map("section_id") @db.Uuid
+  leaderId              String?         @map("leader_id") @db.Uuid
+  manualPhoneEncrypted  String?         @map("manual_phone_encrypted") @db.Text
+  reviewedDataEncrypted String?         @map("reviewed_data_encrypted") @db.Text
+  reviewedAt            DateTime?       @map("reviewed_at") @db.Timestamptz(6)
+  reviewedByUserId      String?         @map("reviewed_by_user_id") @db.Uuid
+  createdAt             DateTime        @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt             DateTime        @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  createdBy  User         @relation("UploadCreatedBy", fields: [createdByUserId], references: [id], onDelete: Restrict)
+  reviewedBy User?        @relation("UploadReviewedBy", fields: [reviewedByUserId], references: [id], onDelete: SetNull)
+  section    Section?     @relation(fields: [sectionId], references: [id], onDelete: Restrict)
+  leader     Leader?      @relation("UploadReviewedLeader", fields: [leaderId], references: [id], onDelete: Restrict)
+  files      StoredFile[]
+  promovido  Promovido?
+
+  @@index([status, createdAt])
+  @@index([createdByUserId])
+  @@index([sectionId])
+  @@map("upload_records")
+}
+
+model StoredFile {
+  id               String       @id @default(uuid()) @db.Uuid
+  uploadRecordId   String       @map("upload_record_id") @db.Uuid
+  side             IneAssetSide
+  storageProvider  String       @map("storage_provider") @db.VarChar(50)
+  storageObjectId  String       @map("storage_object_id") @db.VarChar(255)
+  storagePath      String?      @map("storage_path") @db.VarChar(1024)
+  storageDriveId   String?      @map("storage_drive_id") @db.VarChar(255)
+  storageFolderId  String       @map("storage_folder_id") @db.VarChar(255)
+  mimeType         String       @map("mime_type") @db.VarChar(127)
+  fileSizeBytes    BigInt       @map("file_size_bytes")
+  originalFilename String?      @map("original_filename") @db.VarChar(512)
+  checksumSha256   String       @map("checksum_sha256") @db.VarChar(64)
+  createdAt        DateTime     @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  uploadRecord UploadRecord    @relation(fields: [uploadRecordId], references: [id], onDelete: Cascade)
+  jobs         IneOcrJob[]
+  extractions  OcrExtraction[]
+
+  @@unique([uploadRecordId, side], map: "uq_stored_files_upload_side")
+  @@unique([storageProvider, storageObjectId], map: "uq_stored_files_provider_object")
+  @@index([uploadRecordId])
+  @@map("stored_files")
+}
+
+model IneOcrJob {
+  id            String          @id @default(uuid()) @db.Uuid
+  storedFileId  String          @map("stored_file_id") @db.Uuid
+  status        IneOcrJobStatus @default(queued)
+  attempt       Int             @default(0)
+  maxAttempts   Int             @default(3) @map("max_attempts")
+  nextAttemptAt DateTime?       @map("next_attempt_at") @db.Timestamptz(6)
+  lockedAt      DateTime?       @map("locked_at") @db.Timestamptz(6)
+  lockedBy      String?         @map("locked_by") @db.VarChar(255)
+  lastErrorCode String?         @map("last_error_code") @db.VarChar(80)
+  lastError     String?         @map("last_error") @db.VarChar(255)
+  completedAt   DateTime?       @map("completed_at") @db.Timestamptz(6)
+  createdAt     DateTime        @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt     DateTime        @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  storedFile StoredFile @relation(fields: [storedFileId], references: [id], onDelete: Cascade)
+
+  @@index([status, nextAttemptAt])
+  @@index([storedFileId])
+  @@map("ine_ocr_jobs")
+}
+
+model OcrExtraction {
+  id                        String   @id @default(uuid()) @db.Uuid
+  storedFileId              String   @map("stored_file_id") @db.Uuid
+  attempt                   Int
+  provider                  String   @db.VarChar(50)
+  processorVersion          String?  @map("processor_version") @db.VarChar(255)
+  rawResultEncrypted        String   @map("raw_result_encrypted") @db.Text
+  normalizedResultEncrypted String   @map("normalized_result_encrypted") @db.Text
+  source                    Json     @default("{}") @db.JsonB
+  validationSummary         Json     @map("validation_summary") @db.JsonB
+  createdAt                 DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  storedFile StoredFile @relation(fields: [storedFileId], references: [id], onDelete: Cascade)
+
+  @@unique([storedFileId, attempt], map: "uq_ocr_extractions_file_attempt")
+  @@index([storedFileId, createdAt])
+  @@map("ocr_extractions")
+}
+
+model Promovido {
+  id                   String   @id @default(uuid()) @db.Uuid
+  uploadRecordId       String?  @unique @map("upload_record_id") @db.Uuid
+  leaderId             String   @map("leader_id") @db.Uuid
+  sectionId            String   @map("section_id") @db.Uuid
+  citizenId            String?  @unique @map("citizen_id") @db.Uuid
+  createdByUserId      String   @map("created_by_user_id") @db.Uuid
+  dataEncrypted        String   @map("data_encrypted") @db.Text
+  stateNameSnapshot    String   @map("state_name_snapshot") @db.VarChar(120)
+  districtCodeSnapshot String   @map("district_code_snapshot") @db.VarChar(20)
+  sectionCodeSnapshot  String   @map("section_code_snapshot") @db.VarChar(20)
+  leaderNameSnapshot   String   @map("leader_name_snapshot") @db.VarChar(255)
+  isActive             Boolean  @default(true) @map("is_active")
+  // Privacy-preserving deterministic fingerprints for searching and enforcing uniqueness.
+  voterKeyFingerprint  String?  @map("voter_key_fingerprint") @db.VarChar(32)
+  curpFingerprint      String?  @map("curp_fingerprint") @db.VarChar(32)
+  phoneFingerprint     String?  @map("phone_fingerprint") @db.VarChar(32)
+  // Blind index of the encrypted `sex` field so it can be filtered in SQL.
+  sexBlindIndex        String?  @map("sex_blind_index") @db.VarChar(64)
+  nameSearchTokens     String[] @default([]) @map("name_search_tokens") @db.Text
+  createdAt            DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt            DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  uploadRecord UploadRecord? @relation(fields: [uploadRecordId], references: [id], onDelete: Restrict)
+  leader       Leader        @relation(fields: [leaderId], references: [id], onDelete: Restrict)
+  section      Section       @relation(fields: [sectionId], references: [id], onDelete: Restrict)
+  citizen      Citizen?      @relation(fields: [citizenId], references: [id], onDelete: Restrict)
+  createdBy    User          @relation("PromovidoCreatedBy", fields: [createdByUserId], references: [id], onDelete: Restrict)
+
+  @@unique([voterKeyFingerprint], map: "uq_promovidos_voter_key_fingerprint")
+  @@index([leaderId, createdAt])
+  @@index([sectionId, createdAt])
+  @@index([isActive, createdAt])
+  @@index([curpFingerprint])
+  @@index([phoneFingerprint])
+  @@index([sexBlindIndex])
+  @@index([nameSearchTokens])
+  @@map("promovidos")
+}
+
+enum GoalScope {
+  GLOBAL
+  SECTION
+  LEADER
+
+  @@map("goal_scope")
+}
+
+enum GoalCadence {
+  CAMPAIGN
+  MONTHLY
+  WEEKLY
+
+  @@map("goal_cadence")
+}
+
+model PrecampaignGoal {
+  id        String      @id @default(uuid()) @db.Uuid
+  title     String      @db.VarChar(100)
+  target    Int
+  scope     GoalScope   @default(GLOBAL)
+  cadence   GoalCadence @default(WEEKLY)
+  sectionId String?     @map("section_id") @db.Uuid
+  leaderId  String?     @map("leader_id") @db.Uuid
+  startDate DateTime    @map("start_date") @db.Timestamptz(6)
+  endDate   DateTime    @map("end_date") @db.Timestamptz(6)
+  isActive  Boolean     @default(true) @map("is_active")
+  createdAt DateTime    @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime    @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  section Section? @relation(fields: [sectionId], references: [id], onDelete: Restrict)
+  leader  Leader?  @relation(fields: [leaderId], references: [id], onDelete: Restrict)
+
+  @@index([scope, cadence, isActive, startDate, endDate], map: "idx_precampaign_goals_scope_cadence_dates")
+  @@index([sectionId, cadence, isActive, startDate, endDate], map: "idx_precampaign_goals_section_cadence_dates")
+  @@index([leaderId, cadence, isActive, startDate, endDate], map: "idx_precampaign_goals_leader_cadence_dates")
+  @@map("precampaign_goals")
+}
+
+/// Sesiones de refresh token multi-dispositivo (reemplaza el storage Redis).
+/// Cada fila es una sesión identificada por {userId, deviceId, jti}.
+model RefreshSession {
+  id        String    @id @default(uuid()) @db.Uuid
+  userId    String    @map("user_id") @db.Uuid
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  deviceId  String    @map("device_id") @db.VarChar(255)
+  jti       String    @db.VarChar(64)
+  tokenHash String    @map("token_hash") @db.VarChar(128)
+  expiresAt DateTime  @map("expires_at") @db.Timestamptz(6)
+  revokedAt DateTime? @map("revoked_at") @db.Timestamptz(6)
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  @@unique([userId, deviceId, jti])
+  @@index([userId, createdAt])
+  @@index([expiresAt])
+  @@map("refresh_sessions")
+}
+
+/// Contadores atómicos de rate limiting (ventana fija) sobre PostgreSQL.
+/// Una fila por (scope, bucketKey, windowStart); upsert ON CONFLICT.
+model RateLimitCounter {
+  scope       String   @db.VarChar(50)
+  bucketKey   String   @map("bucket_key") @db.VarChar(255)
+  windowStart DateTime @map("window_start") @db.Timestamptz(6)
+  count       Int      @default(0)
+  updatedAt   DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@id([scope, bucketKey, windowStart])
+  @@index([scope, windowStart])
+  @@map("rate_limit_counters")
+}
+
+/// Estado de lockout progresivo por identidad (email/phone/IP) sobre PostgreSQL.
+model IdentityLockout {
+  id            String    @id @default(uuid()) @db.Uuid
+  identityKey   String    @unique @map("identity_key") @db.VarChar(255)
+  fails         Int       @default(0)
+  level         Int       @default(0)
+  lockedUntil   DateTime? @map("locked_until") @db.Timestamptz(6)
+  lastFailureAt DateTime? @map("last_failure_at") @db.Timestamptz(6)
+  createdAt     DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt     DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@index([lockedUntil])
+  @@map("identity_lockouts")
+}
+
+// Durable, WABA-scoped SSE log; shared by all API instances.
+model TemplateStatusEvent {
+  id           BigInt   @id @default(autoincrement())
+  dedupeKey    String   @unique @map("dedupe_key") @db.VarChar(64)
+  wabaId       String   @map("waba_id") @db.VarChar(100)
+  templateId   String   @map("template_id") @db.VarChar(100)
+  templateName String   @map("template_name") @db.VarChar(512)
+  status       String   @db.VarChar(100)
+  reason       String?
+  occurredAt   DateTime @map("occurred_at") @db.Timestamptz(6)
+  receivedAt   DateTime @default(now()) @map("received_at") @db.Timestamptz(6)
+  @@index([wabaId, id])
+  @@map("template_status_events")
+}
+
+model ManagedTemplate {
+  templateId String @id @map("template_id") @db.VarChar(100)
+  wabaId String @map("waba_id") @db.VarChar(100)
+  createdAt DateTime? @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime? @map("updated_at") @db.Timestamptz(6)
+  @@index([wabaId])
+  @@map("managed_templates")
+}
+
+enum CampaignStatus {
+  queued
+  running
+  completed
+  needs_review
+}
+
+enum CampaignMessageStatus {
+  pending
+  sent
+  delivered
+  read
+  failed
+}
+
+enum CampaignDispatchState {
+  queued
+  sending
+  accepted
+  finished
+  uncertain
+}
+
+model Campaign {
+  attachment CampaignAttachment?
+  id               String         @id @default(uuid()) @db.Uuid
+  name             String         @db.VarChar(160)
+  purpose          String         @db.VarChar(1000)
+  lineId           String         @map("line_id") @db.Uuid
+  phoneNumberId    String         @map("phone_number_id") @db.VarChar(100)
+  templateId       String         @map("template_id") @db.VarChar(100)
+  templateSnapshot Json           @map("template_snapshot") @db.JsonB
+  mappings         Json           @db.JsonB
+  source           String         @db.VarChar(20)
+  status           CampaignStatus @default(queued)
+  total            Int
+  createdBy        String         @map("created_by") @db.Uuid
+  idempotencyKey   String         @map("idempotency_key") @db.Uuid
+  requestHash      String         @map("request_hash") @db.VarChar(64)
+  consentConfirmedAt DateTime     @map("consent_confirmed_at") @db.Timestamptz(6)
+  createdAt        DateTime       @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt        DateTime       @updatedAt @map("updated_at") @db.Timestamptz(6)
+  recipients       CampaignRecipient[]
+  creator User @relation(fields: [createdBy], references: [id], onDelete: Restrict)
+  line CommunicationLine @relation(fields: [lineId], references: [id], onDelete: Restrict)
+
+  @@unique([createdBy, idempotencyKey])
+  @@index([createdAt, id])
+  @@index([status, createdAt])
+  @@map("campaigns")
+}
+
+model CampaignRecipient {
+  id              String                @id @default(uuid()) @db.Uuid
+  campaignId      String                @map("campaign_id") @db.Uuid
+  citizenId       String?               @map("citizen_id") @db.Uuid
+  phone           String                @db.VarChar(16)
+  // Resolved at creation: edits to CSV/citizen data cannot change a queued send.
+  variables       Json                  @db.JsonB
+  messageId       String?               @unique @map("message_id") @db.VarChar(512)
+  status          CampaignMessageStatus @default(pending)
+  dispatchState   CampaignDispatchState @default(queued) @map("dispatch_state")
+  attempts        Int                   @default(0)
+  nextAttemptAt   DateTime              @default(now()) @map("next_attempt_at") @db.Timestamptz(6)
+  lockedAt        DateTime?             @map("locked_at") @db.Timestamptz(6)
+  errorCode       String?               @map("error_code") @db.VarChar(80)
+  acceptedAt      DateTime?             @map("accepted_at") @db.Timestamptz(6)
+  sentAt          DateTime?             @map("sent_at") @db.Timestamptz(6)
+  deliveredAt     DateTime?             @map("delivered_at") @db.Timestamptz(6)
+  readAt          DateTime?             @map("read_at") @db.Timestamptz(6)
+  failedAt        DateTime?             @map("failed_at") @db.Timestamptz(6)
+  createdAt       DateTime              @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt       DateTime              @updatedAt @map("updated_at") @db.Timestamptz(6)
+  campaign        Campaign              @relation(fields: [campaignId], references: [id], onDelete: Restrict)
+  citizen Citizen? @relation(fields: [citizenId], references: [id], onDelete: SetNull)
+
+  @@unique([campaignId, phone])
+  @@index([campaignId, status])
+  @@index([campaignId, dispatchState, nextAttemptAt])
+  @@map("campaign_recipients")
+}
+
+// Uploads are owned and scoped before campaign creation; only this file is public.
+model CampaignAttachment {
+  id         String    @id @default(uuid()) @db.Uuid
+  createdBy  String    @map("created_by") @db.Uuid
+  lineId     String    @map("line_id") @db.Uuid
+  templateId String    @map("template_id") @db.VarChar(100)
+  fileId     String    @unique @map("file_id") @db.Text
+  folderId   String    @map("folder_id") @db.Text
+  filename   String    @db.VarChar(255)
+  mimeType   String    @map("mime_type") @db.VarChar(100)
+  mediaType  String    @map("media_type") @db.VarChar(20)
+  url        String    @db.Text
+  viewUrl    String    @map("view_url") @db.Text
+  createdAt  DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  campaignId String?   @unique @map("campaign_id") @db.Uuid
+  campaign   Campaign? @relation(fields: [campaignId], references: [id], onDelete: Restrict)
+
+  @@index([createdBy, createdAt])
+  @@map("campaign_attachments")
+}
+
+// Durable administrative queue. Items are claimed before invoking domain services.
+model ConversationBulkJob {
+  id          String                 @id @default(uuid()) @db.Uuid
+  actorId     String                 @db.Uuid
+  requestKey  String                 @db.Uuid
+  payloadHash String
+  payload     Json
+  createdAt   DateTime               @default(now()) @db.Timestamptz(6)
+  items       ConversationBulkItem[]
+
+  @@unique([actorId, requestKey])
+  @@map("conversation_bulk_jobs")
+}
+
+model ConversationBulkItem {
+  id             String              @id @default(uuid()) @db.Uuid
+  jobId          String              @db.Uuid
+  conversationId String              @db.Uuid
+  status         String              @default("pending")
+  error          String?
+  claimedAt      DateTime?           @db.Timestamptz(6)
+  job            ConversationBulkJob @relation(fields: [jobId], references: [id], onDelete: Cascade)
+
+  @@unique([jobId, conversationId])
+  @@index([status, claimedAt])
+  @@map("conversation_bulk_items")
+}

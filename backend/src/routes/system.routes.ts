@@ -1,0 +1,35 @@
+import { Router } from 'express';
+
+import { SystemController } from '../controllers/system.controller';
+import { authMiddleware } from '../middlewares/auth.middleware';
+import { paginate } from '../middlewares/pagination';
+import { requireRole } from '../middlewares/rbac';
+import type { SystemService } from '../services/system.service';
+
+export function createSystemRouter(systemService: SystemService): Router {
+  const router = Router();
+  const ctrl = new SystemController(systemService);
+
+  router.use(authMiddleware);
+
+  /* eslint-disable @typescript-eslint/no-misused-promises */
+
+  // ── Lectura operativa ──────────────────────────────────────────────────────
+
+  router.get('/audit-logs', requireRole(['SUPER_ADMIN']), paginate(), ctrl.listAuditLogs);
+  router.get('/inbox-events', requireRole(['SUPER_ADMIN']), paginate(), ctrl.listInboxEvents);
+  router.get('/outbox-events', requireRole(['SUPER_ADMIN']), paginate(), ctrl.listOutboxEvents);
+
+  // ── Acciones de control ────────────────────────────────────────────────────
+
+  router.post('/outbox-events/:id/retry', requireRole(['SUPER_ADMIN']), ctrl.retryOutboxEvent);
+  router.post(
+    '/inbox-events/:id/reprocess',
+    requireRole(['SUPER_ADMIN']),
+    ctrl.reprocessInboxEvent,
+  );
+
+  /* eslint-enable @typescript-eslint/no-misused-promises */
+
+  return router;
+}

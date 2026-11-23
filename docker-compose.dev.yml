@@ -1,0 +1,299 @@
+name: voz-ciudadana-dev
+
+x-root-env-file: &root-env-file
+  - path: .env
+    required: false
+
+x-backend-env-file: &backend-env-file
+  - path: ./backend/.env
+    required: false
+
+x-frontend-env-file: &frontend-env-file
+  - path: ./frontend/.env
+    required: false
+
+x-backend-build: &backend-build
+  context: .
+  dockerfile: backend/Dockerfile
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    env_file: *root-env-file
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-voz}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-secret}
+      POSTGRES_DB: ${POSTGRES_DB:-vozcuidadana}
+    ports:
+      - '${POSTGRES_PORT:-5432}:5432'
+    volumes:
+      - postgres_data_dev:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U ${POSTGRES_USER:-voz} -d ${POSTGRES_DB:-vozcuidadana}']
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  migrator:
+    build:
+      <<: *backend-build
+      target: dev-runtime
+    env_file: *backend-env-file
+    environment:
+      DATABASE_URL: ${DATABASE_URL:-postgresql://voz:secret@postgres:5432/vozcuidadana}
+    command: ['pnpm', 'prisma', 'migrate', 'deploy']
+    working_dir: /workspace/backend
+    volumes:
+      - ./backend:/workspace/backend
+      - ./pnpm-lock.yaml:/workspace/pnpm-lock.yaml:ro
+      - ./pnpm-workspace.yaml:/workspace/pnpm-workspace.yaml:ro
+      - ./package.json:/workspace/package.json:ro
+      - ./frontend/package.json:/workspace/frontend/package.json:ro
+      - backend_workspace_node_modules_dev:/workspace/node_modules
+      - backend_pkg_node_modules_dev:/workspace/backend/node_modules
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: 'no'
+
+  api:
+    build:
+      <<: *backend-build
+      target: dev-runtime
+    env_file: *backend-env-file
+    environment:
+      # Paridad durable por defecto (igual que producción): la API expone WS y
+      # recibe el push de Pub/Sub, pero NO corre loops (van al worker). El evento
+      # viaja outbox -> Pub/Sub -> push -> gateway.
+      # Override REALTIME_DURABLE_ENABLED=false para volver al camino legacy in-process.
+      WORKERS_ENABLED: 'false'
+      WS_ENABLED: 'true'
+      REALTIME_DURABLE_ENABLED: '${REALTIME_DURABLE_ENABLED:-true}'
+      # Fan-out entre réplicas API; con una sola instancia igual ejercita el adapter.
+      SOCKETIO_PUBSUB_ADAPTER_ENABLED: '${SOCKETIO_PUBSUB_ADAPTER_ENABLED:-true}'
+      INBOX_POLLING_ENABLED: 'false'
+      OUTBOX_POLLING_ENABLED: 'false'
+      CHOKIDAR_USEPOLLING: 'true'
+      CHOKIDAR_INTERVAL: '500'
+      DATABASE_URL: ${DATABASE_URL:-postgresql://voz:secret@postgres:5432/vozcuidadana}
+      GOOGLE_APPLICATION_CREDENTIALS: /tmp/gcp/application_default_credentials.json
+      # Emulador local por defecto: nada toca GCP real. GOOGLE_CLOUD_PROJECT es
+      # obligatorio con el emulador, el client no resuelve el proyecto por ADC.
+      PUBSUB_EMULATOR_HOST: '${PUBSUB_EMULATOR_HOST:-pubsub-emulator:8680}'
+      GOOGLE_CLOUD_PROJECT: '${GOOGLE_CLOUD_PROJECT:-voz-ciudadana-dev}'
+      # backend/.env trae los PUBSUB_PUSH_* de PRODUCCIÓN, que activarían la
+      # verificación OIDC en dev. Vacío = verificación omitida fuera de production
+      # (pubsub-push-auth.middleware.ts:57).
+      PUBSUB_PUSH_SERVICE_ACCOUNT_EMAIL: ''
+      PUBSUB_PUSH_AUDIENCE: ''
+      # Paridad con producción: presupuesto de conexiones del deploy
+      # (docs/CLOUD_SQL_CONNECTION.md). Sobrescribible por .env.
+      PRISMA_CONNECTION_LIMIT: ${PRISMA_CONNECTION_LIMIT_API:-5}
+    command: ['pnpm', 'run', 'dev:api']
+    working_dir: /workspace/backend
+    ports:
+      - '${API_PUBLIC_PORT:-8000}:8000'
+    volumes:
+      - ./backend:/workspace/backend
+      - ./pnpm-lock.yaml:/workspace/pnpm-lock.yaml:ro
+      - ./pnpm-workspace.yaml:/workspace/pnpm-workspace.yaml:ro
+      - ./package.json:/workspace/package.json:ro
+      - ./frontend/package.json:/workspace/frontend/package.json:ro
+      - backend_workspace_node_modules_dev:/workspace/node_modules
+      - backend_pkg_node_modules_dev:/workspace/backend/node_modules
+      - ${HOME}/.config/gcloud/application_default_credentials.json:/tmp/gcp/application_default_credentials.json:ro
+    depends_on:
+      postgres:
+        condition: service_healthy
+      migrator:
+        condition: service_completed_successfully
+      pubsub-init:
+        condition: service_completed_successfully
+    healthcheck:
+      test: ['CMD-SHELL', 'wget -q -O /dev/null http://127.0.0.1:8000/ready || exit 1']
+      interval: 30s
+      timeout: 5s
+      retries: 10
+      start_period: 40s
+      start_interval: 5s
+    develop:
+      watch:
+        - path: ./pnpm-lock.yaml
+          action: rebuild
+        - path: ./backend/package.json
+          action: rebuild
+        - path: ./backend/Dockerfile
+          action: rebuild
+
+  worker:
+    build:
+      <<: *backend-build
+      target: dev-runtime
+    env_file: *backend-env-file
+    environment:
+      # Paridad durable: el worker corre inbox + outbox + relay, como en producción.
+      WORKERS_ENABLED: 'true'
+      WS_ENABLED: 'false'
+      REALTIME_DURABLE_ENABLED: '${REALTIME_DURABLE_ENABLED:-true}'
+      INBOX_POLLING_ENABLED: 'true'
+      OUTBOX_POLLING_ENABLED: 'true'
+      CHOKIDAR_USEPOLLING: 'true'
+      CHOKIDAR_INTERVAL: '500'
+      DATABASE_URL: ${DATABASE_URL:-postgresql://voz:secret@postgres:5432/vozcuidadana}
+      GOOGLE_APPLICATION_CREDENTIALS: /tmp/gcp/application_default_credentials.json
+      # Emulador local por defecto: nada toca GCP real.
+      PUBSUB_EMULATOR_HOST: '${PUBSUB_EMULATOR_HOST:-pubsub-emulator:8680}'
+      GOOGLE_CLOUD_PROJECT: '${GOOGLE_CLOUD_PROJECT:-voz-ciudadana-dev}'
+      PRISMA_CONNECTION_LIMIT: ${PRISMA_CONNECTION_LIMIT_WORKER:-2}
+    command: ['pnpm', 'run', 'dev:worker']
+    working_dir: /workspace/backend
+    volumes:
+      - ./backend:/workspace/backend
+      - ./pnpm-lock.yaml:/workspace/pnpm-lock.yaml:ro
+      - ./pnpm-workspace.yaml:/workspace/pnpm-workspace.yaml:ro
+      - ./package.json:/workspace/package.json:ro
+      - ./frontend/package.json:/workspace/frontend/package.json:ro
+      - backend_workspace_node_modules_dev:/workspace/node_modules
+      - backend_pkg_node_modules_dev:/workspace/backend/node_modules
+      - ${HOME}/.config/gcloud/application_default_credentials.json:/tmp/gcp/application_default_credentials.json:ro
+    depends_on:
+      postgres:
+        condition: service_healthy
+      migrator:
+        condition: service_completed_successfully
+      pubsub-init:
+        condition: service_completed_successfully
+    healthcheck:
+      test: ['CMD-SHELL', 'wget -q -O - http://127.0.0.1:8000/healthz > /dev/null || exit 1']
+      interval: 60s
+      timeout: 5s
+      retries: 8
+      start_period: 40s
+      start_interval: 5s
+    develop:
+      watch:
+        - path: ./pnpm-lock.yaml
+          action: rebuild
+        - path: ./backend/package.json
+          action: rebuild
+        - path: ./backend/Dockerfile
+          action: rebuild
+
+  frontend:
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile
+      target: dev
+    env_file: *frontend-env-file
+    command: ['pnpm', 'exec', 'next', 'dev', '--hostname', '0.0.0.0', '--port', '3000']
+    working_dir: /workspace/frontend
+    ports:
+      - '${FRONTEND_PUBLIC_PORT:-3000}:3000'
+    volumes:
+      - ./frontend:/workspace/frontend
+      - ./pnpm-lock.yaml:/workspace/pnpm-lock.yaml:ro
+      - ./pnpm-workspace.yaml:/workspace/pnpm-workspace.yaml:ro
+      - ./package.json:/workspace/package.json:ro
+      - ./backend/package.json:/workspace/backend/package.json:ro
+      - frontend_workspace_node_modules_dev:/workspace/node_modules
+      - frontend_pkg_node_modules_dev:/workspace/frontend/node_modules
+    depends_on:
+      api:
+        condition: service_healthy
+    develop:
+      watch:
+        - path: ./pnpm-lock.yaml
+          action: rebuild
+        - path: ./frontend/package.json
+          action: rebuild
+        - path: ./frontend/Dockerfile
+          action: rebuild
+
+  # Emulador de Pub/Sub local (siempre activo): reemplaza a GCP Pub/Sub en dev y
+  # garantiza que ningún evento de desarrollo toque el proyecto real
+  # (docs/notifications-architecture.md §6 #11).
+  pubsub-emulator:
+    image: gcr.io/google.com/cloudsdktool/google-cloud-cli:emulators
+    command:
+      [
+        'gcloud',
+        'beta',
+        'emulators',
+        'pubsub',
+        'start',
+        '--host-port=0.0.0.0:8680',
+      ]
+    ports:
+      - '${PUBSUB_EMULATOR_PUBLIC_PORT:-8680}:8680'
+
+  # Provisiona topics + la push subscription que entrega /pubsub/realtime a la API.
+  # One-shot idempotente: corre en cada `up` y termina (restart: 'no').
+  pubsub-init:
+    build:
+      <<: *backend-build
+      target: dev-runtime
+    command: ['node', 'scripts/local/pubsub-init.mjs']
+    working_dir: /workspace/backend
+    environment:
+      PUBSUB_EMULATOR_HOST: 'pubsub-emulator:8680'
+      GOOGLE_CLOUD_PROJECT: '${GOOGLE_CLOUD_PROJECT:-voz-ciudadana-dev}'
+      REALTIME_TOPIC: 'realtime-events'
+      AI_STREAM_TOPIC: 'ai-stream'
+      REALTIME_SUBSCRIPTION: 'realtime-events-push'
+      PUSH_ENDPOINT: 'http://api:8000/pubsub/realtime'
+    volumes:
+      - ./backend:/workspace/backend
+      - ./pnpm-lock.yaml:/workspace/pnpm-lock.yaml:ro
+      - ./pnpm-workspace.yaml:/workspace/pnpm-workspace.yaml:ro
+      - ./package.json:/workspace/package.json:ro
+      - ./frontend/package.json:/workspace/frontend/package.json:ro
+      - backend_workspace_node_modules_dev:/workspace/node_modules
+      - backend_pkg_node_modules_dev:/workspace/backend/node_modules
+    depends_on:
+      migrator:
+        condition: service_completed_successfully
+      pubsub-emulator:
+        condition: service_started
+    restart: 'no'
+
+  # Runtime de recuperación dedicado: espeja el servicio realtime-relay de prod
+  # (docker-compose.prod.yml) corriendo sobre TS en dev.
+  realtime-relay:
+    build:
+      <<: *backend-build
+      target: dev-runtime
+    command: ['pnpm', 'run', 'dev:realtime-relay']
+    working_dir: /workspace/backend
+    environment:
+      WORKERS_ENABLED: 'true'
+      WS_ENABLED: 'false'
+      REALTIME_DURABLE_ENABLED: '${REALTIME_DURABLE_ENABLED:-true}'
+      REALTIME_RELAY_INTERVAL_MS: '250'
+      CHOKIDAR_USEPOLLING: 'true'
+      CHOKIDAR_INTERVAL: '500'
+      DATABASE_URL: ${DATABASE_URL:-postgresql://voz:secret@postgres:5432/vozcuidadana}
+      PUBSUB_EMULATOR_HOST: '${PUBSUB_EMULATOR_HOST:-pubsub-emulator:8680}'
+      GOOGLE_CLOUD_PROJECT: '${GOOGLE_CLOUD_PROJECT:-voz-ciudadana-dev}'
+      PRISMA_CONNECTION_LIMIT: ${PRISMA_CONNECTION_LIMIT_RELAY:-2}
+    volumes:
+      - ./backend:/workspace/backend
+      - ./pnpm-lock.yaml:/workspace/pnpm-lock.yaml:ro
+      - ./pnpm-workspace.yaml:/workspace/pnpm-workspace.yaml:ro
+      - ./package.json:/workspace/package.json:ro
+      - ./frontend/package.json:/workspace/frontend/package.json:ro
+      - backend_workspace_node_modules_dev:/workspace/node_modules
+      - backend_pkg_node_modules_dev:/workspace/backend/node_modules
+    depends_on:
+      migrator:
+        condition: service_completed_successfully
+      pubsub-init:
+        condition: service_completed_successfully
+    restart: unless-stopped
+
+volumes:
+  postgres_data_dev:
+  backend_workspace_node_modules_dev:
+  backend_pkg_node_modules_dev:
+  frontend_workspace_node_modules_dev:
+  frontend_pkg_node_modules_dev:

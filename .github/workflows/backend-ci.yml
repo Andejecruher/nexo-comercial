@@ -1,0 +1,261 @@
+name: Backend CI
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "backend/**"
+      - "pnpm-lock.yaml"
+      - "pnpm-workspace.yaml"
+      - "package.json"
+      - "frontend/package.json"
+      - ".github/workflows/backend-ci.yml"
+      - ".github/actions/**"
+      - "backend/Dockerfile"
+      - ".dockerignore"
+      - "docker-compose.dev.yml"
+      - "docker-compose.prod.yml"
+      - "docker-compose.qa.yml"
+  schedule:
+    # Weekly cold build at 04:30 UTC on Mondays detects regressions hidden by
+    # Docker layer cache without consuming daily hosted-runner minutes.
+    - cron: "30 4 * * 1"
+  workflow_dispatch:
+  workflow_call:
+    inputs:
+      ci_profile:
+        description: Full PR checks or the production-safe checks that run before deployment.
+        required: false
+        type: string
+        default: full
+      skip_docker_smoke:
+        description: Skip backend Docker builds when the caller publishes the same targets.
+        required: false
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: backend-ci-${{ github.workflow }}-${{ github.ref }}-${{ github.event_name }}
+  cancel-in-progress: ${{ github.event_name != 'schedule' }}
+
+env:
+  NODE_OPTIONS: "--max-old-space-size=6144"
+
+jobs:
+  static:
+    name: Backend — lint, typecheck, smoke
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Setup Node.js and pnpm
+        uses: ./.github/actions/setup-node-pnpm
+
+      - name: Sanity — Prisma schema present
+        run: |
+          test -f backend/prisma/schema.prisma \
+            || (echo "::error::backend/prisma/schema.prisma missing — Docker postinstall would fail" && exit 1)
+
+      - name: Sanity — single Prisma version in workspace
+        run: |
+          set -e
+          cli=$(grep -E "^\s+prisma:\s*$" -A 2 pnpm-lock.yaml | grep -E "^\s+specifier:" | awk '{print $2}' | sort -u | wc -l)
+          client=$(grep -E "^\s+'@prisma/client':\s*$" -A 2 pnpm-lock.yaml | grep -E "^\s+specifier:" | awk '{print $2}' | sort -u | wc -l)
+          if [ "$cli" != "1" ] || [ "$client" != "1" ]; then
+            echo "::error::Multiple Prisma CLI/client specifiers detected — align versions across workspace."
+            exit 1
+          fi
+
+      - name: Prisma generate
+        run: pnpm --dir backend run prisma:generate
+
+      - name: Lint
+        run: pnpm --dir backend run lint
+
+      - name: Typecheck — production
+        run: pnpm --dir backend run typecheck
+
+      - name: Typecheck — tests
+        run: pnpm --dir backend run typecheck:test
+
+      - name: Smoke — dynamic imports (OpenAI SDK)
+        run: |
+          pnpm --filter voz-ciudadana-api exec node --input-type=module -e "import('openai').then(() => console.log('openai import ok')).catch(e => { console.error(e); process.exit(1); })"
+
+  test-and-integration:
+    name: Backend — Jest and PostgreSQL integration
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: voz
+          POSTGRES_PASSWORD: secret
+          POSTGRES_DB: vozcuidadana
+        ports:
+          - "5432:5432"
+        options: >-
+          --health-cmd "pg_isready -U voz -d vozcuidadana"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Setup Node.js and pnpm
+        uses: ./.github/actions/setup-node-pnpm
+
+      - name: Prisma generate
+        run: pnpm --dir backend run prisma:generate
+
+      - name: Start Pub/Sub emulator for multi-instance tests
+        run: |
+          docker run -d --name realtime-pubsub -p 8680:8680 gcr.io/google.com/cloudsdktool/google-cloud-cli:emulators gcloud beta emulators pubsub start --project=voz-ciudadana-emulator-test --host-port=0.0.0.0:8680
+          for attempt in $(seq 1 60); do
+            if curl -s http://127.0.0.1:8680 >/dev/null; then exit 0; fi
+            sleep 1
+          done
+          docker logs realtime-pubsub
+          exit 1
+
+      # Preserve the existing unit/integration test environment. Only the
+      # PostgreSQL suite requires a real database, so it stays after applying
+      # migrations to the empty service database below.
+      - name: Test — Jest
+        env:
+          PUBSUB_EMULATOR_HOST: localhost:8680
+        run: pnpm --dir backend run test
+
+      - name: Apply all migrations (forward-only) on empty DB
+        env:
+          DATABASE_URL: postgresql://voz:secret@localhost:5432/vozcuidadana
+        run: pnpm --dir backend run migrate:deploy
+
+      - name: Test — real PostgreSQL
+        env:
+          PUBSUB_EMULATOR_HOST: localhost:8680
+          DATABASE_URL: postgresql://voz:secret@localhost:5432/vozcuidadana
+        run: pnpm --dir backend run test:postgres
+
+  compose-validate:
+    name: Compose — validate dev/prod/qa
+    if: inputs.ci_profile != 'deploy'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Validate compose configs
+        env:
+          POSTGRES_PASSWORD: ci
+          DATABASE_URL: postgresql://voz:ci@postgres:5432/vozcuidadana
+        run: |
+          docker compose -f docker-compose.dev.yml config -q
+          docker compose -f docker-compose.prod.yml config -q
+          docker compose -f docker-compose.qa.yml config -q
+
+  migration-immutability:
+    name: Backend — applied migrations are immutable (forward-only)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    if: github.event_name == 'pull_request'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: Reject deleted or modified migration.sql
+        run: |
+          set -e
+          git fetch origin "${{ github.base_ref }}"
+          base="origin/${{ github.base_ref }}"
+          changed=$(git diff --diff-filter=DM --name-only "$base"...HEAD -- 'backend/prisma/migrations/*/migration.sql' || true)
+          if [ -n "$changed" ]; then
+            echo "::error::Las migraciones versionadas son forward-only: no elimines ni modifiques una migration.sql ya commiteada. Crea una nueva migracion correctiva."
+            echo "Archivos afectados:"
+            echo "$changed"
+            exit 1
+          fi
+          echo "OK: sin eliminaciones ni modificaciones de migraciones existentes."
+
+  docker-smoke:
+    name: Docker — ${{ matrix.name }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    if: >
+      github.event_name != 'schedule'
+      && github.event_name != 'workflow_dispatch'
+      && !inputs.skip_docker_smoke
+    permissions:
+      contents: read
+      actions: write
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: backend-runner
+            file: backend/Dockerfile
+            target: runner
+            scope: backend-runner
+          - name: backend-worker
+            file: backend/Dockerfile
+            target: worker
+            scope: backend-runner
+          - name: backend-tools
+            file: backend/Dockerfile
+            target: tools
+            scope: backend-tools
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v4
+
+      - name: Build ${{ matrix.name }}
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          file: ${{ matrix.file }}
+          target: ${{ matrix.target }}
+          push: false
+          provenance: false
+          cache-from: type=gha,scope=${{ matrix.scope }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.scope }},ignore-error=true
+
+  docker-cold-build:
+    # Cold (no-cache) Docker build to detect regressions of stage ordering or
+    # postinstall script issues that the layer cache can hide on regular pushes.
+    name: Backend — Docker cold ${{ matrix.target }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    strategy:
+      fail-fast: false
+      matrix:
+        target: [deps, runner, tools]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v4
+
+      - name: Docker build (${{ matrix.target }}, no cache)
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          file: backend/Dockerfile
+          target: ${{ matrix.target }}
+          push: false
+          provenance: false
+          no-cache: true

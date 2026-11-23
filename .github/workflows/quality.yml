@@ -1,0 +1,88 @@
+name: Quality
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'frontend/**'
+      - 'pnpm-lock.yaml'
+      - 'pnpm-workspace.yaml'
+      - 'package.json'
+      - 'backend/package.json'
+      - '.dockerignore'
+      - '.github/workflows/quality.yml'
+      - '.github/actions/**'
+  workflow_call:
+    inputs:
+      skip_docker_smoke:
+        description: Skip the frontend Docker build when the caller publishes the same target.
+        required: false
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: quality-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  quality:
+    name: Frontend — static checks
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Setup Node.js and pnpm
+        uses: ./.github/actions/setup-node-pnpm
+
+      - name: Typecheck, lint, and format
+        working-directory: frontend
+        run: |
+          pnpm typecheck
+          pnpm lint
+          pnpm format:check
+
+  test:
+    name: Frontend — tests
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Setup Node.js and pnpm
+        uses: ./.github/actions/setup-node-pnpm
+
+      - name: Vitest
+        working-directory: frontend
+        run: pnpm test -- --maxWorkers=2
+
+  docker-smoke:
+    name: Frontend — production build (Docker)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    if: ${{ !inputs.skip_docker_smoke }}
+    permissions:
+      contents: read
+      actions: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v4
+
+      - name: Build frontend-prod
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          file: frontend/Dockerfile
+          target: prod
+          push: false
+          provenance: false
+          cache-from: type=gha,scope=frontend-prod
+          cache-to: type=gha,mode=max,scope=frontend-prod,ignore-error=true

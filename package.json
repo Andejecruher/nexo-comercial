@@ -1,0 +1,8 @@
+{
+  "scripts": {
+    "lint": "pnpm --dir backend run lint && pnpm --dir frontend run lint",
+    "build": "pnpm --dir backend run build && pnpm --dir frontend run build",
+    "typecheck": "pnpm --dir backend run typecheck && pnpm --dir frontend run typecheck",
+    "test": "pnpm --dir backend run test"
+  }
+}

@@ -1,0 +1,21 @@
+name: Setup Node.js and pnpm
+description: Install pnpm 10, Node 20 (app runtime), and workspace deps with the lockfile cache.
+
+runs:
+  using: composite
+  steps:
+    - name: Setup pnpm
+      uses: pnpm/action-setup@v5
+      with:
+        version: 10
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v7
+      with:
+        node-version: 20
+        cache: pnpm
+        cache-dependency-path: pnpm-lock.yaml
+
+    - name: Install dependencies
+      shell: bash
+      run: pnpm install --frozen-lockfile

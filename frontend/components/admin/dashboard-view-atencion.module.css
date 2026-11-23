@@ -1,0 +1,7 @@
+@media (width < 48rem) {
+  /* Recharts rewrites this offscreen span's inline position for every measurement.
+     Fixed positioning preserves its size without extending the document's scroll area. */
+  :global(body):has(.indicators) :global(#recharts_measurement_span) {
+    position: fixed !important;
+  }
+}

@@ -1,0 +1,30 @@
+# Contexto de build del frontend = raíz del monorepo (frontend/Dockerfile).
+# BuildKit usa este archivo en lugar del .dockerignore raíz para builds del frontend,
+# de modo que el código fuente del frontend NO se excluye (a diferencia del build backend).
+
+.git
+.github
+**/.git
+
+**/node_modules
+**/.pnpm-store
+**/.next
+**/dist
+**/coverage
+**/.turbo
+
+# Local / tooling
+.deploy-test-out
+*.log
+.DS_Store
+
+# Env y secretos (nunca enviar al daemon)
+**/.env
+**/.env.*
+!**/.env.example
+
+# Código backend no necesario para construir el frontend (package.json se copia explícito)
+backend/src
+backend/prisma
+backend/scripts
+backend/__tests__

@@ -1,0 +1,187 @@
+name: voz-ciudadana-qa
+
+# QA aislado y production-like: usa los mismos targets inmutables que produccion
+# (tools / runner / prod) pero con proyecto, volumenes y (opcional) dominio propios,
+# de modo que puede convivir con produccion sin compartir datos.
+#
+# Configuracion:
+#   - Provee variables via entorno/CI o `--env-file .env.qa`.
+#   - No hay bind mounts ni instalacion dinamica: cada release construye imagenes,
+#     corre el migrator de esa misma version y luego levanta runtimes.
+
+x-root-env-file: &root-env-file
+  - path: .env.qa
+    required: false
+
+x-backend-env-file: &backend-env-file
+  - path: ./backend/.env.qa
+    required: false
+
+x-frontend-env-file: &frontend-env-file
+  - path: ./frontend/.env.qa
+    required: false
+
+x-backend-build: &backend-build
+  context: .
+  dockerfile: backend/Dockerfile
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    env_file: *root-env-file
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-voz}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD requerido en QA}
+      POSTGRES_DB: ${POSTGRES_DB:-vozcuidadana_qa}
+    volumes:
+      - postgres_data_qa:/var/lib/postgresql/data
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "pg_isready -U ${POSTGRES_USER:-voz} -d ${POSTGRES_DB:-vozcuidadana_qa}",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 20
+
+  migrator:
+    build:
+      <<: *backend-build
+      target: tools
+    env_file: *backend-env-file
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: ${DATABASE_URL:?DATABASE_URL requerido en QA}
+    working_dir: /workspace/backend
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: "no"
+
+  api:
+    build:
+      <<: *backend-build
+      target: runner
+    env_file: *backend-env-file
+    environment:
+      NODE_ENV: production
+      WORKERS_ENABLED: "false"
+      WS_ENABLED: "true"
+      REALTIME_DURABLE_ENABLED: ${REALTIME_DURABLE_ENABLED:-true}
+      # Pool de Prisma por servicio; ver docs/CLOUD_SQL_CONNECTION.md.
+      PRISMA_CONNECTION_LIMIT: ${PRISMA_CONNECTION_LIMIT_API:-5}
+      DATABASE_URL: ${DATABASE_URL:?DATABASE_URL requerido en QA}
+    working_dir: /app
+    command: ["node", "dist/server.js"]
+    depends_on:
+      postgres:
+        condition: service_healthy
+      migrator:
+        condition: service_completed_successfully
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "wget -q -O /dev/null http://127.0.0.1:8000/ready || exit 1",
+        ]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+
+  worker:
+    build:
+      <<: *backend-build
+      target: runner
+    env_file: *backend-env-file
+    environment:
+      NODE_ENV: production
+      WORKERS_ENABLED: "true"
+      WS_ENABLED: "false"
+      REALTIME_DURABLE_ENABLED: ${REALTIME_DURABLE_ENABLED:-true}
+      # Pool de Prisma por servicio; ver docs/CLOUD_SQL_CONNECTION.md.
+      PRISMA_CONNECTION_LIMIT: ${PRISMA_CONNECTION_LIMIT_WORKER:-2}
+      DATABASE_URL: ${DATABASE_URL:?DATABASE_URL requerido en QA}
+    working_dir: /app
+    command: ["node", "dist/worker.js"]
+    depends_on:
+      postgres:
+        condition: service_healthy
+      migrator:
+        condition: service_completed_successfully
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "wget -q -O - http://127.0.0.1:8000/healthz > /dev/null || exit 1",
+        ]
+      interval: 20s
+      timeout: 5s
+      retries: 8
+
+  frontend:
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile
+      target: prod
+    env_file: *frontend-env-file
+    depends_on:
+      api:
+        condition: service_healthy
+    healthcheck:
+      test:
+        ["CMD-SHELL", "wget -q -O /dev/null http://127.0.0.1:3000/ || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 10
+
+  caddy:
+    image: caddy:2.10-alpine
+    restart: unless-stopped
+    depends_on:
+      frontend:
+        condition: service_healthy
+      api:
+        condition: service_healthy
+    ports:
+      - "${QA_HTTP_PORT:-8080}:80"
+      - "${QA_HTTPS_PORT:-8443}:443"
+    volumes:
+      - ./deploy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data_qa:/data
+      - caddy_config_qa:/config
+
+  # Runtime de recuperación realtime; espeja docker-compose.prod.yml para que QA
+  # ejecute la misma topología durable que producción.
+  realtime-relay:
+    build:
+      <<: *backend-build
+      target: worker
+    command: ["node", "dist/realtime-relay.js"]
+    env_file: *backend-env-file
+    environment:
+      NODE_ENV: production
+      WORKERS_ENABLED: "true"
+      WS_ENABLED: "false"
+      REALTIME_DURABLE_ENABLED: ${REALTIME_DURABLE_ENABLED:-true}
+      REALTIME_RELAY_INTERVAL_MS: 250
+      PRISMA_CONNECTION_LIMIT: ${PRISMA_CONNECTION_LIMIT_RELAY:-2}
+      DATABASE_URL: ${DATABASE_URL:?DATABASE_URL requerido en QA}
+    working_dir: /app
+    depends_on:
+      postgres:
+        condition: service_healthy
+      migrator:
+        condition: service_completed_successfully
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O /dev/null http://127.0.0.1:8000/ready || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+
+volumes:
+  postgres_data_qa:
+  caddy_data_qa:
+  caddy_config_qa:

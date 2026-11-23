@@ -1,0 +1,37 @@
+# Backend image build (context = repo root). Reduce context size and avoid secrets.
+
+.git
+.github
+**/.git
+
+**/node_modules
+**/.pnpm-store
+**/.next
+**/dist
+**/coverage
+**/.turbo
+
+# Local / tooling
+.deploy-test-out
+*.log
+.DS_Store
+
+# Env and secrets (never send to daemon)
+**/.env
+**/.env.*
+!**/.env.example
+
+# Docs and tests not needed to compile backend runtime
+postman
+*.md
+!backend/prisma/**/*.md
+
+# Frontend app source not required for backend install (package.json copied explicitly)
+frontend/app
+frontend/components
+frontend/hooks
+frontend/lib
+frontend/public
+frontend/styles
+frontend/*.config.*
+frontend/tsconfig*.json

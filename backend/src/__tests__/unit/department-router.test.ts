@@ -1,0 +1,87 @@
+/**
+ * Unit tests: DepartmentRouterStrategy + MetaErrorParser
+ * Cubre: FallbackRoutingStrategy, keyword routing, meta error parsing.
+ */
+import { describe, expect, it, jest } from '@jest/globals';
+import { DepartmentRouterStrategy } from '../../services/orchestrator/department-router.strategy';
+import {
+  isMetaErrorResponse,
+  isOutsideConversationWindow,
+  parseMetaError,
+} from '../../utils/meta-error-parser';
+
+const asyncMock = <T = unknown>() => jest.fn<(...args: unknown[]) => Promise<T>>();
+
+function buildCtx(text?: string) {
+  return {
+    message: {
+      type: 'text' as const,
+      id: 'test-id',
+      from: '5219612345678',
+      timestamp: '1700000000',
+      text: { body: text ?? 'hola' },
+    },
+    citizenId: 'citizen-uuid',
+    conversationId: 'conv-uuid',
+    citizenInterests: [],
+  };
+}
+
+describe('DepartmentRouterStrategy — con mock de prisma', () => {
+  it('debe retornar undefined cuando no hay keyword ni interés match', async () => {
+    const mockPrisma = {
+      department: {
+        findMany: asyncMock().mockResolvedValue([]),
+        findFirst: asyncMock().mockResolvedValue(null),
+      },
+    };
+    // @ts-ignore mock parcial
+    const router = new DepartmentRouterStrategy(mockPrisma);
+    const result = await router.route(buildCtx('algo sin keywords'));
+    expect(result).toBeUndefined();
+  });
+});
+
+describe('isMetaErrorResponse', () => {
+  it('debe detectar un body de error Meta válido', () => {
+    const errorBody = {
+      error: { message: 'Test error', type: 'OAuthException', code: 190, fbtrace_id: 'trace' },
+    };
+    expect(isMetaErrorResponse(errorBody)).toBe(true);
+  });
+
+  it('debe retornar false para body sin campo error', () => {
+    expect(isMetaErrorResponse({ data: 'ok' })).toBe(false);
+  });
+
+  it('debe retornar false para null', () => {
+    expect(isMetaErrorResponse(null)).toBe(false);
+  });
+});
+
+describe('parseMetaError', () => {
+  it('debe parsear código 131047 como error fuera de ventana', () => {
+    const errorBody = {
+      error: {
+        message: 'Re-engagement message outside window',
+        type: 'OAuthException',
+        code: 131047,
+        fbtrace_id: 'trace123',
+      },
+    };
+    const parsed = parseMetaError(errorBody);
+    expect(parsed.code).toBe(131047);
+    expect(parsed.retryable).toBe(false);
+  });
+});
+
+describe('isOutsideConversationWindow', () => {
+  it('debe retornar true para código 131047', () => {
+    expect(isOutsideConversationWindow(131047)).toBe(true);
+  });
+
+  it('debe retornar false para otros códigos', () => {
+    expect(isOutsideConversationWindow(131000)).toBe(false);
+    expect(isOutsideConversationWindow(190)).toBe(false);
+  });
+});
