@@ -128,7 +128,7 @@ export function TeamView() {
               </Badge>
               <h1 className="text-3xl font-black tracking-tight">Equipo</h1>
               <p className="mt-2 text-sm text-muted-foreground">
-                Administra las personas que tienen acceso a Voz Ciudadana, sus roles y el estado de
+                Administra las personas que tienen acceso a Nexo Comercial, sus roles y el estado de
                 sus cuentas. Las invitaciones y reenvíos se procesan desde el backend mediante
                 correo transaccional.
               </p>
@@ -250,7 +250,7 @@ export function TeamView() {
         title="¿Desactivar integrante?"
         description={
           <>
-            Esta persona perderá acceso a Voz Ciudadana. Sus datos, roles y actividad se conservarán
+            Esta persona perderá acceso a Nexo Comercial. Sus datos, roles y actividad se conservarán
             porque el backend realiza baja lógica con <code>isActive=false</code>.
           </>
         }

@@ -1,6 +1,6 @@
 # Docker runtime profesional (dev + VPS)
 
-Esta guia define el runtime desacoplado de Voz Ciudadana con tres procesos backend:
+Esta guia define el runtime desacoplado de Nexo Comercial con tres procesos backend:
 
 - `api`: trafico HTTP + Socket.IO.
 - `worker`: procesamiento de colas/reintentos (sin puertos publicos).

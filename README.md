@@ -1,6 +1,6 @@
-# VozCiudadana
+# Nexo Comercial
 
-Plataforma de participacion ciudadana para municipios, con canal principal por WhatsApp y panel web en Next.js.
+Plataforma de atención, canales y operación comercial, con canal principal por WhatsApp y panel web en Next.js. El deploy a GCP está apagado; el playbook vive en [docs/DEPLOYMENT_GCP.md](docs/DEPLOYMENT_GCP.md).
 
 ## Estado actual
 
@@ -21,7 +21,7 @@ Plataforma de participacion ciudadana para municipios, con canal principal por W
 ## Estructura del repositorio
 
 ```text
-voz-ciudadana/
+nexo-comercial/
 ├── backend/
 │   ├── docs/                  # Documentacion tecnica del backend
 │   ├── prisma/                # schema.prisma, migraciones y seed
@@ -59,15 +59,15 @@ voz-ciudadana/
 
 ### Backend (Express)
 
-| Capa        | Ubicacion                  | Responsabilidad                                |
-| ----------- | -------------------------- | ---------------------------------------------- |
-| Config      | backend/src/config         | Carga y validacion de variables de entorno     |
-| Routes      | backend/src/routes         | Registro de endpoints y middlewares por modulo |
-| Controllers | backend/src/controllers    | Adaptacion HTTP y delegacion a servicios       |
+| Capa        | Ubicacion                  | Responsabilidad                                    |
+| ----------- | -------------------------- | -------------------------------------------------- |
+| Config      | backend/src/config         | Carga y validacion de variables de entorno         |
+| Routes      | backend/src/routes         | Registro de endpoints y middlewares por modulo     |
+| Controllers | backend/src/controllers    | Adaptacion HTTP y delegacion a servicios           |
 | Services    | backend/src/services       | Casos de uso, reglas de negocio, Prisma/PostgreSQL |
-| Middlewares | backend/src/middlewares    | Cross-cutting: auth, seguridad, errores, firma |
-| Database    | backend/src/database       | Acceso centralizado al PrismaClient            |
-| Tests       | backend/src/\_\_tests\_\_/ | Cobertura unitaria e integracion               |
+| Middlewares | backend/src/middlewares    | Cross-cutting: auth, seguridad, errores, firma     |
+| Database    | backend/src/database       | Acceso centralizado al PrismaClient                |
+| Tests       | backend/src/\_\_tests\_\_/ | Cobertura unitaria e integracion                   |
 
 ### Frontend (Next.js)
 
@@ -110,16 +110,16 @@ voz-ciudadana/
 
 Cada instancia de Cloud Run abre su **propio** pool de Prisma, del tamaño de `PRISMA_CONNECTION_LIMIT`. Como Cloud Run autoescala, el consumo real hacia Cloud SQL es `max-instances × PRISMA_CONNECTION_LIMIT` **por servicio**, y la suma de api + worker + relay debe caber con margen dentro de la capacidad de la instancia.
 
-Configuracion vigente (fuente de verdad: `env` del workflow `.github/workflows/deploy-gcp.yml`, variables `DB_*`):
+Configuracion vigente de la construccion documentada en [docs/DEPLOYMENT_GCP.md](docs/DEPLOYMENT_GCP.md). No hay despliegue activo. La fuente de los numeros es el `env` de [docs/deploy/deploy-gcp.yml](docs/deploy/deploy-gcp.yml), variables `DB_*`:
 
-| Servicio             | `--max-instances` | `PRISMA_CONNECTION_LIMIT` | Peor caso |
-| -------------------- | ----------------- | ------------------------- | --------- |
-| `voz-api`            | 5                 | 5                         | 25        |
-| `voz-worker`         | 5                 | 2                         | 10        |
-| `voz-realtime-relay` | 2                 | 2                         | 4         |
-| **Total**            |                   |                           | **39**    |
+| Servicio              | `--max-instances` | `PRISMA_CONNECTION_LIMIT` | Peor caso |
+| --------------------- | ----------------- | ------------------------- | --------- |
+| `nexo-api`            | 5                 | 5                         | 25        |
+| `nexo-worker`         | 5                 | 2                         | 10        |
+| `nexo-realtime-relay` | 2                 | 2                         | 4         |
+| **Total**             |                   |                           | **39**    |
 
-Se suman la conexion del job `voz-migrator` (1) y la reserva de superusuario de PostgreSQL (~3), para un peor caso efectivo de **40**.
+Se suman la conexion del job `nexo-migrator` (1) y la reserva de superusuario de PostgreSQL (~3), para un peor caso efectivo de **40**.
 
 > **Regla de oro:** no aumentar `--max-instances` ni `PRISMA_CONNECTION_LIMIT` sin haber escalado antes la memoria/tier de Cloud SQL.
 
@@ -149,10 +149,10 @@ by setting `ENABLE_XLSX_EXPORT=false`; this returns `503` before job creation an
 hides the admin button. The `export_jobs` migration is independent of source tables
 and can be reverted without changing promoted, leader, coordinator, or citizen data.
 
-Production enables the feature with `ENABLE_XLSX_EXPORT=true` on `voz-api` and
-`voz-worker` (see `docs/DEPLOYMENT_GCP.md`). In `cloud_tasks` the API enqueues
+Production enables the feature with `ENABLE_XLSX_EXPORT=true` on `nexo-api` and
+`nexo-worker` (see `docs/DEPLOYMENT_GCP.md`). In `cloud_tasks` the API enqueues
 `POST /tasks/export`. In local `polling` the worker loop claims `queued` jobs
-the same way OCR/inbox do; Compose already runs `voz-worker` with
+the same way OCR/inbox do; Compose already runs `nexo-worker` with
 `WORKERS_ENABLED=true`.
 
 For a bounded large-export smoke test, mock 20,000 cursor-ordered rows in
@@ -195,7 +195,7 @@ WS_ENABLED=true
 WS_CORS_ORIGIN=
 WS_PATH=/socket.io
 
-DATABASE_URL=postgresql://voz:secret@postgres:5432/vozcuidadana
+DATABASE_URL=postgresql://nexo:secret@postgres:5432/nexocomercial
 
 # Pool de Prisma por contenedor. En Cloud Run el workflow lo fija (5 api/worker,
 # 2 relay); nunca lo subas sin escalar antes el tier de Cloud SQL.
@@ -300,7 +300,7 @@ pnpm --dir backend prisma:seed
 
 The Prisma seed orchestrator lives at `backend/prisma/seed/index.ts`. Individual domain seeders are under `backend/prisma/seed/core/`, `backend/prisma/seed/dev/`, and `backend/prisma/seed/test/`.
 
-> **Do not run the generic seed command with `NODE_ENV=production`.** `index.ts` throws. En GCP use los Cloud Run Jobs `voz-seeder-core` y `voz-seeder-dev` con `NODE_ENV=staging` y `--command=pnpm` (la imagen `voz-tools` entra por defecto al migrador forward-only). Procedimiento: [docs/DEPLOYMENT_GCP.md](docs/DEPLOYMENT_GCP.md) sección 11.
+> **Do not run the generic seed command with `NODE_ENV=production`.** `index.ts` throws. En GCP use los Cloud Run Jobs `nexo-seeder-core` y `nexo-seeder-dev` con `NODE_ENV=staging` y `--command=pnpm` (la imagen `nexo-tools` entra por defecto al migrador forward-only). Procedimiento: [docs/DEPLOYMENT_GCP.md](docs/DEPLOYMENT_GCP.md) sección 11.
 
 The default command (`pnpm run prisma:seed` and `prisma db seed`) runs **core** seeds only, so it is safe to run in fresh environments without extra credentials:
 
@@ -374,20 +374,20 @@ Modulos principales expuestos en /api/v1:
 
 ## Mapa de modulos backend (resumen)
 
-| Modulo               | Base URL                    | Router                                     | Controller              | Servicios principales                                                        |
-| -------------------- | --------------------------- | ------------------------------------------ | ----------------------- | ---------------------------------------------------------------------------- |
+| Modulo               | Base URL                    | Router                                     | Controller              | Servicios principales                                                         |
+| -------------------- | --------------------------- | ------------------------------------------ | ----------------------- | ----------------------------------------------------------------------------- |
 | Webhook WhatsApp     | /api/v1/webhook             | backend/src/routes/webhook.routes.ts       | WebhookController       | InboxProcessorService, WebhookParserService, MessageRepository, PrismaService |
-| Auth panel           | /api/v1/auth                | backend/src/routes/auth.routes.ts          | AuthController          | AuthService, LockoutService, AuditService                                    |
-| Admin usuarios       | /api/v1/admin/users         | backend/src/routes/users.routes.ts         | UsersController         | UserService, AuditService                                                    |
-| Admin neighborhoods  | /api/v1/admin/neighborhoods | backend/src/routes/neighborhoods.routes.ts | NeighborhoodsController | NeighborhoodsService, AuditService                                           |
-| Admin tags           | /api/v1/admin/tags          | backend/src/routes/tags.routes.ts          | TagsController          | TagsService, AuditService                                                    |
-| Admin departments    | /api/v1/admin/departments   | backend/src/routes/departments.routes.ts   | DepartmentsController   | DepartmentsService, AuditService                                             |
-| Admin events         | /api/v1/admin/events        | backend/src/routes/events.routes.ts        | EventsController        | EventService, AttendanceService, AuditService                                |
-| Citizens             | /api/v1/citizens            | backend/src/routes/citizens.routes.ts      | CitizensController      | CitizensService, AuditService                                                |
-| Conversations        | /api/v1/conversations       | backend/src/routes/conversations.routes.ts | ConversationsController | ConversationsService, MessageService, AuditService                           |
-| Messages             | /api/v1/messages            | backend/src/routes/messages.routes.ts      | MessagesController      | MessageService, OutboxProcessorService                                       |
-| Handover             | /api/v1/handover            | backend/src/routes/handover.routes.ts      | HandoverController      | ConversationStateMachine, ConversationRepository                             |
-| System observability | /api/v1/system              | backend/src/routes/system.routes.ts        | SystemController        | SystemService                                                                |
+| Auth panel           | /api/v1/auth                | backend/src/routes/auth.routes.ts          | AuthController          | AuthService, LockoutService, AuditService                                     |
+| Admin usuarios       | /api/v1/admin/users         | backend/src/routes/users.routes.ts         | UsersController         | UserService, AuditService                                                     |
+| Admin neighborhoods  | /api/v1/admin/neighborhoods | backend/src/routes/neighborhoods.routes.ts | NeighborhoodsController | NeighborhoodsService, AuditService                                            |
+| Admin tags           | /api/v1/admin/tags          | backend/src/routes/tags.routes.ts          | TagsController          | TagsService, AuditService                                                     |
+| Admin departments    | /api/v1/admin/departments   | backend/src/routes/departments.routes.ts   | DepartmentsController   | DepartmentsService, AuditService                                              |
+| Admin events         | /api/v1/admin/events        | backend/src/routes/events.routes.ts        | EventsController        | EventService, AttendanceService, AuditService                                 |
+| Citizens             | /api/v1/citizens            | backend/src/routes/citizens.routes.ts      | CitizensController      | CitizensService, AuditService                                                 |
+| Conversations        | /api/v1/conversations       | backend/src/routes/conversations.routes.ts | ConversationsController | ConversationsService, MessageService, AuditService                            |
+| Messages             | /api/v1/messages            | backend/src/routes/messages.routes.ts      | MessagesController      | MessageService, OutboxProcessorService                                        |
+| Handover             | /api/v1/handover            | backend/src/routes/handover.routes.ts      | HandoverController      | ConversationStateMachine, ConversationRepository                              |
+| System observability | /api/v1/system              | backend/src/routes/system.routes.ts        | SystemController        | SystemService                                                                 |
 
 Tabla ampliada con endpoints por modulo: [docs/backend-modules-map.md](docs/backend-modules-map.md)
 
@@ -526,7 +526,7 @@ En produccion/QA, `POSTGRES_PASSWORD` y `DATABASE_URL` son obligatorias: los com
 
 ## QA (aislado, production-like)
 
-QA usa `docker-compose.qa.yml`: mismos targets inmutables que produccion (`tools`, `runner`, `prod`), pero con proyecto (`voz-ciudadana-qa`) y volumenes propios (`*_qa`), de modo que puede convivir con produccion sin compartir datos. No hay bind mounts ni instalacion dinamica.
+QA usa `docker-compose.qa.yml`: mismos targets inmutables que produccion (`tools`, `runner`, `prod`), pero con proyecto (`nexo-comercial-qa`) y volumenes propios (`*_qa`), de modo que puede convivir con produccion sin compartir datos. No hay bind mounts ni instalacion dinamica.
 
 ```bash
 cp .env.example .env.qa
@@ -558,8 +558,8 @@ Caddy de QA expone puertos host configurables (`QA_HTTP_PORT`/`QA_HTTPS_PORT`, d
 - backend/docs/database-schema.md
 - backend/docs/whatsapp-messaging-flow.md
 - backend/src/ai/README.md
-- postman/voz-ciudadana.postman_collection.json
+- postman/nexo-comercial.postman_collection.json
 
 ## Análisis de Configuraciones
 
-La primera fase y el backlog de Configuraciones están documentados en [`docs/analysis/configuraciones-voz-ciudadana.md`](docs/analysis/configuraciones-voz-ciudadana.md).
+La primera fase y el backlog de Configuraciones están documentados en [`docs/analysis/configuraciones-nexo-comercial.md`](docs/analysis/configuraciones-nexo-comercial.md).

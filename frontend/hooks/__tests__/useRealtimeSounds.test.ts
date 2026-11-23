@@ -67,7 +67,7 @@ describe('useRealtimeSounds', () => {
       router.dispatch(SocketEventName.AdminNotification, inboundNotification);
     });
 
-    expect(NotificationMock).toHaveBeenCalledWith('Nuevo mensaje en Voz Ciudadana', {
+    expect(NotificationMock).toHaveBeenCalledWith('Nuevo mensaje en Nexo Comercial', {
       body: 'María envió un mensaje nuevo.',
       tag: 'vc-message-conv-1',
     });

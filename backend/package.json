@@ -1,7 +1,7 @@
 {
-  "name": "voz-ciudadana-api",
+  "name": "nexo-comercial-api",
   "version": "0.1.0",
-  "description": "Voz Ciudadana — Express backend (WhatsApp bot + Prisma + FSM)",
+  "description": "Nexo Comercial — Express backend (WhatsApp bot + Prisma + FSM)",
   "private": true,
   "scripts": {
     "dev": "ts-node-dev --respawn --transpile-only --ignore-watch node_modules --ignore-watch dist --ignore-watch logs src/server.ts",

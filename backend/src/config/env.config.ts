@@ -353,10 +353,10 @@ export const envSchema = z.object({
   MAILTRAP_API_TOKEN: optionalString,
   MAILTRAP_API_URL: optionalString,
   MAIL_FROM_ADDRESS: optionalString,
-  MAIL_FROM_NAME: z.string().trim().default('Voz Ciudadana'),
+  MAIL_FROM_NAME: z.string().trim().default('Nexo Comercial'),
   MAIL_REPLY_TO_ADDRESS: optionalString,
   MAIL_SUPPORT_EMAIL: optionalString,
-  MAIL_PLATFORM_NAME: z.string().trim().default('Voz Ciudadana'),
+  MAIL_PLATFORM_NAME: z.string().trim().default('Nexo Comercial'),
   /**
    * Fallback HTTP del logo cuando el cliente bloquea el adjunto inline (cid:brand-logo).
    * Si se omite, se deriva de FRONTEND_URL.

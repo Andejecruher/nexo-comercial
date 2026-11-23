@@ -100,7 +100,7 @@ describe('Variable editor and preview', () => {
     expect(screen.getByRole('textbox')).toHaveAttribute('contenteditable', 'false');
   });
   it('renders injected preview text and preserves unresolved tokens', () => {
-    render(<WhatsAppMobilePreview body="Hola Ana" lineName="Voz Ciudadana" />);
+    render(<WhatsAppMobilePreview body="Hola Ana" lineName="Nexo Comercial" />);
     expect(screen.getByText('Hola Ana')).toBeInTheDocument();
     const samples: Record<string, string> = { nombre: 'Ana' };
     expect(renderTemplateText('Hola {{nombre}}, de {{ciudad}}', (key) => samples[key] ?? '')).toBe(

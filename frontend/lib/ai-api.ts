@@ -1,5 +1,5 @@
 /**
- * AI Admin API Client — Voz Ciudadana
+ * AI Admin API Client — Nexo Comercial
  *
  * Wrapper sobre apiClient para endpoints de gestión de IA:
  * Agents, Tools, Topics, Prompts, CommunicationLines

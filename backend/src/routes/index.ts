@@ -406,7 +406,7 @@ export function registerRoutes(
   });
 
   app.get('/', (_req: Request, res: Response) => {
-    res.json({ message: 'Bienvenido a la API de Voz Ciudadana', version: env.APP_VERSION });
+    res.json({ message: 'Bienvenido a la API de Nexo Comercial', version: env.APP_VERSION });
   });
 
   app.use('/api/v1', apiRouter);

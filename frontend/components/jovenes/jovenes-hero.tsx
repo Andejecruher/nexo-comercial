@@ -30,7 +30,7 @@ export function JovenesHero() {
             transition={{ duration: 0.45 }}
             className="mb-5 inline-flex rounded-full border border-accent-teal/40 bg-accent-teal/15 px-4 py-1.5 text-xs font-bold uppercase tracking-widest text-accent-teal"
           >
-            Voz Ciudadana · Juventud Cintalapa
+            Nexo Comercial · Juventud Cintalapa
           </motion.p>
           <motion.h1
             initial={{ opacity: 0, y: 24 }}

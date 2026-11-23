@@ -1,7 +1,7 @@
 'use client';
 
 /**
- * ProtectedRoute — Voz Ciudadana
+ * ProtectedRoute — Nexo Comercial
  *
  * Wrapper que verifica autenticación antes de renderizar children.
  * Si el usuario no está autenticado, redirige a /login preservando el path actual.

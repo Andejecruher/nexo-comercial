@@ -234,7 +234,7 @@ export function SumateSectionView({
                 <Check className="h-4 w-4 stroke-3 text-white" />
               </div>
               <div>
-                <div className="text-lg font-black leading-none text-white">Voz Ciudadana</div>
+                <div className="text-lg font-black leading-none text-white">Nexo Comercial</div>
                 <div className="mt-0.5 text-[10px] font-semibold uppercase tracking-widest text-white/50">
                   Plataforma de Atención y Enlace Social
                 </div>

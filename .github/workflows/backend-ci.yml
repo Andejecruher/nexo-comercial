@@ -85,7 +85,7 @@ jobs:
 
       - name: Smoke — dynamic imports (OpenAI SDK)
         run: |
-          pnpm --filter voz-ciudadana-api exec node --input-type=module -e "import('openai').then(() => console.log('openai import ok')).catch(e => { console.error(e); process.exit(1); })"
+          pnpm --filter nexo-comercial-api exec node --input-type=module -e "import('openai').then(() => console.log('openai import ok')).catch(e => { console.error(e); process.exit(1); })"
 
   test-and-integration:
     name: Backend — Jest and PostgreSQL integration
@@ -95,13 +95,13 @@ jobs:
       postgres:
         image: postgres:16-alpine
         env:
-          POSTGRES_USER: voz
+          POSTGRES_USER: nexo
           POSTGRES_PASSWORD: secret
-          POSTGRES_DB: vozcuidadana
+          POSTGRES_DB: nexocomercial
         ports:
           - "5432:5432"
         options: >-
-          --health-cmd "pg_isready -U voz -d vozcuidadana"
+          --health-cmd "pg_isready -U nexo -d nexocomercial"
           --health-interval 5s
           --health-timeout 5s
           --health-retries 20
@@ -117,7 +117,7 @@ jobs:
 
       - name: Start Pub/Sub emulator for multi-instance tests
         run: |
-          docker run -d --name realtime-pubsub -p 8680:8680 gcr.io/google.com/cloudsdktool/google-cloud-cli:emulators gcloud beta emulators pubsub start --project=voz-ciudadana-emulator-test --host-port=0.0.0.0:8680
+          docker run -d --name realtime-pubsub -p 8680:8680 gcr.io/google.com/cloudsdktool/google-cloud-cli:emulators gcloud beta emulators pubsub start --project=nexo-comercial-emulator-test --host-port=0.0.0.0:8680
           for attempt in $(seq 1 60); do
             if curl -s http://127.0.0.1:8680 >/dev/null; then exit 0; fi
             sleep 1
@@ -135,13 +135,13 @@ jobs:
 
       - name: Apply all migrations (forward-only) on empty DB
         env:
-          DATABASE_URL: postgresql://voz:secret@localhost:5432/vozcuidadana
+          DATABASE_URL: postgresql://nexo:secret@localhost:5432/nexocomercial
         run: pnpm --dir backend run migrate:deploy
 
       - name: Test — real PostgreSQL
         env:
           PUBSUB_EMULATOR_HOST: localhost:8680
-          DATABASE_URL: postgresql://voz:secret@localhost:5432/vozcuidadana
+          DATABASE_URL: postgresql://nexo:secret@localhost:5432/nexocomercial
         run: pnpm --dir backend run test:postgres
 
   compose-validate:
@@ -156,7 +156,7 @@ jobs:
       - name: Validate compose configs
         env:
           POSTGRES_PASSWORD: ci
-          DATABASE_URL: postgresql://voz:ci@postgres:5432/vozcuidadana
+          DATABASE_URL: postgresql://nexo:ci@postgres:5432/nexocomercial
         run: |
           docker compose -f docker-compose.dev.yml config -q
           docker compose -f docker-compose.prod.yml config -q

@@ -1,5 +1,5 @@
 /**
- * Auth Guards — Voz Ciudadana
+ * Auth Guards — Nexo Comercial
  *
  * Guards reutilizables RBAC para controlar acceso a vistas y acciones.
  * Basados en los roles del backend: SUPER_ADMIN | COORDINADOR | CAPTURISTA | OPERADOR_CHAT | LIDER

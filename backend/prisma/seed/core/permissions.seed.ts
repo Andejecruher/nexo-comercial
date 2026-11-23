@@ -1,7 +1,7 @@
 import { PrismaClient } from '@prisma/client';
 
 /**
- * RBAC Permission Seed — Voz Ciudadana
+ * RBAC Permission Seed — Nexo Comercial
  *
  * Estructura extensible basada en los módulos del sidebar (NAV_ITEMS).
  * Cada módulo declara sus acciones; el `slug` sigue la convención

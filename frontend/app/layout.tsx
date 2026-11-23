@@ -15,21 +15,11 @@ export const metadata: Metadata = {
   metadataBase: new URL(siteConfig.baseUrl),
 
   title: {
-    template: '%s | Voz Ciudadana',
+    template: '%s | Nexo Comercial',
     default: siteConfig.defaultTitle,
   },
   description: siteConfig.defaultDescription,
-  keywords: [
-    'Voz Ciudadana',
-    'Cintalapa de Figueroa',
-    'Chiapas',
-    'reporte ciudadano',
-    'gestión social',
-    'atención ciudadana',
-    'participación comunitaria',
-    'servicios públicos',
-    'plataforma ciudadana',
-  ],
+  keywords: ['Nexo Comercial'],
   authors: [{ name: siteConfig.siteName, url: siteConfig.baseUrl }],
   creator: siteConfig.siteName,
   publisher: siteConfig.siteName,
@@ -81,16 +71,9 @@ export const viewport: Viewport = {
 const jsonLd = {
   '@context': 'https://schema.org',
   '@type': 'Organization',
-  name: 'Voz Ciudadana',
-  alternateName: 'Plataforma de Atención y Enlace Social — Cintalapa',
+  name: 'Nexo Comercial',
   url: siteConfig.baseUrl,
-  description:
-    'Plataforma de Atención y Enlace Social para Cintalapa de Figueroa, Chiapas: reporte ciudadano, gestión de necesidades vecinales, jornadas de servicio social y participación informada.',
-  areaServed: {
-    '@type': 'AdministrativeArea',
-    name: 'Cintalapa de Figueroa, Chiapas, México',
-  },
-  sameAs: [],
+  description: siteConfig.defaultDescription,
 };
 
 export default function RootLayout({

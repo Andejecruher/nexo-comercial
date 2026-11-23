@@ -1,3 +1,11 @@
+# Documented construction for Nexo Comercial. This file is not a GitHub Actions
+# workflow: it lives outside .github/workflows and the trigger block below is
+# commented, so nothing here deploys. Jobs, images, env and verify steps are the
+# pipeline that already works, with Nexo Comercial names.
+#
+# To run it later: uncomment the trigger, copy this file to
+# .github/workflows/deploy-gcp.yml, and follow docs/DEPLOYMENT_GCP.md.
+# Services: nexo-api, nexo-worker, nexo-realtime-relay, nexo-frontend, nexo-migrator.
 name: Deploy GCP
 
 # Migracion Railway -> GCP (Cloud Run + Artifact Registry + Cloud SQL + Secret Manager).
@@ -5,8 +13,8 @@ name: Deploy GCP
 #
 # Flujo:
 #   detect -> quality/backend-ci (reusable, sin Docker duplicado) -> ci-gate
-#   build  -> buildx push paralelo de runner (voz-api/voz-worker), tools (migrator), frontend
-#   migrate -> Cloud Run Job `voz-migrator` ejecuta `prisma migrate deploy` (bloquea deploy backend si falla)
+#   build  -> buildx push paralelo de runner (nexo-api/nexo-worker), tools (migrator), frontend
+#   migrate -> Cloud Run Job `nexo-migrator` ejecuta `prisma migrate deploy` (bloquea deploy backend si falla)
 #   deploy  -> worker y relay antes de API; frontend despues del backend
 #   verify  -> salud, Cloud Tasks/Scheduler, Pub/Sub y flags de costo por rol
 #   docs    -> docs/analysis/realtime-implementation.md (costos y rollout).
@@ -43,33 +51,35 @@ name: Deploy GCP
 #   Las variables DB_* de `env:` son la unica fuente de verdad: se usan para
 #   desplegar y para verificar (verify-production). No las dupliques inline.
 
-on:
-  push:
-    branches: [main]
-    paths:
-      - "backend/**"
-      - "frontend/**"
-      - "pnpm-lock.yaml"
-      - "pnpm-workspace.yaml"
-      - "package.json"
-      - ".dockerignore"
-      - "backend/Dockerfile"
-      - "frontend/Dockerfile"
-      - ".github/workflows/deploy-gcp.yml"
-      - ".github/workflows/quality.yml"
-      - ".github/workflows/backend-ci.yml"
-      - ".github/actions/**"
-  workflow_dispatch:
-    inputs:
-      surfaces:
-        description: Components to deploy. Backend includes migrations, worker, relay, tasks, and API.
-        required: true
-        type: choice
-        default: all
-        options:
-          - all
-          - backend
-          - frontend
+# Trigger recorded from the working pipeline. Commented so this file cannot
+# deploy. Restore it together with the copy to .github/workflows/deploy-gcp.yml.
+# on:
+#   push:
+#     branches: [main]
+#     paths:
+#       - "backend/**"
+#       - "frontend/**"
+#       - "pnpm-lock.yaml"
+#       - "pnpm-workspace.yaml"
+#       - "package.json"
+#       - ".dockerignore"
+#       - "backend/Dockerfile"
+#       - "frontend/Dockerfile"
+#       - ".github/workflows/deploy-gcp.yml"
+#       - ".github/workflows/quality.yml"
+#       - ".github/workflows/backend-ci.yml"
+#       - ".github/actions/**"
+#   workflow_dispatch:
+#     inputs:
+#       surfaces:
+#         description: Components to deploy. Backend includes migrations, worker, relay, tasks, and API.
+#         required: true
+#         type: choice
+#         default: all
+#         options:
+#           - all
+#           - backend
+#           - frontend
 
 permissions:
   contents: read
@@ -80,9 +90,9 @@ concurrency:
 
 env:
   GCP_REGION: us-central1
-  AR_REPO: voz-ciudadana
-  DB_INSTANCE: voz-ciudadana
-  SA_RUN: voz-ciudadana-run-sa
+  AR_REPO: nexo-comercial
+  DB_INSTANCE: nexo-comercial
+  SA_RUN: nexo-comercial-run-sa
   CLOUDSDK_CORE_DISABLE_PROMPTS: "1"
   # ── Presupuesto de conexiones Cloud SQL (unica fuente de verdad) ───────────
   # api y worker comparten DB_MAX_INSTANCES pero NO el pool: el worker lleva
@@ -251,7 +261,7 @@ jobs:
           service_account: ${{ secrets.GH_SA_CICD }}
           registry: ${{ env.GCP_REGION }}-docker.pkg.dev
 
-      - name: Build & push backend (runner -> voz-api)
+      - name: Build & push backend (runner -> nexo-api)
         uses: docker/build-push-action@v7
         with:
           context: .
@@ -261,9 +271,9 @@ jobs:
           provenance: false
           cache-from: type=gha,scope=backend-runner
           cache-to: type=gha,mode=max,scope=backend-runner,ignore-error=true
-          tags: ${{ env.GCP_REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/${{ env.AR_REPO }}/voz-api:sha-${{ needs.detect.outputs.git_sha }}
+          tags: ${{ env.GCP_REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/${{ env.AR_REPO }}/nexo-api:sha-${{ needs.detect.outputs.git_sha }}
 
-      - name: Build & push backend (worker -> voz-worker)
+      - name: Build & push backend (worker -> nexo-worker)
         uses: docker/build-push-action@v7
         with:
           context: .
@@ -273,7 +283,7 @@ jobs:
           provenance: false
           cache-from: type=gha,scope=backend-runner
           cache-to: type=gha,mode=max,scope=backend-runner,ignore-error=true
-          tags: ${{ env.GCP_REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/${{ env.AR_REPO }}/voz-worker:sha-${{ needs.detect.outputs.git_sha }}
+          tags: ${{ env.GCP_REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/${{ env.AR_REPO }}/nexo-worker:sha-${{ needs.detect.outputs.git_sha }}
 
   build-backend-tools:
     name: Build & push migrator
@@ -304,7 +314,7 @@ jobs:
           provenance: false
           cache-from: type=gha,scope=backend-tools
           cache-to: type=gha,mode=max,scope=backend-tools,ignore-error=true
-          tags: ${{ env.GCP_REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/${{ env.AR_REPO }}/voz-tools:sha-${{ needs.detect.outputs.git_sha }}
+          tags: ${{ env.GCP_REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/${{ env.AR_REPO }}/nexo-tools:sha-${{ needs.detect.outputs.git_sha }}
 
   build-frontend:
     name: Build & push frontend
@@ -338,7 +348,7 @@ jobs:
           build-args: |
             NEXT_PUBLIC_API_URL=${{ vars.GCP_API_BASE_URL }}
             NEXT_PUBLIC_WS_URL=${{ vars.GCP_API_BASE_URL }}
-          tags: ${{ env.GCP_REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/${{ env.AR_REPO }}/voz-frontend:sha-${{ needs.detect.outputs.git_sha }}
+          tags: ${{ env.GCP_REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/${{ env.AR_REPO }}/nexo-frontend:sha-${{ needs.detect.outputs.git_sha }}
 
   migrate:
     name: Run Prisma migrations (Cloud Run Job)
@@ -364,12 +374,12 @@ jobs:
         run: |
           set -euo pipefail
           INST_CN="${GCP_PROJECT_ID}:${GCP_REGION}:${DB_INSTANCE}"
-          IMG_TOOLS="${GCP_REGION}-docker.pkg.dev/${GCP_PROJECT_ID}/${AR_REPO}/voz-tools:sha-${GIT_SHA}"
+          IMG_TOOLS="${GCP_REGION}-docker.pkg.dev/${GCP_PROJECT_ID}/${AR_REPO}/nexo-tools:sha-${GIT_SHA}"
           SA_EMAIL="${SA_RUN}@${GCP_PROJECT_ID}.iam.gserviceaccount.com"
-          gcloud run jobs deploy voz-migrator \
+          gcloud run jobs deploy nexo-migrator \
             --image="$IMG_TOOLS" --region="$GCP_REGION" \
             --tasks=1 --max-retries=0 --task-timeout=10m \
-            --command="/usr/local/bin/voz-prod-migrate.sh" \
+            --command="/usr/local/bin/nexo-prod-migrate.sh" \
             --args="" \
             --set-env-vars="NODE_ENV=production" \
             --set-cloudsql-instances="$INST_CN" \
@@ -381,10 +391,10 @@ jobs:
           set -euo pipefail
           # --wait propaga el exit code del job a la action: si migrate deploy falla,
           # los jobs de deploy backend (que dependen de este) no se ejecutan.
-          gcloud run jobs execute voz-migrator --region "$GCP_REGION" --wait
+          gcloud run jobs execute nexo-migrator --region "$GCP_REGION" --wait
 
   deploy-api:
-    name: Deploy voz-api
+    name: Deploy nexo-api
     needs:
       [
         detect,
@@ -421,22 +431,22 @@ jobs:
             echo "SA_RUN_EMAIL=${SA_RUN}@${GCP_PROJECT_ID}.iam.gserviceaccount.com"
           } >> "$GITHUB_ENV"
 
-      - name: Deploy voz-api
+      - name: Deploy nexo-api
         run: |
           set -euo pipefail
-          gcloud run deploy voz-api \
-            --image="$IMG/voz-api:sha-$SHA" --region="$GCP_REGION" --allow-unauthenticated \
+          gcloud run deploy nexo-api \
+            --image="$IMG/nexo-api:sha-$SHA" --region="$GCP_REGION" --allow-unauthenticated \
             --service-account="$SA_RUN_EMAIL" --port=8080 \
             --min-instances=0 --max-instances=$DB_MAX_INSTANCES \
             --clear-vpc-connector \
             --concurrency=80 --timeout=3600 \
             --cpu=1 --memory=1Gi --cpu-boost --cpu-throttling \
-            --set-env-vars="NODE_ENV=production,BATCHING_WINDOW_MS=5000,BATCHING_MAX_WAIT_MS=30000,BASE_URL=${{ vars.GCP_API_BASE_URL }},FRONTEND_URL=${{ vars.GCP_FRONTEND_URL }},CORS_ORIGIN=${{ vars.GCP_FRONTEND_URL }},GOOGLE_CLOUD_PROJECT_ID=$GCP_PROJECT_ID,DOCUMENT_AI_LOCATION=${{ vars.GCP_DOC_AI_LOC }},INE_OCR_ENABLED=true,ENABLE_XLSX_EXPORT=true,WORKERS_ENABLED=false,BACKGROUND_EXECUTION_BACKEND=cloud_tasks,GCP_PROJECT_ID=$GCP_PROJECT_ID,GCP_LOCATION=$GCP_REGION,TASKS_QUEUE_NAME=${{ vars.GCP_TASKS_QUEUE_NAME }},TASKS_AI_QUEUE_NAME=${{ vars.GCP_TASKS_QUEUE_NAME }}-ai,TASKS_DELIVERY_QUEUE_NAME=${{ vars.GCP_TASKS_QUEUE_NAME }}-delivery,TASKS_DOCUMENT_QUEUE_NAME=${{ vars.GCP_TASKS_QUEUE_NAME }}-documents,WORKER_SERVICE_URL=${{ vars.GCP_WORKER_SERVICE_URL }},TASKS_SERVICE_ACCOUNT_EMAIL=${{ vars.GCP_TASKS_SERVICE_ACCOUNT_EMAIL }},WS_ENABLED=true,REALTIME_DURABLE_ENABLED=true,REALTIME_IMMEDIATE_PUBLISH_ENABLED=true,INBOUND_EAGER_INGESTION_ENABLED=true,SOCKETIO_PUBSUB_ADAPTER_ENABLED=true,SOCKETIO_PUBSUB_TOPIC=socketio-adapter,PUBSUB_PUSH_AUDIENCE=${{ vars.GCP_API_BASE_URL }},PUBSUB_PUSH_SERVICE_ACCOUNT_EMAIL=${{ vars.GCP_PUBSUB_PUSH_SERVICE_ACCOUNT_EMAIL }},PRISMA_CONNECTION_LIMIT=$DB_CONNECTION_LIMIT,MAIL_PROVIDER=mailtrap,MAIL_FROM_NAME=Voz Ciudadana,MAIL_PLATFORM_NAME=Voz Ciudadana,MAIL_TIME_ZONE=America/Mexico_City,MAIL_SEND_TIMEOUT_MS=10000,GCS_SIGNER_SERVICE_ACCOUNT=${{ vars.GCS_SIGNER_SERVICE_ACCOUNT }}" \
+            --set-env-vars="NODE_ENV=production,BATCHING_WINDOW_MS=5000,BATCHING_MAX_WAIT_MS=30000,BASE_URL=${{ vars.GCP_API_BASE_URL }},FRONTEND_URL=${{ vars.GCP_FRONTEND_URL }},CORS_ORIGIN=${{ vars.GCP_FRONTEND_URL }},GOOGLE_CLOUD_PROJECT_ID=$GCP_PROJECT_ID,DOCUMENT_AI_LOCATION=${{ vars.GCP_DOC_AI_LOC }},INE_OCR_ENABLED=true,ENABLE_XLSX_EXPORT=true,WORKERS_ENABLED=false,BACKGROUND_EXECUTION_BACKEND=cloud_tasks,GCP_PROJECT_ID=$GCP_PROJECT_ID,GCP_LOCATION=$GCP_REGION,TASKS_QUEUE_NAME=${{ vars.GCP_TASKS_QUEUE_NAME }},TASKS_AI_QUEUE_NAME=${{ vars.GCP_TASKS_QUEUE_NAME }}-ai,TASKS_DELIVERY_QUEUE_NAME=${{ vars.GCP_TASKS_QUEUE_NAME }}-delivery,TASKS_DOCUMENT_QUEUE_NAME=${{ vars.GCP_TASKS_QUEUE_NAME }}-documents,WORKER_SERVICE_URL=${{ vars.GCP_WORKER_SERVICE_URL }},TASKS_SERVICE_ACCOUNT_EMAIL=${{ vars.GCP_TASKS_SERVICE_ACCOUNT_EMAIL }},WS_ENABLED=true,REALTIME_DURABLE_ENABLED=true,REALTIME_IMMEDIATE_PUBLISH_ENABLED=true,INBOUND_EAGER_INGESTION_ENABLED=true,SOCKETIO_PUBSUB_ADAPTER_ENABLED=true,SOCKETIO_PUBSUB_TOPIC=socketio-adapter,PUBSUB_PUSH_AUDIENCE=${{ vars.GCP_API_BASE_URL }},PUBSUB_PUSH_SERVICE_ACCOUNT_EMAIL=${{ vars.GCP_PUBSUB_PUSH_SERVICE_ACCOUNT_EMAIL }},PRISMA_CONNECTION_LIMIT=$DB_CONNECTION_LIMIT,MAIL_PROVIDER=mailtrap,MAIL_FROM_NAME=Nexo Comercial,MAIL_PLATFORM_NAME=Nexo Comercial,MAIL_TIME_ZONE=America/Mexico_City,MAIL_SEND_TIMEOUT_MS=10000,GCS_SIGNER_SERVICE_ACCOUNT=${{ vars.GCS_SIGNER_SERVICE_ACCOUNT }}" \
             --add-cloudsql-instances="$INST_CN" \
             --set-secrets="DATABASE_URL=DATABASE_URL:latest,CLOUDSQL_DB_USER=DB_USER:latest,CLOUDSQL_DB_PASS=DB_PASS:latest,CLOUDSQL_DB_NAME=DB_NAME:latest,CLOUDSQL_INSTANCE_CONNECTION_NAME=INSTANCE_CONNECTION_NAME:latest,JWT_SECRET=JWT_SECRET:latest,JWT_REFRESH_SECRET=JWT_REFRESH_SECRET:latest,ENCRYPTION_KEY=ENCRYPTION_KEY:latest,WHATSAPP_VERIFY_TOKEN=WHATSAPP_VERIFY_TOKEN:latest,WHATSAPP_APP_ID=WHATSAPP_APP_ID:latest,WHATSAPP_APP_SECRET=WHATSAPP_APP_SECRET:latest,WHATSAPP_ACCESS_TOKEN=WHATSAPP_ACCESS_TOKEN:latest,WHATSAPP_PHONE_NUMBER_ID=WHATSAPP_PHONE_NUMBER_ID:latest,WHATSAPP_BUSINESS_ACCOUNT_ID=WHATSAPP_BUSINESS_ACCOUNT_ID:latest,MAILTRAP_API_TOKEN=MAILTRAP_API_TOKEN:latest,MAILTRAP_API_URL=MAILTRAP_API_URL:latest,MAIL_FROM_ADDRESS=MAIL_FROM_ADDRESS:latest,MAIL_REPLY_TO_ADDRESS=MAIL_REPLY_TO_ADDRESS:latest,MAIL_SUPPORT_EMAIL=MAIL_SUPPORT_EMAIL:latest,OPENAI_API_KEY=OPENAI_API_KEY:latest,NVIDIA_API_KEY=NVIDIA_API_KEY:latest,ANTHROPIC_API_KEY=ANTHROPIC_API_KEY:latest,GOOGLE_DRIVE_FOLDER_ID=GOOGLE_DRIVE_FOLDER_ID:latest,GOOGLE_OAUTH_CLIENT_ID=GOOGLE_OAUTH_CLIENT_ID:latest,GOOGLE_OAUTH_CLIENT_SECRET=GOOGLE_OAUTH_CLIENT_SECRET:latest,GOOGLE_DRIVE_REFRESH_TOKEN=GOOGLE_DRIVE_REFRESH_TOKEN:latest,DOCUMENT_AI_PROCESSOR_ID=DOCUMENT_AI_PROCESSOR_ID:latest"
 
   deploy-worker:
-    name: Deploy voz-worker
+    name: Deploy nexo-worker
     needs: [detect, ci-gate, build-backend-runner, migrate]
     if: always() && !cancelled() && needs.ci-gate.result == 'success' && needs.build-backend-runner.result == 'success' && needs.migrate.result == 'success' && needs.detect.outputs.backend == 'true'
     runs-on: ubuntu-24.04
@@ -464,14 +474,14 @@ jobs:
             echo "SA_RUN_EMAIL=${SA_RUN}@${GCP_PROJECT_ID}.iam.gserviceaccount.com"
           } >> "$GITHUB_ENV"
 
-      - name: Deploy voz-worker
+      - name: Deploy nexo-worker
         run: |
           set -euo pipefail
           # Image `worker` stage already runs `tini -- node dist/worker.js`.
           # Empty command/args restore image defaults and drop sticky overrides
           # from older revisions (`--command=node` replaces ENTRYPOINT).
-          gcloud run deploy voz-worker \
-            --image="$IMG/voz-worker:sha-$SHA" --region="$GCP_REGION" --no-allow-unauthenticated \
+          gcloud run deploy nexo-worker \
+            --image="$IMG/nexo-worker:sha-$SHA" --region="$GCP_REGION" --no-allow-unauthenticated \
             --ingress=all \
             --service-account="$SA_RUN_EMAIL" --port=8080 \
             --min-instances=0 --max-instances=$DB_MAX_INSTANCES \
@@ -479,12 +489,12 @@ jobs:
             --concurrency=50 --timeout=300 \
             --cpu=1 --memory=1Gi --no-cpu-boost --cpu-throttling \
             --command="" --args="" \
-            --set-env-vars="NODE_ENV=production,BATCHING_WINDOW_MS=5000,BATCHING_MAX_WAIT_MS=30000,BASE_URL=${{ vars.GCP_API_BASE_URL }},FRONTEND_URL=${{ vars.GCP_FRONTEND_URL }},CORS_ORIGIN=${{ vars.GCP_FRONTEND_URL }},GOOGLE_CLOUD_PROJECT_ID=$GCP_PROJECT_ID,DOCUMENT_AI_LOCATION=${{ vars.GCP_DOC_AI_LOC }},INE_OCR_ENABLED=true,ENABLE_XLSX_EXPORT=true,WORKERS_ENABLED=true,BACKGROUND_EXECUTION_BACKEND=cloud_tasks,GCP_PROJECT_ID=$GCP_PROJECT_ID,GCP_LOCATION=$GCP_REGION,TASKS_QUEUE_NAME=${{ vars.GCP_TASKS_QUEUE_NAME }},TASKS_AI_QUEUE_NAME=${{ vars.GCP_TASKS_QUEUE_NAME }}-ai,TASKS_DELIVERY_QUEUE_NAME=${{ vars.GCP_TASKS_QUEUE_NAME }}-delivery,TASKS_DOCUMENT_QUEUE_NAME=${{ vars.GCP_TASKS_QUEUE_NAME }}-documents,WORKER_SERVICE_URL=${{ vars.GCP_WORKER_SERVICE_URL }},TASKS_SERVICE_ACCOUNT_EMAIL=${{ vars.GCP_TASKS_SERVICE_ACCOUNT_EMAIL }},WS_ENABLED=false,REALTIME_DURABLE_ENABLED=true,REALTIME_IMMEDIATE_PUBLISH_ENABLED=true,PRISMA_CONNECTION_LIMIT=$DB_WORKER_CONNECTION_LIMIT,WORKER_HEALTH_PORT=8080,MAIL_PROVIDER=mailtrap,MAIL_FROM_NAME=Voz Ciudadana,MAIL_PLATFORM_NAME=Voz Ciudadana,MAIL_TIME_ZONE=America/Mexico_City,MAIL_SEND_TIMEOUT_MS=10000,GCS_SIGNER_SERVICE_ACCOUNT=${{ vars.GCS_SIGNER_SERVICE_ACCOUNT }},DISABLE_INTERNAL_POLLING=true" \
+            --set-env-vars="NODE_ENV=production,BATCHING_WINDOW_MS=5000,BATCHING_MAX_WAIT_MS=30000,BASE_URL=${{ vars.GCP_API_BASE_URL }},FRONTEND_URL=${{ vars.GCP_FRONTEND_URL }},CORS_ORIGIN=${{ vars.GCP_FRONTEND_URL }},GOOGLE_CLOUD_PROJECT_ID=$GCP_PROJECT_ID,DOCUMENT_AI_LOCATION=${{ vars.GCP_DOC_AI_LOC }},INE_OCR_ENABLED=true,ENABLE_XLSX_EXPORT=true,WORKERS_ENABLED=true,BACKGROUND_EXECUTION_BACKEND=cloud_tasks,GCP_PROJECT_ID=$GCP_PROJECT_ID,GCP_LOCATION=$GCP_REGION,TASKS_QUEUE_NAME=${{ vars.GCP_TASKS_QUEUE_NAME }},TASKS_AI_QUEUE_NAME=${{ vars.GCP_TASKS_QUEUE_NAME }}-ai,TASKS_DELIVERY_QUEUE_NAME=${{ vars.GCP_TASKS_QUEUE_NAME }}-delivery,TASKS_DOCUMENT_QUEUE_NAME=${{ vars.GCP_TASKS_QUEUE_NAME }}-documents,WORKER_SERVICE_URL=${{ vars.GCP_WORKER_SERVICE_URL }},TASKS_SERVICE_ACCOUNT_EMAIL=${{ vars.GCP_TASKS_SERVICE_ACCOUNT_EMAIL }},WS_ENABLED=false,REALTIME_DURABLE_ENABLED=true,REALTIME_IMMEDIATE_PUBLISH_ENABLED=true,PRISMA_CONNECTION_LIMIT=$DB_WORKER_CONNECTION_LIMIT,WORKER_HEALTH_PORT=8080,MAIL_PROVIDER=mailtrap,MAIL_FROM_NAME=Nexo Comercial,MAIL_PLATFORM_NAME=Nexo Comercial,MAIL_TIME_ZONE=America/Mexico_City,MAIL_SEND_TIMEOUT_MS=10000,GCS_SIGNER_SERVICE_ACCOUNT=${{ vars.GCS_SIGNER_SERVICE_ACCOUNT }},DISABLE_INTERNAL_POLLING=true" \
             --add-cloudsql-instances="$INST_CN" \
             --set-secrets="DATABASE_URL=DATABASE_URL:latest,CLOUDSQL_DB_USER=DB_USER:latest,CLOUDSQL_DB_PASS=DB_PASS:latest,CLOUDSQL_DB_NAME=DB_NAME:latest,CLOUDSQL_INSTANCE_CONNECTION_NAME=INSTANCE_CONNECTION_NAME:latest,JWT_SECRET=JWT_SECRET:latest,JWT_REFRESH_SECRET=JWT_REFRESH_SECRET:latest,ENCRYPTION_KEY=ENCRYPTION_KEY:latest,WHATSAPP_VERIFY_TOKEN=WHATSAPP_VERIFY_TOKEN:latest,WHATSAPP_APP_ID=WHATSAPP_APP_ID:latest,WHATSAPP_APP_SECRET=WHATSAPP_APP_SECRET:latest,WHATSAPP_ACCESS_TOKEN=WHATSAPP_ACCESS_TOKEN:latest,WHATSAPP_PHONE_NUMBER_ID=WHATSAPP_PHONE_NUMBER_ID:latest,WHATSAPP_BUSINESS_ACCOUNT_ID=WHATSAPP_BUSINESS_ACCOUNT_ID:latest,MAILTRAP_API_TOKEN=MAILTRAP_API_TOKEN:latest,MAILTRAP_API_URL=MAILTRAP_API_URL:latest,MAIL_FROM_ADDRESS=MAIL_FROM_ADDRESS:latest,MAIL_REPLY_TO_ADDRESS=MAIL_REPLY_TO_ADDRESS:latest,MAIL_SUPPORT_EMAIL=MAIL_SUPPORT_EMAIL:latest,OPENAI_API_KEY=OPENAI_API_KEY:latest,NVIDIA_API_KEY=NVIDIA_API_KEY:latest,ANTHROPIC_API_KEY=ANTHROPIC_API_KEY:latest,GOOGLE_DRIVE_FOLDER_ID=GOOGLE_DRIVE_FOLDER_ID:latest,GOOGLE_OAUTH_CLIENT_ID=GOOGLE_OAUTH_CLIENT_ID:latest,GOOGLE_OAUTH_CLIENT_SECRET=GOOGLE_OAUTH_CLIENT_SECRET:latest,GOOGLE_DRIVE_REFRESH_TOKEN=GOOGLE_DRIVE_REFRESH_TOKEN:latest,DOCUMENT_AI_PROCESSOR_ID=DOCUMENT_AI_PROCESSOR_ID:latest"
 
   deploy-realtime-relay:
-    name: Deploy voz-realtime-relay
+    name: Deploy nexo-realtime-relay
     needs: [detect, ci-gate, build-backend-runner, migrate]
     if: always() && !cancelled() && needs.ci-gate.result == 'success' && needs.build-backend-runner.result == 'success' && needs.migrate.result == 'success' && needs.detect.outputs.backend == 'true'
     runs-on: ubuntu-24.04
@@ -512,12 +522,12 @@ jobs:
             echo "SA_RUN_EMAIL=${SA_RUN}@${GCP_PROJECT_ID}.iam.gserviceaccount.com"
           } >> "$GITHUB_ENV"
 
-      - name: Deploy voz-realtime-relay
+      - name: Deploy nexo-realtime-relay
         run: |
           set -euo pipefail
           # Recovery requires CPU outside requests; it does not run AI tasks.
-          gcloud run deploy voz-realtime-relay \
-            --image="$IMG/voz-worker:sha-$SHA" --region="$GCP_REGION" --no-allow-unauthenticated \
+          gcloud run deploy nexo-realtime-relay \
+            --image="$IMG/nexo-worker:sha-$SHA" --region="$GCP_REGION" --no-allow-unauthenticated \
             --ingress=all \
             --service-account="$SA_RUN_EMAIL" --port=8080 \
             --min-instances=0 --max-instances=$DB_RELAY_MAX_INSTANCES \
@@ -525,7 +535,7 @@ jobs:
             --concurrency=1 --timeout=300 \
             --cpu=1 --memory=1Gi --cpu-boost --cpu-throttling \
             --command=node --args=dist/realtime-relay.js \
-            --set-env-vars="NODE_ENV=production,BATCHING_WINDOW_MS=5000,BATCHING_MAX_WAIT_MS=30000,BASE_URL=${{ vars.GCP_API_BASE_URL }},FRONTEND_URL=${{ vars.GCP_FRONTEND_URL }},CORS_ORIGIN=${{ vars.GCP_FRONTEND_URL }},GOOGLE_CLOUD_PROJECT_ID=$GCP_PROJECT_ID,DOCUMENT_AI_LOCATION=${{ vars.GCP_DOC_AI_LOC }},INE_OCR_ENABLED=true,ENABLE_XLSX_EXPORT=true,WORKERS_ENABLED=true,BACKGROUND_EXECUTION_BACKEND=cloud_tasks,GCP_PROJECT_ID=$GCP_PROJECT_ID,GCP_LOCATION=$GCP_REGION,TASKS_QUEUE_NAME=${{ vars.GCP_TASKS_QUEUE_NAME }},TASKS_AI_QUEUE_NAME=${{ vars.GCP_TASKS_QUEUE_NAME }}-ai,TASKS_DELIVERY_QUEUE_NAME=${{ vars.GCP_TASKS_QUEUE_NAME }}-delivery,TASKS_DOCUMENT_QUEUE_NAME=${{ vars.GCP_TASKS_QUEUE_NAME }}-documents,WORKER_SERVICE_URL=${{ vars.GCP_WORKER_SERVICE_URL }},TASKS_SERVICE_ACCOUNT_EMAIL=${{ vars.GCP_TASKS_SERVICE_ACCOUNT_EMAIL }},WS_ENABLED=false,REALTIME_DURABLE_ENABLED=true,REALTIME_IMMEDIATE_PUBLISH_ENABLED=true,PRISMA_CONNECTION_LIMIT=$DB_RELAY_CONNECTION_LIMIT,WORKER_HEALTH_PORT=8080,MAIL_PROVIDER=mailtrap,MAIL_FROM_NAME=Voz Ciudadana,MAIL_PLATFORM_NAME=Voz Ciudadana,MAIL_TIME_ZONE=America/Mexico_City,MAIL_SEND_TIMEOUT_MS=10000,GCS_SIGNER_SERVICE_ACCOUNT=${{ vars.GCS_SIGNER_SERVICE_ACCOUNT }}" \
+            --set-env-vars="NODE_ENV=production,BATCHING_WINDOW_MS=5000,BATCHING_MAX_WAIT_MS=30000,BASE_URL=${{ vars.GCP_API_BASE_URL }},FRONTEND_URL=${{ vars.GCP_FRONTEND_URL }},CORS_ORIGIN=${{ vars.GCP_FRONTEND_URL }},GOOGLE_CLOUD_PROJECT_ID=$GCP_PROJECT_ID,DOCUMENT_AI_LOCATION=${{ vars.GCP_DOC_AI_LOC }},INE_OCR_ENABLED=true,ENABLE_XLSX_EXPORT=true,WORKERS_ENABLED=true,BACKGROUND_EXECUTION_BACKEND=cloud_tasks,GCP_PROJECT_ID=$GCP_PROJECT_ID,GCP_LOCATION=$GCP_REGION,TASKS_QUEUE_NAME=${{ vars.GCP_TASKS_QUEUE_NAME }},TASKS_AI_QUEUE_NAME=${{ vars.GCP_TASKS_QUEUE_NAME }}-ai,TASKS_DELIVERY_QUEUE_NAME=${{ vars.GCP_TASKS_QUEUE_NAME }}-delivery,TASKS_DOCUMENT_QUEUE_NAME=${{ vars.GCP_TASKS_QUEUE_NAME }}-documents,WORKER_SERVICE_URL=${{ vars.GCP_WORKER_SERVICE_URL }},TASKS_SERVICE_ACCOUNT_EMAIL=${{ vars.GCP_TASKS_SERVICE_ACCOUNT_EMAIL }},WS_ENABLED=false,REALTIME_DURABLE_ENABLED=true,REALTIME_IMMEDIATE_PUBLISH_ENABLED=true,PRISMA_CONNECTION_LIMIT=$DB_RELAY_CONNECTION_LIMIT,WORKER_HEALTH_PORT=8080,MAIL_PROVIDER=mailtrap,MAIL_FROM_NAME=Nexo Comercial,MAIL_PLATFORM_NAME=Nexo Comercial,MAIL_TIME_ZONE=America/Mexico_City,MAIL_SEND_TIMEOUT_MS=10000,GCS_SIGNER_SERVICE_ACCOUNT=${{ vars.GCS_SIGNER_SERVICE_ACCOUNT }}" \
             --add-cloudsql-instances="$INST_CN" \
             --set-secrets="DATABASE_URL=DATABASE_URL:latest,CLOUDSQL_DB_USER=DB_USER:latest,CLOUDSQL_DB_PASS=DB_PASS:latest,CLOUDSQL_DB_NAME=DB_NAME:latest,CLOUDSQL_INSTANCE_CONNECTION_NAME=INSTANCE_CONNECTION_NAME:latest,JWT_SECRET=JWT_SECRET:latest,JWT_REFRESH_SECRET=JWT_REFRESH_SECRET:latest,ENCRYPTION_KEY=ENCRYPTION_KEY:latest,WHATSAPP_VERIFY_TOKEN=WHATSAPP_VERIFY_TOKEN:latest,WHATSAPP_APP_ID=WHATSAPP_APP_ID:latest,WHATSAPP_APP_SECRET=WHATSAPP_APP_SECRET:latest,WHATSAPP_ACCESS_TOKEN=WHATSAPP_ACCESS_TOKEN:latest,WHATSAPP_PHONE_NUMBER_ID=WHATSAPP_PHONE_NUMBER_ID:latest,WHATSAPP_BUSINESS_ACCOUNT_ID=WHATSAPP_BUSINESS_ACCOUNT_ID:latest,MAILTRAP_API_TOKEN=MAILTRAP_API_TOKEN:latest,MAILTRAP_API_URL=MAILTRAP_API_URL:latest,MAIL_FROM_ADDRESS=MAIL_FROM_ADDRESS:latest,MAIL_REPLY_TO_ADDRESS=MAIL_REPLY_TO_ADDRESS:latest,MAIL_SUPPORT_EMAIL=MAIL_SUPPORT_EMAIL:latest,OPENAI_API_KEY=OPENAI_API_KEY:latest,NVIDIA_API_KEY=NVIDIA_API_KEY:latest,ANTHROPIC_API_KEY=ANTHROPIC_API_KEY:latest,GOOGLE_DRIVE_FOLDER_ID=GOOGLE_DRIVE_FOLDER_ID:latest,GOOGLE_OAUTH_CLIENT_ID=GOOGLE_OAUTH_CLIENT_ID:latest,GOOGLE_OAUTH_CLIENT_SECRET=GOOGLE_OAUTH_CLIENT_SECRET:latest,GOOGLE_DRIVE_REFRESH_TOKEN=GOOGLE_DRIVE_REFRESH_TOKEN:latest,DOCUMENT_AI_PROCESSOR_ID=DOCUMENT_AI_PROCESSOR_ID:latest"
 
@@ -578,7 +588,7 @@ jobs:
           fi
 
   deploy-frontend:
-    name: Deploy voz-frontend
+    name: Deploy nexo-frontend
     needs: [detect, ci-gate, build-frontend, deploy-api, deploy-worker]
     if: >
       always() && !cancelled()
@@ -611,13 +621,13 @@ jobs:
             echo "SA_RUN_EMAIL=${SA_RUN}@${GCP_PROJECT_ID}.iam.gserviceaccount.com"
           } >> "$GITHUB_ENV"
 
-      - name: Deploy voz-frontend
+      - name: Deploy nexo-frontend
         run: |
           set -euo pipefail
           # NEXT_PUBLIC_* in browser code is frozen by the frontend build args above;
           # runtime values keep Next.js server-side execution consistent.
-          gcloud run deploy voz-frontend \
-            --image="$IMG/voz-frontend:sha-$SHA" --region="$GCP_REGION" --allow-unauthenticated \
+          gcloud run deploy nexo-frontend \
+            --image="$IMG/nexo-frontend:sha-$SHA" --region="$GCP_REGION" --allow-unauthenticated \
             --service-account="$SA_RUN_EMAIL" --port=8080 \
             --min-instances=0 --max-instances=10 \
             --clear-vpc-connector \
@@ -693,7 +703,7 @@ jobs:
           GCP_PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
         run: |
           set -euo pipefail
-          url="$(gcloud run services describe voz-worker \
+          url="$(gcloud run services describe nexo-worker \
             --region "$GCP_REGION" --project "$GCP_PROJECT_ID" \
             --format='value(status.url)')"
           url="${url%/}"
@@ -701,7 +711,7 @@ jobs:
           configured='${{ vars.GCP_WORKER_SERVICE_URL }}'
           configured="${configured%/}"
           if [[ -n "$configured" && "$configured" != "$url" ]]; then
-            echo "::warning::GCP_WORKER_SERVICE_URL ($configured) differs from live voz-worker URL ($url). Cloud Tasks OIDC audience must match the service origin."
+            echo "::warning::GCP_WORKER_SERVICE_URL ($configured) differs from live nexo-worker URL ($url). Cloud Tasks OIDC audience must match the service origin."
           fi
 
       # Cloud Run rejects ID tokens without the email claim as unauthenticated
@@ -722,7 +732,7 @@ jobs:
           GCP_PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
         run: |
           set -euo pipefail
-          url="$(gcloud run services describe voz-realtime-relay --region "$GCP_REGION" --project "$GCP_PROJECT_ID" --format='value(status.url)')"
+          url="$(gcloud run services describe nexo-realtime-relay --region "$GCP_REGION" --project "$GCP_PROJECT_ID" --format='value(status.url)')"
           echo "url=${url%/}" >> "$GITHUB_OUTPUT"
 
       - id: auth-relay
@@ -814,34 +824,34 @@ jobs:
           }
 
           if [[ "$BACKEND_CHANGED" == "true" ]]; then
-            API_URL="$(gcloud run services describe voz-api \
+            API_URL="$(gcloud run services describe nexo-api \
               --region "$GCP_REGION" --project "$GCP_PROJECT_ID" \
               --format='value(status.url)')"
 
-            curl_check "voz-api readiness" "$API_URL/ready"
+            curl_check "nexo-api readiness" "$API_URL/ready"
             # Use /ready, not /healthz: Google Frontend swallows the literal
             # `/healthz` path on run.app and returns its own HTML 404, so the
             # request never reaches the container. Both paths share one handler.
-            curl_check "voz-worker health" "$WORKER_URL/ready" \
+            curl_check "nexo-worker health" "$WORKER_URL/ready" \
               -H "Authorization: Bearer $WORKER_ID_TOKEN"
 
-            assert_run_cost_flags voz-api 0 "$DB_MAX_INSTANCES" 3600
-            assert_run_cost_flags voz-worker 0 "$DB_MAX_INSTANCES" 300
+            assert_run_cost_flags nexo-api 0 "$DB_MAX_INSTANCES" 3600
+            assert_run_cost_flags nexo-worker 0 "$DB_MAX_INSTANCES" 300
 
             # Presupuesto de conexiones: el pool explicito por revision debe
             # coincidir con el valor presupuestado en `env:` (docs/CLOUD_SQL_CONNECTION.md).
-            assert_prisma_connection_limit voz-api "$DB_CONNECTION_LIMIT"
-            assert_prisma_connection_limit voz-worker "$DB_WORKER_CONNECTION_LIMIT"
+            assert_prisma_connection_limit nexo-api "$DB_CONNECTION_LIMIT"
+            assert_prisma_connection_limit nexo-worker "$DB_WORKER_CONNECTION_LIMIT"
 
             POOL_TOTAL=$(( DB_MAX_INSTANCES * DB_CONNECTION_LIMIT \
               + DB_MAX_INSTANCES * DB_WORKER_CONNECTION_LIMIT \
               + DB_RELAY_MAX_INSTANCES * DB_RELAY_CONNECTION_LIMIT ))
             echo "::notice::Cloud SQL peor caso (api+worker+relay): $POOL_TOTAL conexiones (+1 migrator). Debe quedar muy por debajo del max_connections medido; si no, escala el tier antes de subir instancias o pools."
 
-            curl_check "voz-realtime-relay readiness" "$RELAY_URL/ready" \
+            curl_check "nexo-realtime-relay readiness" "$RELAY_URL/ready" \
               -H "Authorization: Bearer $RELAY_ID_TOKEN"
-            assert_run_cost_flags voz-realtime-relay 0 "$DB_RELAY_MAX_INSTANCES" 300
-            assert_prisma_connection_limit voz-realtime-relay "$DB_RELAY_CONNECTION_LIMIT"
+            assert_run_cost_flags nexo-realtime-relay 0 "$DB_RELAY_MAX_INSTANCES" 300
+            assert_prisma_connection_limit nexo-realtime-relay "$DB_RELAY_CONNECTION_LIMIT"
             for VERIFY_QUEUE in "$TASKS_QUEUE_NAME" "$TASKS_QUEUE_NAME-ai" "$TASKS_QUEUE_NAME-delivery" "$TASKS_QUEUE_NAME-documents"; do
               QUEUE_STATE="$(gcloud tasks queues describe "$VERIFY_QUEUE" \
                 --location "$GCP_REGION" --project "$GCP_PROJECT_ID" --format='value(state)')"
@@ -888,15 +898,15 @@ jobs:
             verify_push_subscription realtime-events-push "$API_AUDIENCE/pubsub/realtime"
             verify_push_subscription ai-stream-push "$API_AUDIENCE/pubsub/ai-stream"
 
-            echo "::notice::voz-api -> $API_URL"
-            echo "::notice::voz-worker -> $WORKER_URL"
+            echo "::notice::nexo-api -> $API_URL"
+            echo "::notice::nexo-worker -> $WORKER_URL"
           fi
 
           if [[ "$FRONTEND_CHANGED" == "true" ]]; then
-            FRONTEND_URL="$(gcloud run services describe voz-frontend \
+            FRONTEND_URL="$(gcloud run services describe nexo-frontend \
               --region "$GCP_REGION" --project "$GCP_PROJECT_ID" \
               --format='value(status.url)')"
-            curl_check "voz-frontend" "$FRONTEND_URL/"
-            assert_run_cost_flags voz-frontend 0 10 300
-            echo "::notice::voz-frontend -> $FRONTEND_URL"
+            curl_check "nexo-frontend" "$FRONTEND_URL/"
+            assert_run_cost_flags nexo-frontend 0 10 300
+            echo "::notice::nexo-frontend -> $FRONTEND_URL"
           fi

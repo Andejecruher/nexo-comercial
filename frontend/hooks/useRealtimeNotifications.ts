@@ -160,7 +160,7 @@ export function useRealtimeNotifications(): void {
               },
             );
             showDesktopNotification(
-              'Nuevo mensaje en Voz Ciudadana',
+              'Nuevo mensaje en Nexo Comercial',
               description,
               `vc-message-${conversationId}`,
             );

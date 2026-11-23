@@ -18,7 +18,7 @@ const baseTestEnv = {
     WHATSAPP_BUSINESS_ACCOUNT_ID: 'x',
     MAIL_PROVIDER: 'fake',
     MAIL_FROM_ADDRESS: 'no-reply@example.test',
-    MAIL_FROM_NAME: 'Voz Ciudadana',
+    MAIL_FROM_NAME: 'Nexo Comercial',
     MAILTRAP_API_TOKEN: 'token',
     MAILTRAP_API_URL: 'https://send.test',
     ENABLE_EMAIL_TEST_ENDPOINTS: 'true',

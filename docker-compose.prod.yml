@@ -1,4 +1,4 @@
-name: voz-ciudadana-prod
+name: nexo-comercial-prod
 
 x-root-env-file: &root-env-file
   - path: .env
@@ -22,16 +22,16 @@ services:
     restart: unless-stopped
     env_file: *root-env-file
     environment:
-      POSTGRES_USER: ${POSTGRES_USER:-voz}
+      POSTGRES_USER: ${POSTGRES_USER:-nexo}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD requerido en produccion}
-      POSTGRES_DB: ${POSTGRES_DB:-vozcuidadana}
+      POSTGRES_DB: ${POSTGRES_DB:-nexocomercial}
     volumes:
       - postgres_data_prod:/var/lib/postgresql/data
     healthcheck:
       test:
         [
           "CMD-SHELL",
-          "pg_isready -U ${POSTGRES_USER:-voz} -d ${POSTGRES_DB:-vozcuidadana}",
+          "pg_isready -U ${POSTGRES_USER:-nexo} -d ${POSTGRES_DB:-nexocomercial}",
         ]
       interval: 10s
       timeout: 5s

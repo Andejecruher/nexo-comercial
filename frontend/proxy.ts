@@ -1,5 +1,5 @@
 /**
- * Next.js Proxy — Voz Ciudadana
+ * Next.js Proxy — Nexo Comercial
  *
  * Normaliza rutas del panel administrativo en el Edge Runtime.
  *

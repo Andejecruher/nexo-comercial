@@ -10,15 +10,14 @@ export const legalConfig = {
   /** Fecha visible de última actualización de ambos documentos. */
   lastUpdated: '21 de agosto de 2026',
 
-  /** Responsable del tratamiento: organización / movimiento ciudadano. */
-  responsibleName:
-    'Voz Ciudadana, movimiento ciudadano e iniciativa de servicio social impulsada por el equipo KAB',
+  /** Responsable del tratamiento. */
+  responsibleName: 'Nexo Comercial',
 
   /** Domicilio del responsable. Completar con calle y número cuando exista. */
-  address: 'Cintalapa de Figueroa, Chiapas, México',
+  address: 'Domicilio pendiente de registro',
 
   /** Correo para el ejercicio de derechos ARCO. */
-  arcoEmail: 'datos@voz-ciudadana.com.mx',
+  arcoEmail: 'datos@nexo-comercial.example',
 } as const;
 
 /** Rutas públicas de los documentos legales. */

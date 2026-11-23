@@ -1,6 +1,6 @@
 # Campañas de WhatsApp — entregables por fases
 
-Implementación integrada en Voz Ciudadana con Next.js/React, Express/TypeScript,
+Implementación integrada en Nexo Comercial con Next.js/React, Express/TypeScript,
 Prisma/PostgreSQL y **Google Cloud Tasks**, ya disponible en este repositorio.
 En desarrollo también funciona el backend de ejecución `polling` existente.
 No requiere Redis ni BullMQ.

@@ -1,7 +1,7 @@
 import { PrismaClient } from '@prisma/client';
 
 /**
- * RBAC Role Seed — Voz Ciudadana
+ * RBAC Role Seed — Nexo Comercial
  *
  * Define los roles del sistema. Se persisten con `upsert` usando `slug`
  * como clave única.

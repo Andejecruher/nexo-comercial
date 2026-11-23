@@ -1,7 +1,7 @@
 'use client';
 
 /**
- * useAuth — Voz Ciudadana
+ * useAuth — Nexo Comercial
  *
  * Contexto central de autenticación. Gestiona login, logout, restauración,
  * renovación silenciosa y sincronización multi-pestaña.

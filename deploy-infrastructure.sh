@@ -1,6 +1,11 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+if [ "${GCP_DEPLOY_ENABLED:-0}" != "1" ]; then
+  echo "GCP deploy is disabled for nexo-comercial. See docs/DEPLOYMENT_GCP.md" >&2
+  exit 1
+fi
+
 # Required inputs. The API runtime identity is explicit because guessing it can
 # grant enqueue/token permissions to the wrong principal.
 PROJECT_ID="${PROJECT_ID:?Set PROJECT_ID}"
@@ -23,7 +28,7 @@ esac
 
 GCP_LOCATION="${GCP_LOCATION:-us-central1}"
 TASKS_QUEUE_NAME="${TASKS_QUEUE_NAME:-background-tasks}"
-WORKER_SERVICE_NAME="${WORKER_SERVICE_NAME:-voz-worker}"
+WORKER_SERVICE_NAME="${WORKER_SERVICE_NAME:-nexo-worker}"
 TASKS_SERVICE_ACCOUNT_NAME="${TASKS_SERVICE_ACCOUNT_NAME:-cloud-tasks-invoker}"
 MAX_DISPATCHES_PER_SECOND="${MAX_DISPATCHES_PER_SECOND:-20}"
 MAX_CONCURRENT_DISPATCHES="${MAX_CONCURRENT_DISPATCHES:-10}"
@@ -50,7 +55,7 @@ PUBSUB_PUSH_ACK_DEADLINE="${PUBSUB_PUSH_ACK_DEADLINE:-60}"
 # API service whose /pubsub/* routes receive the push deliveries. API_BASE_URL
 # (custom domain) overrides the Cloud Run origin and must match the audience
 # configured through PUBSUB_PUSH_AUDIENCE on the API runtime.
-API_SERVICE_NAME="${API_SERVICE_NAME:-voz-api}"
+API_SERVICE_NAME="${API_SERVICE_NAME:-nexo-api}"
 API_BASE_URL="${API_BASE_URL:-}"
 # Optional GitHub Actions deploy identity. When provided, it receives
 # roles/pubsub.viewer so the production verify step can describe the topics and

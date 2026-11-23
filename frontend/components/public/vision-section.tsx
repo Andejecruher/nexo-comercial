@@ -73,7 +73,7 @@ export function VisionSection() {
 
             <p className="text-muted-foreground leading-relaxed mb-6">
               En KAB creemos que la transformación se hace escuchando. Nací, crecí y caminé cada
-              calle de nuestra tierra. Hoy, a través de Voz Ciudadana, abrimos un canal directo para
+              calle de nuestra tierra. Hoy, a través de Nexo Comercial, abrimos un canal directo para
               que tu reporte se convierta en acción. Es momento de avanzar juntos, porque es tiempo
               de mujeres.
             </p>

@@ -130,7 +130,7 @@ export function CoordinatorForm({
           <DialogTitle>{title}</DialogTitle>
           <DialogDescription>
             Al crear el coordinador se crea su usuario con rol COORDINADOR y se envía una invitación
-            por correo para configurar el acceso a Voz Ciudadana.
+            por correo para configurar el acceso a Nexo Comercial.
           </DialogDescription>
         </DialogHeader>
         <form className="space-y-5" onSubmit={(event) => void handleSubmit(event)}>

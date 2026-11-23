@@ -11,7 +11,7 @@ vi.mock('@/lib/templates-api', async (importOriginal) => ({
     uploadSample: vi.fn(),
   },
 }));
-const lines = [{ id: 'line', wabaId: '100', name: 'Voz Ciudadana' }];
+const lines = [{ id: 'line', wabaId: '100', name: 'Nexo Comercial' }];
 describe('Template form submission', () => {
   it('renames a named variable and keeps its sample in the Meta payload and preview', async () => {
     const saved = vi.fn();

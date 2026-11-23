@@ -26,8 +26,8 @@ const TESTIMONIALS: TestimonialItem[] = [
     location: 'Vecina del Barrio de la Candelaria',
     img: '/images/team-1.jpg',
     short:
-      'Gracias al equipo KAB y su herramienta Voz Ciudadana, pudimos canalizar el reporte de nuestro barrio y gestionar la escritura de mi casa.',
-    full: 'Gracias al equipo KAB y su herramienta Voz Ciudadana, pudimos canalizar el reporte de nuestro barrio y gestionar la escritura de mi casa que llevaba diez años en trámite. Por primera vez alguien llegó a preguntar cómo estamos, qué necesitamos. No sólo prometieron, llegaron y cumplieron. Eso no se olvida en un barrio como el nuestro donde siempre nos piden el voto y luego desaparecen.',
+      'Gracias al equipo KAB y su herramienta Nexo Comercial, pudimos canalizar el reporte de nuestro barrio y gestionar la escritura de mi casa.',
+    full: 'Gracias al equipo KAB y su herramienta Nexo Comercial, pudimos canalizar el reporte de nuestro barrio y gestionar la escritura de mi casa que llevaba diez años en trámite. Por primera vez alguien llegó a preguntar cómo estamos, qué necesitamos. No sólo prometieron, llegaron y cumplieron. Eso no se olvida en un barrio como el nuestro donde siempre nos piden el voto y luego desaparecen.',
   },
   {
     id: 't2',
@@ -44,8 +44,8 @@ const TESTIMONIALS: TestimonialItem[] = [
     location: 'Barrio de Guadalupe, Cintalapa',
     img: '/images/team-3.jpg',
     short:
-      'Gracias al equipo KAB y su herramienta Voz Ciudadana, pudimos canalizar el reporte de nuestro barrio y en dos semanas arreglaron el camino.',
-    full: 'Llevaba tres años pidiendo la reparación del camino de terracería que conecta a veinte familias con la carretera principal y nadie me daba respuesta. Gracias al equipo KAB y su herramienta Voz Ciudadana, pudimos canalizar el reporte de nuestro barrio, lo escucharon y en dos semanas mandaron la maquinaria. Ahora nuestros hijos llegan bien a la escuela aunque llueva.',
+      'Gracias al equipo KAB y su herramienta Nexo Comercial, pudimos canalizar el reporte de nuestro barrio y en dos semanas arreglaron el camino.',
+    full: 'Llevaba tres años pidiendo la reparación del camino de terracería que conecta a veinte familias con la carretera principal y nadie me daba respuesta. Gracias al equipo KAB y su herramienta Nexo Comercial, pudimos canalizar el reporte de nuestro barrio, lo escucharon y en dos semanas mandaron la maquinaria. Ahora nuestros hijos llegan bien a la escuela aunque llueva.',
   },
   {
     id: 't4',
@@ -62,8 +62,8 @@ const TESTIMONIALS: TestimonialItem[] = [
     location: 'Santo Domingo, Cintalapa',
     img: '/images/team-1.jpg',
     short:
-      'Gracias al equipo KAB y su herramienta Voz Ciudadana, pudimos canalizar el reporte de nuestro barrio y gestionar la beca que salvó a mi hija.',
-    full: 'Gracias al equipo KAB y su herramienta Voz Ciudadana, pudimos canalizar el reporte de nuestro barrio y gestionar la beca que salvó a mi hija de tener que dejar la preparatoria por la falta de dinero. Hoy está en su segundo año y quiere estudiar enfermería. Parece pequeño pero para nuestra familia fue todo. La gestión fue rápida y sin complicaciones, sin padrinos ni palancas, solo llenamos una solicitud.',
+      'Gracias al equipo KAB y su herramienta Nexo Comercial, pudimos canalizar el reporte de nuestro barrio y gestionar la beca que salvó a mi hija.',
+    full: 'Gracias al equipo KAB y su herramienta Nexo Comercial, pudimos canalizar el reporte de nuestro barrio y gestionar la beca que salvó a mi hija de tener que dejar la preparatoria por la falta de dinero. Hoy está en su segundo año y quiere estudiar enfermería. Parece pequeño pero para nuestra familia fue todo. La gestión fue rápida y sin complicaciones, sin padrinos ni palancas, solo llenamos una solicitud.',
   },
   {
     id: 't6',
@@ -172,7 +172,7 @@ function TestimonialModal({ item, onClose }: TestimonialModalProps) {
               {item.location}
             </p>
             <p className="text-primary/60 text-[10px] font-semibold uppercase tracking-wider mt-0.5">
-              Voz Ciudadana · Cintalapa de Figueroa
+              Nexo Comercial · Cintalapa de Figueroa
             </p>
           </div>
         </div>
@@ -449,7 +449,7 @@ function TestimonialCard({ item, onOpen, dragMovedRef }: CardProps) {
             {item.location}
           </p>
           <p className="text-primary/60 text-[10px] font-semibold uppercase tracking-wider mt-1">
-            Voz Ciudadana · Cintalapa de Figueroa
+            Nexo Comercial · Cintalapa de Figueroa
           </p>
         </div>
       </div>

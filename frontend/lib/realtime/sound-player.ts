@@ -217,7 +217,7 @@ export class RealtimeSoundPlayer {
     if (this.warnedPlaybackBlocked) return;
     this.warnedPlaybackBlocked = true;
     console.warn(
-      '[Voz Ciudadana] El navegador bloqueó el sonido automático. Interactúa con la página para habilitar las alertas.',
+      '[Nexo Comercial] El navegador bloqueó el sonido automático. Interactúa con la página para habilitar las alertas.',
       error ?? '',
     );
   }

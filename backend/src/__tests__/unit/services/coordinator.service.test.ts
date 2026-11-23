@@ -5,7 +5,7 @@ import { AppError } from '../../../utils/app-error';
 jest.mock('../../../config/env.config', () => ({
   env: {
     FRONTEND_URL: 'http://localhost:5173',
-    MAIL_PLATFORM_NAME: 'Voz Ciudadana',
+    MAIL_PLATFORM_NAME: 'Nexo Comercial',
     INVITATION_EXPIRATION_MINUTES: 1440,
     INVITATION_RESEND_COOLDOWN_SECONDS: 300,
   },

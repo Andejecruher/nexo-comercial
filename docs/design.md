@@ -1,6 +1,6 @@
-# Voz Ciudadana — Design System & Guidelines (`design.md`)
+# Nexo Comercial — Design System & Guidelines (`design.md`)
 
-> **Fuente de verdad del Design System visual y comportamental de Voz Ciudadana.**
+> **Fuente de verdad del Design System visual y comportamental de Nexo Comercial.**
 > Todo componente nuevo (tablas, botones, modales, formularios, badges de estado, toasts) debe construirse con los tokens y patrones de este documento.
 >
 > Derivado de la implementación real: `frontend/app/globals.css`, `frontend/components/ui/*`, `frontend/components/admin/*`, `frontend/components/tickets/*`, `frontend/components/public/*`.

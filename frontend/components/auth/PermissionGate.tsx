@@ -1,7 +1,7 @@
 'use client';
 
 /**
- * PermissionGate — Voz Ciudadana
+ * PermissionGate — Nexo Comercial
  *
  * Renderiza children solo si el usuario tiene el permiso o rol requerido.
  * Opcionalmente muestra un fallback si no tiene acceso.

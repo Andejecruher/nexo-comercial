@@ -17,7 +17,7 @@ const PUBLIC_IMAGES_DIR = new URL('../public/images/', import.meta.url);
 /** Email templates read the logo from disk to attach it inline (cid:brand-logo). */
 const BACKEND_EMAIL_ASSETS_DIR = new URL('../../backend/src/services/email/assets/', import.meta.url);
 
-const rel = (url) => fileURLToPath(url).split('/voz-ciudadana/')[1] ?? fileURLToPath(url);
+const rel = (url) => fileURLToPath(url).split('/nexo-comercial/')[1] ?? fileURLToPath(url);
 
 /** Guarantees the vector sources stay real, self-contained vectors. */
 function loadSource(name) {

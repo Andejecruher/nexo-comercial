@@ -4,8 +4,8 @@ import { AuthPageLoader, AuthPageShell } from '@/components/auth/auth-page-shell
 import { ResetPasswordForm } from '@/components/auth/ResetPasswordForm';
 
 export const metadata: Metadata = {
-  title: 'Restablecer contraseña | Voz Ciudadana',
-  description: 'Creá una contraseña nueva para tu cuenta de Voz Ciudadana.',
+  title: 'Restablecer contraseña | Nexo Comercial',
+  description: 'Creá una contraseña nueva para tu cuenta de Nexo Comercial.',
   robots: { index: false, follow: false },
   referrer: 'no-referrer',
 };

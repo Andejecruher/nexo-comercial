@@ -29,7 +29,7 @@ NODE_ENV=development
 PORT=8000
 CORS_ORIGIN=*
 
-DATABASE_URL=postgresql://voz:secret@postgres:5432/vozcuidadana
+DATABASE_URL=postgresql://nexo:secret@postgres:5432/nexocomercial
 
 JWT_SECRET=change-me
 JWT_REFRESH_SECRET=change-me-too

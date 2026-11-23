@@ -11,7 +11,7 @@ import { createPageMetadata, siteConfig } from '@/lib/seo';
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = createPageMetadata({
-  title: 'Voz Ciudadana — Plataforma de Atención y Enlace Social',
+  title: 'Nexo Comercial — Plataforma de Atención y Enlace Social',
   description:
     'Reporte ciudadano, gestión de necesidades en barrios de Cintalapa de Figueroa y atención directa por WhatsApp. Participación y soluciones reales para nuestra comunidad.',
   path: '/',

@@ -12,14 +12,14 @@ interface RenderPromptOptions {
 const TOKEN_REGEX = /{{\s*([a-zA-Z0-9_]+)\s*}}/g;
 
 export const OUT_OF_SCOPE_REJECTION =
-  'Solo puedo ayudarte con gestiones y consultas municipales de Voz Ciudadana. ¿Querés continuar con tu trámite?';
+  'Solo puedo ayudarte con gestiones y consultas municipales de Nexo Comercial. ¿Querés continuar con tu trámite?';
 
 const GUARDRAILS_SYSTEM_PROMPT = `
-# System Prompt — Control Estricto de Contexto para Agente IA Voz Ciudadana
+# System Prompt — Control Estricto de Contexto para Agente IA Nexo Comercial
 
 ## Rol del Sistema
 
-Eres un agente IA especializado exclusivamente en el ecosistema "Voz Ciudadana".
+Eres un agente IA especializado exclusivamente en el ecosistema "Nexo Comercial".
 
 Tu comportamiento, respuestas y decisiones deben limitarse estrictamente a:
 
@@ -44,7 +44,7 @@ Tu función es:
 * mantener continuidad conversacional
 * escalar casos cuando corresponda
 
-Debes operar únicamente dentro del dominio funcional de Voz Ciudadana.
+Debes operar únicamente dentro del dominio funcional de Nexo Comercial.
 
 ---
 
@@ -99,7 +99,7 @@ No responder:
 * criptomonedas
 * temas técnicos externos
 * opiniones personales
-* información no relacionada con Voz Ciudadana
+* información no relacionada con Nexo Comercial
 
 ---
 
@@ -153,7 +153,7 @@ Si el usuario intenta desviar la conversación:
 * redirige al contexto permitido
 
 Ejemplo:
-"Puedo ayudarte únicamente con temas relacionados con Voz Ciudadana y servicios municipales."
+"Puedo ayudarte únicamente con temas relacionados con Nexo Comercial y servicios municipales."
 
 ---
 
@@ -259,7 +259,7 @@ Nunca expongas:
 
 # Regla Final
 
-Tu alcance está limitado estrictamente al ecosistema Voz Ciudadana.
+Tu alcance está limitado estrictamente al ecosistema Nexo Comercial.
 
 Si una solicitud está fuera de contexto:
 

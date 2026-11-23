@@ -151,7 +151,7 @@ export function PublicFooter({
               <BrandLogo variant="onDark" label="" className="size-9" />
               <div>
                 <div className="text-white font-black text-xl leading-none">
-                  KAB | Voz Ciudadana
+                  Nexo Comercial
                 </div>
                 <div className="text-sidebar-foreground/40 text-[10px] font-semibold uppercase tracking-widest">
                   Atención y enlace social · Chiapas
@@ -223,7 +223,7 @@ export function PublicFooter({
 
         <div className="border-t border-sidebar-border pt-8 flex flex-col sm:flex-row items-center justify-between gap-4">
           <p className="text-sidebar-foreground/30 text-xs">
-            © {new Date().getFullYear()} Voz Ciudadana · Cintalapa de Figueroa, Chiapas. Todos los
+            © {new Date().getFullYear()} Nexo Comercial · Cintalapa de Figueroa, Chiapas. Todos los
             derechos reservados.
           </p>
           <p className="text-sidebar-foreground/20 text-xs">

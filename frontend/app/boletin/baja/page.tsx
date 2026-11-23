@@ -4,8 +4,8 @@ import { AuthPageLoader, AuthPageShell } from '@/components/auth/auth-page-shell
 import { NewsletterTokenAction } from '@/components/newsletter/newsletter-token-action';
 
 export const metadata: Metadata = {
-  title: 'Baja del boletín | Voz Ciudadana',
-  description: 'Dejá de recibir el boletín de Voz Ciudadana.',
+  title: 'Baja del boletín | Nexo Comercial',
+  description: 'Dejá de recibir el boletín de Nexo Comercial.',
   robots: { index: false, follow: false },
   referrer: 'no-referrer',
 };

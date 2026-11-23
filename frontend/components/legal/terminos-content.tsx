@@ -19,7 +19,7 @@ export function TerminosContent() {
     <>
       <h2 id="aceptacion">1. Aceptación de los Términos</h2>
       <p>
-        El uso de la plataforma &quot;Voz Ciudadana&quot; implica la aceptación plena y sin reservas
+        El uso de la plataforma &quot;Nexo Comercial&quot; implica la aceptación plena y sin reservas
         de todos los términos aquí establecidos. Si no está de acuerdo, no deberá registrarse ni
         utilizar el sitio.
       </p>
@@ -48,13 +48,13 @@ export function TerminosContent() {
       <h2 id="propiedad-intelectual">5. Propiedad Intelectual</h2>
       <p>
         Todos los contenidos de la plataforma (textos, logotipos, diseños) son propiedad de
-        &quot;Voz Ciudadana&quot; o de sus licenciantes. Queda prohibida su reproducción sin
+        &quot;Nexo Comercial&quot; o de sus licenciantes. Queda prohibida su reproducción sin
         autorización previa.
       </p>
 
       <h2 id="responsabilidad">6. Limitación de Responsabilidad</h2>
       <p>
-        &quot;Voz Ciudadana&quot; no será responsable por daños o perjuicios derivados del uso
+        &quot;Nexo Comercial&quot; no será responsable por daños o perjuicios derivados del uso
         indebido de la plataforma por parte del usuario, el acceso no autorizado a su cuenta por
         negligencia del usuario, o fallos técnicos de la plataforma. La participación es voluntaria
         y el usuario es responsable de sus actos.

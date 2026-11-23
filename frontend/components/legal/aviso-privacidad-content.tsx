@@ -16,7 +16,7 @@ export function AvisoPrivacidadContent() {
     <>
       <h2 id="responsable">Responsable de los Datos</h2>
       <p>
-        &quot;Voz Ciudadana&quot;, representada por {legalConfig.responsibleName}, con domicilio en{' '}
+        &quot;Nexo Comercial&quot;, representada por {legalConfig.responsibleName}, con domicilio en{' '}
         {legalConfig.address}, es el responsable del tratamiento de sus datos personales.
       </p>
 
@@ -80,7 +80,7 @@ export function AvisoPrivacidadContent() {
         </li>
         <li>
           A proveedores de servicios tecnológicos (hosting, plataforma de envío de correos) que
-          actúan únicamente por cuenta de &quot;Voz Ciudadana&quot; y están sujetos a las mismas
+          actúan únicamente por cuenta de &quot;Nexo Comercial&quot; y están sujetos a las mismas
           obligaciones de confidencialidad.
         </li>
       </ul>

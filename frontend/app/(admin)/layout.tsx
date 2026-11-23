@@ -9,9 +9,9 @@ export const metadata: Metadata = {
   ...createPageMetadata({
     title: 'Panel administrativo',
     description:
-      'Panel interno de gestión social y atención ciudadana — Voz Ciudadana, Cintalapa de Figueroa.',
+      'Panel interno de Nexo Comercial.',
     path: '/admin',
-    openGraphTitle: 'Voz Ciudadana — Panel de gestión social',
+    openGraphTitle: 'Nexo Comercial — Panel',
   }),
   robots: {
     index: false,

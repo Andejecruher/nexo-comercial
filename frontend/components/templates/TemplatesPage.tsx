@@ -178,7 +178,7 @@ export function TemplatesPage() {
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">Plantillas</h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            Administra los mensajes de WhatsApp de Voz Ciudadana.
+            Administra los mensajes de WhatsApp de Nexo Comercial.
           </p>
         </div>
         {/* Filtros y acciones: en móvil se apilan al 100%; en escritorio van en una fila. */}
@@ -291,7 +291,7 @@ export function TemplatesPage() {
             />
             <p className="text-xs text-muted-foreground">
               Las plantillas pertenecen a la cuenta WABA; las líneas de una misma cuenta comparten
-              la lista. Las fechas corresponden a operaciones registradas en Voz Ciudadana; — indica
+              la lista. Las fechas corresponden a operaciones registradas en Nexo Comercial; — indica
               que no hay fecha disponible.
             </p>
           </>

@@ -57,7 +57,7 @@ describe('ActivateAccountForm', () => {
         valid: true,
         email: 'persona@example.test',
         name: 'Persona',
-        teamName: 'Voz Ciudadana',
+        teamName: 'Nexo Comercial',
         invitedBy: 'Admin',
         expiresAt: new Date(Date.now() + 60_000).toISOString(),
       },

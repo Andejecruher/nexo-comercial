@@ -1,4 +1,4 @@
-# RBAC Permission Catalog — Voz Ciudadana
+# RBAC Permission Catalog — Nexo Comercial
 
 > **Source of truth:** `backend/prisma/seed/core/permissions.seed.ts`
 > **Role matrix:** `backend/prisma/seed/core/role-permissions.seed.ts`

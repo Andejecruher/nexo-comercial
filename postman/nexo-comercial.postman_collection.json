@@ -1,7 +1,7 @@
 {
   "info": {
     "_postman_id": "7c3a9e21-f4b5-4d8a-bc12-3e9f0a1b2c3d",
-    "name": "Voz Ciudadana — Backend API",
+    "name": "Nexo Comercial — Backend API",
     "description": "Colección alineada con la API documentada en OpenAPI (`GET {{base_url}}/api-docs.json` o UI en `/api-docs`).\n\n**Flujo recomendado:**\n1. `POST /api/v1/auth/login` → guarda `access_token`, `refresh_token`, `user_id`.\n2. Requests autenticados heredan `Bearer {{access_token}}`.\n3. El script de colección renueva el access token cuando está a ≤60s de expirar.\n\n**RBAC (resumen):** listados de usuarios/catálogo suelen permitir `SUPERADMIN` y `COORDINADOR`; mutaciones sensibles suelen ser `SUPERADMIN` (ver cada carpeta).\n\n**Variables útiles:** en el entorno Postman definí `target_user_id`, `citizen_id`, `conversation_id`, `message_id`, `event_id`, `registration_id`, `neighborhood_id`, `tag_id`, `department_id`, `role_id`, `inbox_event_id`, `outbox_event_id` (UUIDs según listados o creaciones previas).",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
@@ -383,7 +383,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"email\": \"operador@vozcuidadana.ar\",\n  \"password\": \"Operador2026!\",\n  \"fullName\": \"Operador Chat Test\",\n  \"roles\": [\"OPERADOR_CHAT\"]\n}",
+              "raw": "{\n  \"email\": \"operador@nexocomercial.ar\",\n  \"password\": \"Operador2026!\",\n  \"fullName\": \"Operador Chat Test\",\n  \"roles\": [\"OPERADOR_CHAT\"]\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -483,7 +483,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"email\": \"nuevo.operador@vozcuidadana.ar\",\n  \"password\": \"NuevoPass2026!\",\n  \"fullName\": \"Nuevo Operador\",\n  \"isActive\": true,\n  \"roleIds\": []\n}",
+              "raw": "{\n  \"email\": \"nuevo.operador@nexocomercial.ar\",\n  \"password\": \"NuevoPass2026!\",\n  \"fullName\": \"Nuevo Operador\",\n  \"isActive\": true,\n  \"roleIds\": []\n}",
               "options": {
                 "raw": {
                   "language": "json"

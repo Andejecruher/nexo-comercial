@@ -35,7 +35,7 @@ export function AuthPageShell({
         <header className="mb-7 flex flex-col items-center gap-3 text-center">
           <BrandLogo size="xl" label="" />
           <div>
-            <p className="text-xl font-black tracking-tight text-foreground">Voz Ciudadana</p>
+            <p className="text-xl font-black tracking-tight text-foreground">Nexo Comercial</p>
             <p className="mt-1 text-xs font-bold uppercase tracking-[0.2em] text-primary">
               {eyebrow}
             </p>

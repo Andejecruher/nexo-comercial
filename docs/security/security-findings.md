@@ -172,7 +172,7 @@ Ordenados por severidad. La severidad asume datos ciudadanos reales y usuarios i
 **Componente:** Seed
 **Archivos afectados:** `backend/prisma/seed/dev/superadmin.seed.ts:5-13`
 
-**Descripción:** el antiguo `backend/prisma/seed/seed.ts` creaba `admin@vozcuidadana.mx` con `changeme_in_production_123!` cuando faltaban env vars. Ese archivo fue eliminado en la reorganización de seeders. El superadmin ahora vive en `backend/prisma/seed/dev/superadmin.seed.ts`, que se niega a ejecutar cuando `NODE_ENV === 'production'` y **falla si `SUPERADMIN_PASSWORD` no está definida**; el email y nombre completo aún tienen defaults de desarrollo, pero no la contraseña.
+**Descripción:** el antiguo `backend/prisma/seed/seed.ts` creaba `admin@nexocomercial.mx` con `changeme_in_production_123!` cuando faltaban env vars. Ese archivo fue eliminado en la reorganización de seeders. El superadmin ahora vive en `backend/prisma/seed/dev/superadmin.seed.ts`, que se niega a ejecutar cuando `NODE_ENV === 'production'` y **falla si `SUPERADMIN_PASSWORD` no está definida**; el email y nombre completo aún tienen defaults de desarrollo, pero no la contraseña.
 
 **Impacto:** compromiso total si el seed se ejecuta así en un entorno accesible.
 

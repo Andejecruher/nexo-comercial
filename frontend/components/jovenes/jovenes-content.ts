@@ -202,7 +202,7 @@ export const JOVENES_EJES: Propuesta[] = [
     full: {
       paragraphs: [
         'Participar no es solo votar. Aquí las juventudes registran propuestas, asisten a foros y dan seguimiento a lo que se gestiona en su colonia.',
-        'Voz Ciudadana es el canal: tu reporte entra, se canaliza y se informa el avance.',
+        'Nexo Comercial es el canal: tu reporte entra, se canaliza y se informa el avance.',
       ],
       benefits: [
         'Foros juveniles en colonias y ejidos',
@@ -273,7 +273,7 @@ export const JOVENES_TESTIMONIOS: TestimonialItem[] = [
     img: '/images/team-1.jpg',
     short:
       'Por primera vez sentí que una propuesta de prepa no se quedaba en el pizarrón: la registramos y le dieron seguimiento.',
-    full: 'Por primera vez sentí que una propuesta de prepa no se quedaba en el pizarrón: la registramos en Voz Ciudadana y le dieron seguimiento. Pedíamos un espacio para estudiar por las tardes y hoy hay jornada juvenil en mi colonia. Eso me hizo creer que participar sí sirve.',
+    full: 'Por primera vez sentí que una propuesta de prepa no se quedaba en el pizarrón: la registramos en Nexo Comercial y le dieron seguimiento. Pedíamos un espacio para estudiar por las tardes y hoy hay jornada juvenil en mi colonia. Eso me hizo creer que participar sí sirve.',
   },
   {
     id: 'yj2',

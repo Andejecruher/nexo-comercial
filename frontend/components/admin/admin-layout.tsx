@@ -61,117 +61,117 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
   const currentStatus = STATUS_OPTIONS.find((s) => s.value === status)!;
 
   const PAGE_TITLES: Record<string, { title: string; subtitle: string }> = {
-    '/perfil': { title: 'Mi perfil — Voz Ciudadana', subtitle: 'Información de tu cuenta' },
+    '/perfil': { title: 'Mi perfil — Nexo Comercial', subtitle: 'Información de tu cuenta' },
     '/admin': {
-      title: 'Configuraciones — Voz Ciudadana',
+      title: 'Configuraciones — Nexo Comercial',
       subtitle: 'Centro de atención ciudadana',
     },
     '/admin/indicadores/atencion': {
-      title: 'Indicadores — Atención — Voz Ciudadana',
+      title: 'Indicadores — Atención — Nexo Comercial',
       subtitle: 'Gestión de whatsapp · Métricas de atención ciudadana y gestión social',
     },
     '/admin/conversaciones': {
-      title: 'Bandeja de conversaciones — Voz Ciudadana',
+      title: 'Bandeja de conversaciones — Nexo Comercial',
       subtitle: 'Gestión de whatsapp · Seguimiento de reportes y mensajes WhatsApp',
     },
     '/admin/tickets': {
-      title: 'Casos — Voz Ciudadana',
+      title: 'Casos — Nexo Comercial',
       subtitle: 'Gestión de whatsapp · Reportes ciudadanos y seguimiento operativo',
     },
     '/admin/ciudadanos': {
-      title: 'Directorio Ciudadano — Voz Ciudadana',
+      title: 'Directorio Ciudadano — Nexo Comercial',
       subtitle: 'Gestión de whatsapp · Personas registradas para atención y participación',
     },
     '/admin/campanas': {
-      title: 'Campañas — Voz Ciudadana',
+      title: 'Campañas — Nexo Comercial',
       subtitle: 'Gestión de whatsapp · Campañas y seguimiento operativo',
     },
     '/admin/mensajes-masivos': {
-      title: 'Mensajes Masivos — Voz Ciudadana',
+      title: 'Mensajes Masivos — Nexo Comercial',
       subtitle: 'Gestión de whatsapp · Mensajes masivos y seguimiento operativo',
     },
     '/admin/plantillas': {
-      title: 'Plantillas — Voz Ciudadana',
+      title: 'Plantillas — Nexo Comercial',
       subtitle: 'Gestión de whatsapp · Plantillas de whatsapp',
     },
     '/admin/indicadores/precampana': {
-      title: 'Indicadores — Precampaña — Voz Ciudadana',
+      title: 'Indicadores — Precampaña — Nexo Comercial',
       subtitle: 'Gestión de campaña · Métricas y seguimiento de la fase de precampaña',
     },
     '/admin/eventos': {
-      title: 'Eventos — Voz Ciudadana',
+      title: 'Eventos — Nexo Comercial',
       subtitle: 'Gestión de campaña · Eventos de la campaña',
     },
     '/admin/catalogo-electoral': {
-      title: 'Catálogo electoral — Voz Ciudadana',
+      title: 'Catálogo electoral — Nexo Comercial',
       subtitle: 'Gestión de campaña · Catálogo electoral',
     },
     '/admin/estructuras': {
-      title: 'Estructuras — Voz Ciudadana',
+      title: 'Estructuras — Nexo Comercial',
       subtitle: 'Gestión de campaña · Catálogo de estructuras operativas',
     },
     '/admin/coordinadores': {
-      title: 'Coordinadores — Voz Ciudadana',
+      title: 'Coordinadores — Nexo Comercial',
       subtitle: 'Gestión de campaña · Coordinadores de sección',
     },
     '/admin/lideres': {
-      title: 'Líderes — Voz Ciudadana',
+      title: 'Líderes — Nexo Comercial',
       subtitle: 'Gestión de campaña · Líderes territoriales',
     },
     '/admin/promovidos': {
-      title: 'Promovidos — Voz Ciudadana',
+      title: 'Promovidos — Nexo Comercial',
       subtitle: 'Gestión de campaña · Promovidos de la campaña',
     },
     '/admin/configuracion': {
-      title: 'Configuraciones — Voz Ciudadana',
+      title: 'Configuraciones — Nexo Comercial',
       subtitle: 'Configuraciones de la plataforma',
     },
     '/admin/equipo': {
-      title: 'Equipo — Voz Ciudadana',
+      title: 'Equipo — Nexo Comercial',
       subtitle: 'Configuración · Gestión de usuarios y roles',
     },
     '/admin/departamentos': {
-      title: 'Departamentos — Voz Ciudadana',
+      title: 'Departamentos — Nexo Comercial',
       subtitle: 'Configuraciones · Departamentos para routing automático',
     },
     '/admin/barrios': {
-      title: 'Barrios — Voz Ciudadana',
+      title: 'Barrios — Nexo Comercial',
       subtitle: 'Configuraciones · Territorio y barrios sin cambiar la URL existente',
     },
     '/admin/etiquetas': {
-      title: 'Etiquetas — Voz Ciudadana',
+      title: 'Etiquetas — Nexo Comercial',
       subtitle: 'Configuraciones · Etiquetas para clasificación operativa',
     },
     '/admin/ai': {
-      title: 'Panel IA — Voz Ciudadana',
+      title: 'Panel IA — Nexo Comercial',
       subtitle: 'Configuraciones · Panel de inteligencia artificial',
     },
     '/admin/ai/agents': {
-      title: 'Agentes IA — Voz Ciudadana',
+      title: 'Agentes IA — Nexo Comercial',
       subtitle: 'Configuraciones · Configuración de agentes de inteligencia artificial',
     },
     '/admin/ai/tools': {
-      title: 'Herramientas IA — Voz Ciudadana',
+      title: 'Herramientas IA — Nexo Comercial',
       subtitle: 'Configuraciones · Herramientas internas y externas disponibles para los agentes',
     },
     '/admin/ai/topics': {
-      title: 'Tópicos IA — Voz Ciudadana',
+      title: 'Tópicos IA — Nexo Comercial',
       subtitle: 'Configuraciones · Tópicos de conversación y asignación de herramientas',
     },
     '/admin/ai/prompts': {
-      title: 'Prompts del sistema — Voz Ciudadana',
+      title: 'Prompts del sistema — Nexo Comercial',
       subtitle: 'Configuraciones · Prompts dinámicos del sistema con versionado',
     },
     '/admin/ai/lines': {
-      title: 'Líneas de comunicación — Voz Ciudadana',
+      title: 'Líneas de comunicación — Nexo Comercial',
       subtitle: 'Configuraciones · Configuración de canales y asignación de agentes IA',
     },
     '/admin/accesos/roles': {
-      title: 'Roles — Voz Ciudadana',
+      title: 'Roles — Nexo Comercial',
       subtitle: 'Configuración · Administración de roles y permisos',
     },
     '/admin/accesos/permissions': {
-      title: 'Permisos — Voz Ciudadana',
+      title: 'Permisos — Nexo Comercial',
       subtitle: 'Configuración · Catálogo de permisos administrativos',
     },
   };
@@ -180,29 +180,29 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
     PAGE_TITLES[pathname] ??
     (pathname.startsWith('/admin/accesos/roles/')
       ? {
-          title: 'Permisos del rol — Voz Ciudadana',
+          title: 'Permisos del rol — Nexo Comercial',
           subtitle: 'Configuración · Asignación de permisos por rol',
         }
       : pathname.startsWith('/admin/ai/')
         ? PAGE_TITLES['/admin/ai']
         : pathname.startsWith('/admin/ciudadanos/')
           ? {
-              title: 'Perfil de ciudadano — Voz Ciudadana',
+              title: 'Perfil de ciudadano — Nexo Comercial',
               subtitle: 'Detalle CRM del ciudadano seleccionado',
             }
           : pathname.startsWith('/admin/tickets/')
             ? {
-                title: 'Ticket — Voz Ciudadana',
+                title: 'Ticket — Nexo Comercial',
                 subtitle: 'Detalle de caso ciudadano',
               }
             : pathname === '/admin/eventos/new'
               ? {
-                  title: 'Nueva jornada — Voz Ciudadana',
+                  title: 'Nueva jornada — Nexo Comercial',
                   subtitle: 'Alta de jornada de atención y agenda operativa',
                 }
               : pathname.startsWith('/admin/eventos/')
                 ? {
-                    title: 'Jornada — Voz Ciudadana',
+                    title: 'Jornada — Nexo Comercial',
                     subtitle: 'Registros y asistencia ciudadana',
                   }
                 : PAGE_TITLES['/admin']);

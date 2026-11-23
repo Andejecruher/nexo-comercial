@@ -1,5 +1,5 @@
 /**
- * Tickets API — Voz Ciudadana
+ * Tickets API — Nexo Comercial
  *
  * El módulo de Tickets opera sobre el modelo de tickets real del backend:
  *   - GET  /tickets                    → listado paginado de casos (tickets)

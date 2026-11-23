@@ -1,7 +1,7 @@
 'use client';
 
 /**
- * usePermissions — Voz Ciudadana
+ * usePermissions — Nexo Comercial
  *
  * Hook RBAC. Expone los guards del usuario autenticado.
  * Consume los roles del user almacenado en auth-storage.

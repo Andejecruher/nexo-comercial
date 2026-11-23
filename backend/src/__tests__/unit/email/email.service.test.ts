@@ -5,7 +5,7 @@ import { LOGO_CID } from '../../../services/email/templates/branding';
 
 const props = {
   recipientName: 'Ana',
-  platformName: 'Voz Ciudadana',
+  platformName: 'Nexo Comercial',
   activationUrl: 'https://app.example.test/activate-account?token=abc',
   expirationDate: '15 de julio de 2026',
   expirationTime: '10:00',
@@ -21,7 +21,7 @@ describe('EmailService.send', () => {
     });
 
     const [message] = provider.sent;
-    expect(message?.subject).toBe('Te invitaron a formar parte de Voz Ciudadana');
+    expect(message?.subject).toBe('Te invitaron a formar parte de Nexo Comercial');
     expect(message?.category).toBe('user-invitation');
     expect(message?.html).toContain('Configurar mi acceso');
     expect(message?.text.length).toBeGreaterThan(0);

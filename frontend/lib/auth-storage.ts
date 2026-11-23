@@ -1,5 +1,5 @@
 /**
- * Auth Storage — Voz Ciudadana
+ * Auth Storage — Nexo Comercial
  *
  * Persistencia liviana de sesión en localStorage.
  * Sin dependencias externas. TypeScript estricto, undefined (nunca null).

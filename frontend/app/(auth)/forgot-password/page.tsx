@@ -3,8 +3,8 @@ import { AuthPageShell } from '@/components/auth/auth-page-shell';
 import { ForgotPasswordForm } from '@/components/auth/ForgotPasswordForm';
 
 export const metadata: Metadata = {
-  title: 'Recuperar contraseña | Voz Ciudadana',
-  description: 'Solicitá un enlace para restablecer tu contraseña de Voz Ciudadana.',
+  title: 'Recuperar contraseña | Nexo Comercial',
+  description: 'Solicitá un enlace para restablecer tu contraseña de Nexo Comercial.',
   robots: { index: false, follow: false },
   referrer: 'no-referrer',
 };

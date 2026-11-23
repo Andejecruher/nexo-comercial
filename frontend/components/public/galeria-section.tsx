@@ -190,7 +190,7 @@ function GaleriaLightbox({ items, index, onClose, onNav }: LightboxProps) {
         <div className="mt-4 text-center px-4">
           <p className="text-white font-semibold text-sm leading-relaxed">{item.caption}</p>
           <p className="text-white/50 text-xs mt-1">
-            {index + 1} / {items.length} · Voz Ciudadana · Cintalapa de Figueroa
+            {index + 1} / {items.length} · Nexo Comercial · Cintalapa de Figueroa
           </p>
         </div>
       </motion.div>

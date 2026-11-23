@@ -12,7 +12,7 @@ const cloudSql = {
   CLOUDSQL_INSTANCE_CONNECTION_NAME: 'proj:us-central1:voz-db',
   CLOUDSQL_DB_USER: 'voz',
   CLOUDSQL_DB_PASS: 'secret',
-  CLOUDSQL_DB_NAME: 'vozcuidadana',
+  CLOUDSQL_DB_NAME: 'nexocomercial',
   CLOUDSQL_USE_PGBOUNCER: undefined,
 };
 
@@ -79,7 +79,7 @@ describe('prisma datasource URL', () => {
     });
     try {
       expect(resolveDatasourceUrl()).toBe(
-        'postgresql://voz:secret@localhost/vozcuidadana?host=/cloudsql/proj:us-central1:voz-db&connection_limit=8',
+        'postgresql://nexo:secret@localhost/nexocomercial?host=/cloudsql/proj:us-central1:voz-db&connection_limit=8',
       );
     } finally {
       restoreConfig();

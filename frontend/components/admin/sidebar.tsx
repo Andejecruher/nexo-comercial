@@ -410,7 +410,7 @@ export function AdminSidebar({ activePath, onNavigate }: SidebarProps) {
                 className="min-w-0 overflow-hidden"
               >
                 <div className="text-sidebar-foreground font-black text-sm tracking-tight whitespace-nowrap leading-none">
-                  Voz Ciudadana
+                  Nexo Comercial
                 </div>
                 <div className="text-sidebar-foreground/40 text-[9px] font-semibold uppercase tracking-widest leading-none mt-0.5">
                   Gestión social · Cintalapa

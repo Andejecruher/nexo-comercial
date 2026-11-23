@@ -2,7 +2,7 @@ import { PrismaClient } from '@prisma/client';
 import { hashPassword } from '../shared/utils';
 
 export async function seedSuperadmin(prisma: PrismaClient): Promise<void> {
-  const email = process.env.SUPERADMIN_EMAIL ?? 'admin@vozcuidadana.mx';
+  const email = process.env.SUPERADMIN_EMAIL ?? 'admin@nexocomercial.mx';
   const password = process.env.SUPERADMIN_PASSWORD;
   const fullName = process.env.SUPERADMIN_FULL_NAME ?? 'Super Administrador';
 

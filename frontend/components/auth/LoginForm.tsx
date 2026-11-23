@@ -1,7 +1,7 @@
 'use client';
 
 /**
- * LoginForm — Voz Ciudadana
+ * LoginForm — Nexo Comercial
  *
  * Formulario de login con validación Zod + react-hook-form.
  * Maneja: loading, error credenciales inválidas, error servidor.
@@ -70,7 +70,7 @@ export function LoginForm() {
           id="email"
           type="email"
           autoComplete="email"
-          placeholder="admin@vozcuidadana.mx"
+          placeholder="admin@nexocomercial.mx"
           aria-invalid={!!errors.email}
           {...register('email')}
         />

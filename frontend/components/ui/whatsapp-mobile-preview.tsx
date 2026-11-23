@@ -116,7 +116,7 @@ export function WhatsAppMobilePreview({
           <span className="rounded-full bg-white/20 p-2">
             <MessageCircle size={18} />
           </span>
-          <strong className="flex-1 truncate text-xs">{lineName || 'Voz Ciudadana'}</strong>
+          <strong className="flex-1 truncate text-xs">{lineName || 'Nexo Comercial'}</strong>
           <Video size={17} />
           <Phone size={17} />
           <MoreVertical size={17} />

@@ -1,5 +1,5 @@
 /**
- * Entry point de la aplicación Express — Voz Ciudadana API.
+ * Entry point de la aplicación Express — Nexo Comercial API.
  *
  * Responsabilidades:
  * - Cargar variables de entorno (dotenv)
@@ -121,7 +121,7 @@ const swaggerUiOptions: swaggerUi.SwaggerUiOptions = {
     docExpansion: 'list',
   },
   // Customizar el título de la UI
-  customSiteTitle: 'Voz Ciudadana API — Docs',
+  customSiteTitle: 'Nexo Comercial API — Docs',
 };
 
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, swaggerUiOptions));
@@ -222,7 +222,7 @@ async function start(): Promise<void> {
   }
 
   httpServer.listen(port, () => {
-    console.log(`🚀 Voz Ciudadana API corriendo en ${env.BASE_URL}:${port}`);
+    console.log(`🚀 Nexo Comercial API corriendo en ${env.BASE_URL}:${port}`);
     console.log(`📚 Documentación en ${env.BASE_URL}:${port}/api-docs`);
     console.log(`📄 OpenAPI JSON en ${env.BASE_URL}:${port}/api-docs.json`);
     if (env.WS_ENABLED) {

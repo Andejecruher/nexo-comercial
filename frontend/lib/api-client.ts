@@ -1,5 +1,5 @@
 /**
- * API Client base — Voz Ciudadana
+ * API Client base — Nexo Comercial
  *
  * - Inyección automática de Authorization header
  * - Interceptor de refresh listo (scaffolding)

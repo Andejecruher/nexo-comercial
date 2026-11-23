@@ -30,7 +30,7 @@ export function JovenesCompromiso() {
             barrio.
           </p>
           <p className="mt-4 text-pretty leading-relaxed text-muted-foreground">
-            A través de Voz Ciudadana canalizamos becas, oficios, cultura, deporte y salud mental
+            A través de Nexo Comercial canalizamos becas, oficios, cultura, deporte y salud mental
             con seguimiento claro. Tu energía ya está en la calle; nosotros ponemos el puente para
             que se convierta en proyecto, empleo o propuesta con respuesta.
           </p>

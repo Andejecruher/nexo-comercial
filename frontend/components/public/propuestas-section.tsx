@@ -40,7 +40,7 @@ const PROPUESTAS: Propuesta[] = [
     featured: true,
     full: {
       paragraphs: [
-        'El acceso al agua potable es un derecho fundamental de cada familia en Cintalapa. A través de nuestra herramienta Voz Ciudadana, recopilamos los reportes de vecinos de más de 30 colonias sobre fallas en la red de distribución, desabasto y falta de mantenimiento, y los canalizamos ante las instancias responsables.',
+        'El acceso al agua potable es un derecho fundamental de cada familia en Cintalapa. A través de nuestra herramienta Nexo Comercial, recopilamos los reportes de vecinos de más de 30 colonias sobre fallas en la red de distribución, desabasto y falta de mantenimiento, y los canalizamos ante las instancias responsables.',
         'Junto con las juntas vecinales y comités de agua, gestionamos la rehabilitación de infraestructura hidráulica, la instalación de sistemas de medición eficiente y el establecimiento de brigadas comunitarias de vigilancia que aseguren el servicio continuo.',
         'Apoyamos también la sensibilización comunitaria sobre el uso responsable del agua, coordinando talleres en escuelas, centros comunitarios y asambleas de barrio desde el equipo KAB.',
       ],
@@ -52,7 +52,7 @@ const PROPUESTAS: Propuesta[] = [
         'Monitoreo permanente de la calidad del agua mediante análisis mensuales',
       ],
       phases: [
-        'Paso 1: Recepción del reporte en el canal Voz Ciudadana',
+        'Paso 1: Recepción del reporte en el canal Nexo Comercial',
         'Paso 2: Evaluación y mapeo por el equipo KAB',
         'Paso 3: Canalización y seguimiento vecinal',
       ],
@@ -66,7 +66,7 @@ const PROPUESTAS: Propuesta[] = [
     full: {
       paragraphs: [
         'La tranquilidad de los vecinos es el punto de partida de cualquier comunidad sostenible. A través de esta red gestionamos los reportes de falta de alumbrado, zonas de riesgo y ausencia de canales de comunicación entre vecinos que elevan la percepción de inseguridad.',
-        'Conformamos redes de apoyo mutuo entre vecinos, con protocolos claros de comunicación y coordinación. Esta red trabaja en conjunto con instancias municipales para identificar y atender puntos críticos con rapidez desde Voz Ciudadana.',
+        'Conformamos redes de apoyo mutuo entre vecinos, con protocolos claros de comunicación y coordinación. Esta red trabaja en conjunto con instancias municipales para identificar y atender puntos críticos con rapidez desde Nexo Comercial.',
         'Apoyamos a las colonias en la gestión de luminarias LED para calles oscuras y en la habilitación de espacios públicos seguros para la convivencia, dando seguimiento a cada solicitud registrada.',
       ],
       benefits: [
@@ -77,7 +77,7 @@ const PROPUESTAS: Propuesta[] = [
         'Jornadas de diagnóstico participativo bimestrales en cada barrio',
       ],
       phases: [
-        'Paso 1: Recepción del reporte en el canal Voz Ciudadana',
+        'Paso 1: Recepción del reporte en el canal Nexo Comercial',
         'Paso 2: Evaluación y mapeo por el equipo KAB',
         'Paso 3: Canalización y seguimiento vecinal',
       ],
@@ -102,7 +102,7 @@ const PROPUESTAS: Propuesta[] = [
         'Acompañamiento en la constitución de cooperativas agrícolas comunitarias',
       ],
       phases: [
-        'Paso 1: Recepción del reporte en el canal Voz Ciudadana',
+        'Paso 1: Recepción del reporte en el canal Nexo Comercial',
         'Paso 2: Evaluación y mapeo por el equipo KAB',
         'Paso 3: Canalización y seguimiento vecinal',
       ],
@@ -183,7 +183,7 @@ const PROPUESTAS: Propuesta[] = [
     full: {
       paragraphs: [
         'Una vivienda digna es mucho más que cuatro paredes: es seguridad, salud y bienestar familiar. Acompañamos a las familias de Cintalapa en el proceso de regularización de predios, con asesoría jurídica gratuita, para que puedan acceder a apoyos gubernamentales y servicios básicos.',
-        'Gestionamos apoyos materiales para mejoramiento de vivienda —techos, pisos firmes y muros seguros— y coordinamos la urbanización de calles en colonias periféricas, dando seguimiento a cada caso registrado en Voz Ciudadana.',
+        'Gestionamos apoyos materiales para mejoramiento de vivienda —techos, pisos firmes y muros seguros— y coordinamos la urbanización de calles en colonias periféricas, dando seguimiento a cada caso registrado en Nexo Comercial.',
       ],
       benefits: [
         'Acompañamiento en regularización de predios para familias en situación irregular',
@@ -410,7 +410,7 @@ export function PropuestasSection({
       <span className="text-primary">Cintalapa tiene voz de mujer.</span>
     </>
   ),
-  description = 'El equipo KAB pone a tu disposición estos canales de gestión social. A través de nuestra herramienta Voz Ciudadana, recopilamos, analizamos y canalizamos tus reportes hacia soluciones reales para nuestros barrios.',
+  description = 'El equipo KAB pone a tu disposición estos canales de gestión social. A través de nuestra herramienta Nexo Comercial, recopilamos, analizamos y canalizamos tus reportes hacia soluciones reales para nuestros barrios.',
   items = PROPUESTAS,
   tone = 'muted',
 }: PropuestasSectionProps = {}) {

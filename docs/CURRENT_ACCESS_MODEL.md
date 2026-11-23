@@ -1,4 +1,4 @@
-# Modelo actual de acceso — Voz Ciudadana
+# Modelo actual de acceso — Nexo Comercial
 
 > Auditoría de código al 2026-07-09. Estado observado en la rama y árbol de trabajo actuales.
 > Este documento describe lo comprobado; no representa una arquitectura objetivo.
@@ -286,7 +286,7 @@ Detalle y escenarios: [security-findings.md](security/security-findings.md).
 - `jwt.middleware.ts` es un re-export deprecado todavía importado.
 - `isSuperuser` sigue en schema/documentación antigua sin participar en autorización.
 - Permisos frontend no tienen fuente backend.
-- Documentación previa `docs/analysis/configuraciones-voz-ciudadana.md` conserva afirmaciones anteriores a la incorporación de RBAC en conversaciones/mensajes/handover/analytics; no debe usarse como inventario actual de acceso.
+- Documentación previa `docs/analysis/configuraciones-nexo-comercial.md` conserva afirmaciones anteriores a la incorporación de RBAC en conversaciones/mensajes/handover/analytics; no debe usarse como inventario actual de acceso.
 - Tests de rutas mockean el middleware JWT: prueban wiring RBAC, no criptografía ni estado real de DB.
 
 ## 17. Preguntas abiertas

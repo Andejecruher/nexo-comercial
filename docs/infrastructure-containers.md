@@ -16,7 +16,7 @@ Este documento define la infraestructura Docker del monorepo sin romper compatib
 
 - Las imagenes de `api`, `worker` y `migrator` se construyen con **contexto en la raiz del monorepo** (`context: .`) y `dockerfile: backend/Dockerfile`.
 - El `frontend` tambien se construye con **contexto en la raiz** (`dockerfile: frontend/Dockerfile`), instalando con `pnpm install --frozen-lockfile --filter my-project...` sobre el mismo [pnpm-lock.yaml](../pnpm-lock.yaml) del monorepo (antes usaba `npm install` sin lockfile). Para que el build del frontend NO herede las exclusiones del `.dockerignore` raiz (pensado para backend), existe [`frontend/Dockerfile.dockerignore`](../frontend/Dockerfile.dockerignore) que BuildKit aplica solo a ese build.
-- Las dependencias del backend se instalan con `pnpm install --frozen-lockfile --filter voz-ciudadana-api...`.
+- Las dependencias del backend se instalan con `pnpm install --frozen-lockfile --filter nexo-comercial-api...`.
 - En desarrollo, los servicios (incluido `migrator` y `frontend`) montan `pnpm-lock.yaml` / `package.json` de la raiz (read-only) y comparten volúmenes nombrados para `node_modules`, con entrypoint que sincroniza cuando cambia el lockfile. El `migrator` monta `backend/`, por lo que siempre ve las migraciones actuales (agregadas o eliminadas) sin depender de una copia baked-in. Detalle: [dependency-policy.md](dependency-policy.md).
 
 ## Actualizacion por entorno
@@ -45,7 +45,7 @@ camino legacy in-process.
 ### QA (`docker-compose.qa.yml`)
 
 - Mismos servicios que produccion (`postgres`, `migrator`, `api`, `worker`, `realtime-relay`, `frontend`, `caddy`).
-- Proyecto `voz-ciudadana-qa` y volumenes `*_qa` (aislado de prod).
+- Proyecto `nexo-comercial-qa` y volumenes `*_qa` (aislado de prod).
 - Variables via `.env.qa` / `backend/.env.qa` / `frontend/.env.qa`.
 - Caddy en puertos host `QA_HTTP_PORT`/`QA_HTTPS_PORT` (default `8080`/`8443`).
 

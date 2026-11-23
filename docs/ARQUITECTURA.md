@@ -1,8 +1,8 @@
-# Arquitectura del Proyecto Voz Ciudadana
+# Arquitectura del Proyecto Nexo Comercial
 
 ## 1. Propósito del documento
 
-Este documento describe la arquitectura **real observada en el código** de Voz Ciudadana para que una persona desarrolladora nueva pueda seguir peticiones, datos, dependencias, persistencia e integraciones sin asumir patrones por nombres de carpetas.
+Este documento describe la arquitectura **real observada en el código** de Nexo Comercial para que una persona desarrolladora nueva pueda seguir peticiones, datos, dependencias, persistencia e integraciones sin asumir patrones por nombres de carpetas.
 
 - **Alcance:** repositorio completo: backend Express/TypeScript, worker, frontend Next.js, Prisma/PostgreSQL, Google Pub/Sub, Docker/CI y documentación existente.
 - **Metodología:** inventario de estructura, lectura de `package.json`, entrypoints, rutas, controladores, servicios, repositorios, middlewares, Prisma schema, clientes frontend, Docker y workflows. Las conclusiones se clasifican como **Confirmado**, **Inferido** o **No determinado**.
@@ -13,7 +13,7 @@ Este documento describe la arquitectura **real observada en el código** de Voz 
 
 ## 2. Resumen ejecutivo
 
-**Confirmado.** Voz Ciudadana es un sistema web con:
+**Confirmado.** Nexo Comercial es un sistema web con:
 
 1. **Backend API HTTP REST** en Express/TypeScript, iniciado desde `backend/src/server.ts`, que monta middlewares globales, Swagger, rutas bajo `/api/v1`, healthchecks y WebSocket opcional. Evidencia: `server.ts` crea `express()`, instancia `PrismaService`, registra `registerRoutes(app, { prisma, realtimeTransport })`, agrega `errorHandler` y escucha en `env.PORT` (`backend/src/server.ts`).
 2. **Worker background** en `backend/src/worker.ts` que procesa inbox/outbox sobre PostgreSQL (polling de `inbox_events`/`outbox_events` o invocado por Cloud Tasks en producción), healthcheck `/healthz` y relay realtime durable. Evidencia: instancia `InboxProcessorService`, `OutboxProcessorService`, arranca `.start()` si `WORKERS_ENABLED` y expone `healthServer` (`backend/src/worker.ts`).
@@ -49,7 +49,7 @@ Este documento describe la arquitectura **real observada en el código** de Voz 
 ## 4. Vista general del repositorio
 
 ```text
-voz-ciudadana/
+nexo-comercial/
 ├── backend/
 │   ├── prisma/                 # schema, migraciones y seeds
 │   ├── src/

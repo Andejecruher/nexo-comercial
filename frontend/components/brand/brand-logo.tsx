@@ -1,12 +1,12 @@
-import { cn } from '@/lib/utils';
 import {
   BRAND_BUBBLE_PATH,
   BRAND_FIGURE_PATH,
   BRAND_VIEW_BOX,
 } from '@/components/brand/logo-paths.generated';
+import { cn } from '@/lib/utils';
 
-export const BRAND_NAME = 'KAB | Voz Ciudadana';
-export const BRAND_TAGLINE = 'Cintalapa de Figueroa';
+export const BRAND_NAME = 'Nexo Comercial';
+export const BRAND_TAGLINE = 'Canales y operación';
 /** Guinda Morena, matches --primary in globals.css. */
 export const BRAND_COLOR = '#711B2C';
 export const BRAND_ON_COLOR = '#FFFFFF';
@@ -37,7 +37,7 @@ export interface BrandLogoProps {
 }
 
 /**
- * The KAB Voz Ciudadana mark, inlined as vector so it inherits the current
+ * The Nexo Comercial mark, inlined as vector so it inherits the current
  * colour scheme and costs no extra request. Geometry is generated from
  * components/brand/logo-icon.svg.
  */

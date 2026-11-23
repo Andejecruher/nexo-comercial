@@ -8,7 +8,7 @@ export type AccountActivatedProps = {
   loginUrl: string;
 };
 
-export const accountActivatedSubject = (): string => 'Tu cuenta de Voz Ciudadana está activa';
+export const accountActivatedSubject = (): string => 'Tu cuenta de Nexo Comercial está activa';
 
 export function AccountActivatedEmail(props: AccountActivatedProps): React.ReactElement {
   const recipientName = props.recipientName || 'integrante del equipo';

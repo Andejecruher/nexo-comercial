@@ -60,7 +60,7 @@ function showDesktopNotification(payload: AdminNotificationPayload): void {
   }
 
   try {
-    new window.Notification('Nuevo mensaje en Voz Ciudadana', {
+    new window.Notification('Nuevo mensaje en Nexo Comercial', {
       body: payload.contactName
         ? `${payload.contactName} envió un mensaje nuevo.`
         : 'Hay una nueva conversación por atender.',

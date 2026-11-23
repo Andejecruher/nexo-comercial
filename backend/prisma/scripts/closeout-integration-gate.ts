@@ -5,12 +5,12 @@
  *
  * Requires a local PostgreSQL instance reachable on localhost:5432 with the
  * credentials below. It will DROP and CREATE a database named
- * `vozcuidadana_pr3_verify` and run destructive migrations against ONLY that
+ * `nexocomercial_pr3_verify` and run destructive migrations against ONLY that
  * database. It refuses to run if the target URL does not end with
  * `_pr3_verify`.
  *
  * Usage (from backend/):
- *   DATABASE_URL=postgresql://voz:secret@localhost:5432/vozcuidadana_pr3_verify \
+ *   DATABASE_URL=postgresql://nexo:secret@localhost:5432/nexocomercial_pr3_verify \
  *     PR3_GATE_ALLOW=1 \
  *     pnpm ts-node --project scripts/tsconfig.json prisma/scripts/closeout-integration-gate.ts
  */
@@ -28,7 +28,7 @@ const PGHOST = 'localhost';
 const PGPORT = '5432';
 const PGUSER = 'voz';
 const PGPASSWORD = 'secret';
-const VERIFY_DB_SUFFIX = 'vozcuidadana_pr3_verify';
+const VERIFY_DB_SUFFIX = 'nexocomercial_pr3_verify';
 const MIGRATION_DIR = resolve(__dirname, '../migrations/20260901093000_coordinators_hierarchy_closeout');
 const SKIP_DIR = resolve('/tmp/opencode', 'pr3-gate-skip');
 

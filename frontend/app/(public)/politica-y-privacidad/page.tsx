@@ -10,9 +10,9 @@ import type { Metadata } from 'next';
 export const metadata: Metadata = createPageMetadata({
   title: 'Aviso de Privacidad',
   description:
-    'Aviso de Privacidad de Voz Ciudadana: qué datos personales recabamos, con qué finalidades los tratamos, cuándo se transfieren y cómo ejercer tus derechos ARCO conforme a la LFPDPPP.',
+    'Aviso de Privacidad de Nexo Comercial: qué datos personales recabamos, con qué finalidades los tratamos, cuándo se transfieren y cómo ejercer tus derechos ARCO conforme a la LFPDPPP.',
   path: legalRoutes.privacy,
-  openGraphTitle: 'Aviso de Privacidad — Voz Ciudadana',
+  openGraphTitle: 'Aviso de Privacidad — Nexo Comercial',
 });
 
 export default function PoliticaPrivacidadPage() {

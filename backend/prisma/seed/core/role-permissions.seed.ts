@@ -7,7 +7,7 @@ import {
 } from './permissions.seed';
 
 /**
- * RBAC Role-Permission Matrix — Voz Ciudadana
+ * RBAC Role-Permission Matrix — Nexo Comercial
  *
  * Asocia permisos a roles buscando los registros por `slug` e insertando
  * en la tabla pivote `RolePermission` con `skipDuplicates: true`.

@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 
-const FALLBACK_BASE_URL = 'https://voz-frontend-875300288748.us-central1.run.app';
+const FALLBACK_BASE_URL = 'http://localhost:3000';
 
 /**
  * Guinda Morena: color de identidad del logo. Debe seguir igual a `--primary`
@@ -16,16 +16,15 @@ export const brandChrome = {
 
 export const siteConfig = {
   baseUrl: process.env.NEXT_PUBLIC_BASE_URL ?? FALLBACK_BASE_URL,
-  siteName: 'Voz Ciudadana',
-  defaultTitle: 'Voz Ciudadana — Plataforma de Atención y Enlace Social',
-  defaultDescription:
-    'Reporte ciudadano, gestión vecinal y atención directa en Cintalapa de Figueroa, Chiapas. Participación y soluciones reales.',
+  siteName: 'Nexo Comercial',
+  defaultTitle: 'Nexo Comercial',
+  defaultDescription: 'Plataforma de atención, canales y operación comercial.',
   locale: 'es_MX',
   ogImage: {
     path: '/images/og-image-optimice.jpg',
     width: 1200,
     height: 630,
-    alt: 'Voz Ciudadana — Atención y enlace social en Cintalapa de Figueroa, Chiapas',
+    alt: 'Nexo Comercial',
   },
 } as const;
 

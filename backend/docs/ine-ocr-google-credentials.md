@@ -21,11 +21,11 @@ The Cloud Run workflow supplies these values as follows:
 - `GOOGLE_CLOUD_PROJECT_ID`: the deployment project (`GCP_PROJECT_ID`).
 - `DOCUMENT_AI_LOCATION`: the GitHub Actions variable `GCP_DOC_AI_LOC`.
 - `DOCUMENT_AI_PROCESSOR_ID`: the Secret Manager secret
-  `DOCUMENT_AI_PROCESSOR_ID`, mounted into both `voz-api` and `voz-worker`.
+  `DOCUMENT_AI_PROCESSOR_ID`, mounted into both `nexo-api` and `nexo-worker`.
 
 `GCP_DOC_AI_PROC` is not consumed by the current workflow. Before enabling OCR,
 verify that the `DOCUMENT_AI_PROCESSOR_ID` secret has a non-empty version and is
-present in the `voz-worker` secret environment mapping. A missing value fails the
+present in the `nexo-worker` secret environment mapping. A missing value fails the
 job with `DOCUMENT_AI_CONFIGURATION_MISSING`; the worker validates this before
 downloading the source file from Drive.
 

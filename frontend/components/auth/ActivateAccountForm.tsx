@@ -143,7 +143,7 @@ export function ActivateAccountForm() {
     return (
       <AuthStatus
         title="Tu cuenta está lista"
-        body="La activación se completó correctamente. Ya podés ingresar a Voz Ciudadana."
+        body="La activación se completó correctamente. Ya podés ingresar a Nexo Comercial."
         success
       />
     );

@@ -91,7 +91,7 @@ export function RegisterForm() {
         <h3 className="text-2xl font-bold text-foreground mb-2">¡Tu voz fue registrada!</h3>
         <p className="text-muted-foreground max-w-xs leading-relaxed">
           Gracias, <strong>{form.name}</strong>. Tu voz de <strong>{form.barrio}</strong> ya es
-          parte de Voz Ciudadana. Te contactaremos pronto.
+          parte de Nexo Comercial. Te contactaremos pronto.
         </p>
       </motion.div>
     );

@@ -36,7 +36,7 @@ export function HeroSection() {
               <Check className="w-3 h-3 text-white stroke-3" />
             </div>
             <span className="text-white/90 text-sm font-semibold tracking-wide">
-              Voz Ciudadana · Cintalapa de Figueroa, Chiapas
+              Nexo Comercial · Cintalapa de Figueroa, Chiapas
             </span>
           </motion.div>
 
@@ -57,7 +57,7 @@ export function HeroSection() {
             transition={{ duration: 0.6, delay: 0.4 }}
             className="text-lg text-white/70 leading-relaxed mb-10 max-w-lg text-pretty"
           >
-            Porque Cintalapa tiene voz de mujer. El equipo KAB pone a tu disposición Voz Ciudadana,
+            Porque Cintalapa tiene voz de mujer. El equipo KAB pone a tu disposición Nexo Comercial,
             la plataforma digital para atender, escuchar y gestionar las necesidades de nuestros
             barrios y colonias.
           </motion.p>
@@ -77,7 +77,7 @@ export function HeroSection() {
               className="inline-flex items-center justify-center gap-2 bg-[#25D366] hover:bg-[#1ebe5d] text-white font-bold text-base px-8 py-3.5 rounded-full transition-colors shadow-lg shadow-green-700/30"
             >
               <MessageCircle className="w-5 h-5" />
-              Súmate a Voz Ciudadana
+              Súmate a Nexo Comercial
             </a>
             <a
               href="#propuestas"

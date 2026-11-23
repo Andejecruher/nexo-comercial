@@ -15,7 +15,7 @@ function createDispatcher(client: ReturnType<typeof createClient>) {
       projectId: 'project-1',
       location: 'us-central1',
       queueName: 'background-tasks',
-      workerServiceUrl: 'https://voz-worker.example.run.app/',
+      workerServiceUrl: 'https://nexo-worker.example.run.app/',
       serviceAccountEmail: 'cloud-tasks-invoker@project-1.iam.gserviceaccount.com',
     },
     client as never,
@@ -72,11 +72,11 @@ describe('CloudTasksDispatcher', () => {
     expect(request.task.name).toBeUndefined();
     expect(request.task.httpRequest).toMatchObject({
       httpMethod: protos.google.cloud.tasks.v2.HttpMethod.POST,
-      url: 'https://voz-worker.example.run.app/tasks/process-inbox',
+      url: 'https://nexo-worker.example.run.app/tasks/process-inbox',
       headers: { 'Content-Type': 'application/json' },
       oidcToken: {
         serviceAccountEmail: 'cloud-tasks-invoker@project-1.iam.gserviceaccount.com',
-        audience: 'https://voz-worker.example.run.app',
+        audience: 'https://nexo-worker.example.run.app',
       },
     });
     expect(Buffer.from(request.task.httpRequest.body, 'base64').toString('utf8')).toBe(
@@ -136,7 +136,7 @@ describe('CloudTasksDispatcher', () => {
     };
     expect(request.task.name).toBeUndefined();
     expect(request.task.httpRequest.url).toBe(
-      'https://voz-worker.example.run.app/tasks/process-batch',
+      'https://nexo-worker.example.run.app/tasks/process-batch',
     );
     expect(Buffer.from(request.task.httpRequest.body, 'base64').toString('utf8')).toBe(
       '{"phone":"521999888777","generation":3}',

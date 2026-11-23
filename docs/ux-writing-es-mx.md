@@ -1,6 +1,6 @@
 # Guia de UX writing y localizacion (espanol MX/LatAm)
 
-Esta guia define el estilo editorial para la interfaz de Voz Ciudadana en espanol latinoamericano, con prioridad en usos naturales de Mexico. Su objetivo es mantener mensajes claros, consistentes y confiables en toda la plataforma.
+Esta guia define el estilo editorial para la interfaz de Nexo Comercial en espanol latinoamericano, con prioridad en usos naturales de Mexico. Su objetivo es mantener mensajes claros, consistentes y confiables en toda la plataforma.
 
 ## Quick path
 

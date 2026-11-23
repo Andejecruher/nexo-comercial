@@ -128,7 +128,7 @@ export function LeaderForm({
           <DialogTitle>{title}</DialogTitle>
           <DialogDescription>
             Al crear el líder se crea su usuario con rol LIDER y se envía una invitación por correo
-            para configurar el acceso a Voz Ciudadana. El coordinador debe pertenecer a la misma
+            para configurar el acceso a Nexo Comercial. El coordinador debe pertenecer a la misma
             sección.
           </DialogDescription>
         </DialogHeader>

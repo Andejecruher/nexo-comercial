@@ -4,8 +4,8 @@ import { AuthPageLoader, AuthPageShell } from '@/components/auth/auth-page-shell
 import { NewsletterTokenAction } from '@/components/newsletter/newsletter-token-action';
 
 export const metadata: Metadata = {
-  title: 'Confirmar suscripción | Voz Ciudadana',
-  description: 'Confirmá tu correo para recibir el boletín de Voz Ciudadana.',
+  title: 'Confirmar suscripción | Nexo Comercial',
+  description: 'Confirmá tu correo para recibir el boletín de Nexo Comercial.',
   robots: { index: false, follow: false },
   referrer: 'no-referrer',
 };

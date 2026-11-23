@@ -11,7 +11,7 @@ export type PasswordResetProps = {
   supportEmail?: string;
 };
 
-export const passwordResetSubject = (): string => 'Restablece tu contraseña de Voz Ciudadana';
+export const passwordResetSubject = (): string => 'Restablece tu contraseña de Nexo Comercial';
 
 export function PasswordResetEmail(props: PasswordResetProps): React.ReactElement {
   const recipientName = props.recipientName || 'integrante del equipo';

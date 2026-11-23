@@ -4,8 +4,8 @@ import { LoginForm } from '@/components/auth/LoginForm';
 import { BrandLogo } from '@/components/brand/brand-logo';
 
 export const metadata: Metadata = {
-  title: 'Iniciar sesión | Voz Ciudadana',
-  description: 'Acceso al panel administrativo de Voz Ciudadana.',
+  title: 'Iniciar sesión | Nexo Comercial',
+  description: 'Acceso al panel administrativo de Nexo Comercial.',
   robots: { index: false, follow: false },
 };
 
@@ -17,7 +17,7 @@ export default function LoginPage() {
         <div className="flex flex-col items-center gap-3 mb-8">
           <BrandLogo size="xl" label="" />
           <div className="text-center">
-            <h1 className="text-xl font-black text-foreground tracking-tight">Voz Ciudadana</h1>
+            <h1 className="text-xl font-black text-foreground tracking-tight">Nexo Comercial</h1>
             <p className="text-xs text-muted-foreground font-semibold uppercase tracking-widest mt-0.5">
               Panel Administrativo
             </p>

@@ -4,7 +4,7 @@ import { motion } from 'framer-motion';
 import { MessageCircle } from 'lucide-react';
 
 const DEFAULT_NUMBER = '15551468932';
-const DEFAULT_MESSAGE = 'Hola, quiero sumarme a Voz Ciudadana';
+const DEFAULT_MESSAGE = 'Hola, quiero sumarme a Nexo Comercial';
 
 export function WhatsAppFab({
   message = DEFAULT_MESSAGE,

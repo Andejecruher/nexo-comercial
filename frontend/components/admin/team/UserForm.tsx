@@ -95,7 +95,7 @@ export function UserForm({
           <DialogTitle>{title}</DialogTitle>
           <DialogDescription>
             Al crear el usuario, enviaremos mediante correo electrónico una invitación para
-            configurar su acceso a Voz Ciudadana.
+            configurar su acceso a Nexo Comercial.
           </DialogDescription>
         </DialogHeader>
         <form className="space-y-5" onSubmit={handleSubmit}>
