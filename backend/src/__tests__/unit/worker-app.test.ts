@@ -8,7 +8,6 @@ const id = '550e8400-e29b-41d4-a716-446655440000';
 function appWith(overrides: Record<string, unknown> = {}) {
   return createWorkerApp({
     prisma: { $queryRaw: jest.fn(async () => [{ ok: 1 }]) } as never,
-    ineOcrService: { processJobById: jest.fn(async () => 'noop') } as never,
     inboxProcessor: { processEventById: jest.fn(async () => 'noop') } as never,
     outboxProcessor: { processEventById: jest.fn(async () => 'noop') } as never,
     realtimeRelay: { processEventById: jest.fn(async () => 'noop') } as never,
@@ -80,13 +79,19 @@ describe('Cloud Tasks worker HTTP handlers', () => {
 
   it('rejects bodies containing anything except one UUID id', async () => {
     const response = await request(appWith())
-      .post('/tasks/process-ocr')
+      .post('/tasks/process-inbox')
       .send({ id, phone: 'must-not-be-accepted' });
 
     // 2xx a propósito: Cloud Tasks reintenta todo lo que no sea 2xx, y un
     // payload con claves extrañas nunca va a sanar solo.
     expect(response.status).toBe(200);
     expect(response.body).toEqual({ status: 'invalid_payload' });
+  });
+
+  it('does not expose the removed OCR task route', async () => {
+    const response = await request(appWith()).post('/tasks/process-ocr').send({ id });
+
+    expect(response.status).toBe(404);
   });
 
   it('returns 200 for an idempotent duplicate/no-op', async () => {

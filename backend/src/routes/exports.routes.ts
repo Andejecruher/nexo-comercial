@@ -21,7 +21,7 @@ export function createExportsRouter(
 
   router.use(authMiddleware);
   router.use(scopeMiddleware(scopeService));
-  router.use(requireScope('admin', 'coordinator', 'leader'));
+  router.use(requireScope('admin'));
   router.get('/feature-flag', controller.featureFlag);
   router.get('/', (req, res, next) => {
     void controller.list(req, res, next);

@@ -21,7 +21,6 @@ import { InboxProcessorService } from './services/events/inbox-processor.service
 import { OutboxProcessorService } from './services/events/outbox-processor.service';
 import { ExportProcessorService } from './services/exports/export-processor.service';
 import { EXPORT_RECONCILE_BATCH_SIZE } from './services/exports/export-job.service';
-import { IneOcrService } from './services/ine/ine-ocr.service';
 import { PostgresRateLimiter } from './services/postgres-rate-limiter.service';
 import { PrismaService } from './services/prisma.service';
 import { ConversationRepository } from './repositories/conversation.repository';
@@ -53,7 +52,6 @@ async function startWorker(): Promise<void> {
   let stopCampaignWorker: (() => void) | undefined;
   const whatsappLineConfigResolver = new WhatsAppLineConfigResolver(prisma);
   const rateLimiter = new PostgresRateLimiter(prisma);
-  const ineOcrService = IneOcrService.createDefault(prisma, taskDispatcher);
   const exportProcessor = new ExportProcessorService(prisma);
   const whatsappProvider = new WhatsAppProvider(rateLimiter, whatsappLineConfigResolver);
 
@@ -102,7 +100,6 @@ async function startWorker(): Promise<void> {
     metrics: realtimeMetrics,
   });
   let relayInterval: NodeJS.Timeout | undefined;
-  let stopIneOcrWorker: (() => void) | undefined;
   let stopExportWorker: (() => void) | undefined;
   let exportReconcileInterval: NodeJS.Timeout | undefined;
   let attendanceReconcileInterval: NodeJS.Timeout | undefined;
@@ -114,7 +111,6 @@ async function startWorker(): Promise<void> {
   } else if (env.BACKGROUND_EXECUTION_BACKEND === 'polling') {
     if (env.OUTBOX_POLLING_ENABLED) outboxProcessor.start();
     if (env.INBOX_POLLING_ENABLED) inboxProcessor.start();
-    stopIneOcrWorker = ineOcrService.startWorker();
     stopExportWorker = exportProcessor.startWorker();
     stopCampaignWorker = campaignProcessor.start();
 
@@ -200,7 +196,6 @@ async function startWorker(): Promise<void> {
 
   const app = createWorkerApp({
     prisma,
-    ineOcrService,
     inboxProcessor,
     outboxProcessor,
     realtimeRelay: realtimeRelayFactory?.relay,
@@ -248,7 +243,6 @@ async function startWorker(): Promise<void> {
     }
     if (exportReconcileInterval) clearInterval(exportReconcileInterval);
     if (attendanceReconcileInterval) clearInterval(attendanceReconcileInterval);
-    stopIneOcrWorker?.();
     stopExportWorker?.();
     stopCampaignWorker?.();
     stopMessageMedia?.();

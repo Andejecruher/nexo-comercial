@@ -53,7 +53,7 @@ export interface RefreshTokenPayload extends JwtLibPayload {
 
 // ── Scope de autorización RBAC ───────────────────────────────────────────────
 
-export type ScopeKind = 'admin' | 'coordinator' | 'leader' | 'none';
+export type ScopeKind = 'admin' | 'none';
 
 /**
  * Contexto de alcance resuelto por el servidor a partir del usuario autenticado.
@@ -61,9 +61,6 @@ export type ScopeKind = 'admin' | 'coordinator' | 'leader' | 'none';
  */
 export type ScopeContext = {
   kind: ScopeKind;
-  sectionId?: string;
-  coordinatorId?: string;
-  leaderId?: string;
 };
 
 // ── Extensión de Express Request ──────────────────────────────────────────────

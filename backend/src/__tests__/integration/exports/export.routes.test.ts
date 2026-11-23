@@ -35,9 +35,6 @@ jest.mock('../../../middlewares/scope.middleware', () => {
   const { NotFoundError } = require('../../../utils/app-error');
   const SCOPES: Record<string, unknown> = {
     admin: { kind: 'admin' },
-    'leader-42': { kind: 'leader', leaderId: 'leader-42' },
-    'leader-99': { kind: 'leader', leaderId: 'leader-99' },
-    'coord-7': { kind: 'coordinator', coordinatorId: 'coordinator-7' },
   };
   return {
     scopeMiddleware:
@@ -66,13 +63,13 @@ jest.mock('../../../middlewares/scope.middleware', () => {
 
 const readyJob = {
   id: 'job-1',
-  module: 'promoted',
+  module: 'citizens',
   filtersJson: {},
   scopeSnapshot: { kind: 'admin' },
   status: 'ready',
   driveFileId: 'drive-file-1',
   driveFolderId: 'folder-1',
-  driveFilename: 'promoted-2026-09-06-1432.xlsx',
+  driveFilename: 'citizens-2026-09-06-1432.xlsx',
   rowCount: 3,
   errorCode: null,
   lastError: null,
@@ -106,7 +103,6 @@ function buildHarness(options: { dispatcher?: { dispatchExportJob: jest.Mock } }
       }),
       updateMany: jest.fn(async () => ({ count: 1 })),
     },
-    leader: { findUnique: jest.fn<AsyncFn<[unknown], Record<string, unknown> | null>>() },
   };
   const dispatcher =
     'dispatcher' in options
@@ -134,16 +130,21 @@ describe('export routes: create', () => {
   it('creates a job and dispatches the worker when enabled', async () => {
     const { prisma, dispatcher, app } = buildHarness();
     const res = await request(app)
-      .post('/api/v1/exports/promoted')
+      .post('/api/v1/exports/citizens')
       .set('Authorization', 'Bearer role:ADMIN')
       .set('x-test-scope', 'admin')
-      .send({ q: 'ciudad' });
+      .send({ search: 'ciudad' });
     expect(res.status).toBe(202);
     expect(res.body).toEqual({ jobId: 'job-created', status: 'queued' });
     expect(dispatcher!.dispatchExportJob).toHaveBeenCalledWith('job-created');
     expect(prisma.exportJob.create).toHaveBeenCalledWith(
       expect.objectContaining({
-        data: expect.objectContaining({ module: 'promoted', requestedByUserId: 'u-1' }),
+        data: expect.objectContaining({
+          module: 'citizens',
+          filtersJson: { search: 'ciudad' },
+          scopeSnapshot: { kind: 'admin' },
+          requestedByUserId: 'u-1',
+        }),
       }),
     );
   });
@@ -152,10 +153,10 @@ describe('export routes: create', () => {
     const { prisma, dispatcher, app } = buildHarness({ dispatcher: undefined });
     const warn = jest.spyOn(console, 'warn').mockImplementation(() => undefined);
     const res = await request(app)
-      .post('/api/v1/exports/promoted')
+      .post('/api/v1/exports/citizens')
       .set('Authorization', 'Bearer role:ADMIN')
       .set('x-test-scope', 'admin')
-      .send({ q: 'ciudad' });
+      .send({ search: 'ciudad' });
     expect(res.status).toBe(202);
     expect(res.body).toEqual({ jobId: 'job-created', status: 'queued' });
     expect(dispatcher).toBeUndefined();
@@ -169,10 +170,10 @@ describe('export routes: create', () => {
     dispatcher!.dispatchExportJob.mockRejectedValue(new Error('queue unavailable') as never);
     const warn = jest.spyOn(console, 'warn').mockImplementation(() => undefined);
     const res = await request(app)
-      .post('/api/v1/exports/promoted')
+      .post('/api/v1/exports/citizens')
       .set('Authorization', 'Bearer role:ADMIN')
       .set('x-test-scope', 'admin')
-      .send({ q: 'ciudad' });
+      .send({ search: 'ciudad' });
     expect(res.status).toBe(202);
     expect(res.body).toEqual({ jobId: 'job-created', status: 'queued' });
     expect(prisma.exportJob.create).toHaveBeenCalled();
@@ -185,10 +186,10 @@ describe('export routes: create', () => {
     env.ENABLE_XLSX_EXPORT = false;
     const { prisma, dispatcher, app } = buildHarness();
     const res = await request(app)
-      .post('/api/v1/exports/promoted')
+      .post('/api/v1/exports/citizens')
       .set('Authorization', 'Bearer role:ADMIN')
       .set('x-test-scope', 'admin')
-      .send({ q: 'ciudad' });
+      .send({ search: 'ciudad' });
     expect(res.status).toBe(503);
     expect(dispatcher!.dispatchExportJob).not.toHaveBeenCalled();
     expect(prisma.exportJob.create).not.toHaveBeenCalled();
@@ -197,59 +198,12 @@ describe('export routes: create', () => {
   it('rejects pagination fields with 400', async () => {
     const { app } = buildHarness();
     const res = await request(app)
-      .post('/api/v1/exports/promoted')
+      .post('/api/v1/exports/citizens')
       .set('Authorization', 'Bearer role:ADMIN')
       .set('x-test-scope', 'admin')
       .send({ page: 1 });
     expect(res.status).toBe(400);
     expect(res.body.message).toContain('Pagination');
-  });
-
-  it('rejects invalid filter values with 400', async () => {
-    const { app } = buildHarness();
-    const res = await request(app)
-      .post('/api/v1/exports/promoted')
-      .set('Authorization', 'Bearer role:ADMIN')
-      .set('x-test-scope', 'admin')
-      .send({ sex: 'X' });
-    expect(res.status).toBe(400);
-    expect(res.body.message).toBe('Invalid export filters');
-  });
-
-  it('persists the validated filters on the created job', async () => {
-    const { prisma, app } = buildHarness();
-    const leaderId = '550e8400-e29b-41d4-a716-446655440000';
-    const res = await request(app)
-      .post('/api/v1/exports/promoted')
-      .set('Authorization', 'Bearer role:ADMIN')
-      .set('x-test-scope', 'admin')
-      .send({ q: 'ciudad', sex: 'M', leaderId });
-    expect(res.status).toBe(202);
-    expect(prisma.exportJob.create).toHaveBeenCalledWith(
-      expect.objectContaining({
-        data: expect.objectContaining({
-          filtersJson: { q: 'ciudad', sex: 'M', leaderId },
-          scopeSnapshot: { kind: 'admin' },
-        }),
-      }),
-    );
-  });
-
-  it('snapshots the job-time scope with coordinator and leader ids at creation', async () => {
-    const { prisma, app } = buildHarness();
-    const res = await request(app)
-      .post('/api/v1/exports/leaders')
-      .set('Authorization', 'Bearer role:COORDINATOR')
-      .set('x-test-scope', 'coord-7')
-      .send({ q: 'pipa' });
-    expect(res.status).toBe(202);
-    expect(prisma.exportJob.create).toHaveBeenCalledWith(
-      expect.objectContaining({
-        data: expect.objectContaining({
-          scopeSnapshot: { kind: 'coordinator', coordinatorId: 'coordinator-7' },
-        }),
-      }),
-    );
   });
 
   it('rejects unknown citizen filters with 400', async () => {
@@ -264,33 +218,46 @@ describe('export routes: create', () => {
     expect(prisma.exportJob.create).not.toHaveBeenCalled();
   });
 
-  it('rejects pagination fields across every module', async () => {
-    const { prisma, app } = buildHarness();
-    for (const module of ['promoted', 'leaders', 'coordinators', 'citizens']) {
+  it.each(['promoted', 'simpatizantes', 'leaders', 'coordinators'])(
+    'rejects removed module %s',
+    async (module) => {
+      const { prisma, app } = buildHarness();
       const res = await request(app)
         .post(`/api/v1/exports/${module}`)
         .set('Authorization', 'Bearer role:ADMIN')
         .set('x-test-scope', 'admin')
-        .send({ limit: 1 });
+        .send({});
       expect(res.status).toBe(400);
-      expect(res.body.message).toContain('Pagination');
-    }
+      expect(res.body.message).toBe('Unsupported export module');
+      expect(prisma.exportJob.create).not.toHaveBeenCalled();
+    },
+  );
+
+  it('rejects pagination fields for citizens', async () => {
+    const { prisma, app } = buildHarness();
+    const res = await request(app)
+      .post('/api/v1/exports/citizens')
+      .set('Authorization', 'Bearer role:ADMIN')
+      .set('x-test-scope', 'admin')
+      .send({ limit: 1 });
+    expect(res.status).toBe(400);
+    expect(res.body.message).toContain('Pagination');
     expect(prisma.exportJob.create).not.toHaveBeenCalled();
   });
 
   it('requires authentication for the authenticated routes', async () => {
     const { app } = buildHarness();
-    const res = await request(app).post('/api/v1/exports/promoted').send({ q: 'x' });
+    const res = await request(app).post('/api/v1/exports/citizens').send({ search: 'x' });
     expect(res.status).toBe(401);
   });
 
   it('requires a permitted scope kind', async () => {
     const { app } = buildHarness();
     const res = await request(app)
-      .post('/api/v1/exports/promoted')
+      .post('/api/v1/exports/citizens')
       .set('Authorization', 'Bearer role:X')
       .set('x-test-scope', 'none')
-      .send({ q: 'x' });
+      .send({ search: 'x' });
     expect(res.status).toBe(404);
   });
 });
@@ -320,17 +287,13 @@ describe('export routes: status', () => {
     expect(res.body.message).toBe('Export not found');
   });
 
-  it('returns 404 without leaking a job owned by another scope', async () => {
+  it('returns 404 to a user without admin scope', async () => {
     const { prisma, app } = buildHarness();
-    prisma.exportJob.findUnique.mockResolvedValue({
-      ...readyJob,
-      scopeSnapshot: { kind: 'leader', leaderId: 'leader-42' },
-    });
-    prisma.leader.findUnique.mockResolvedValue(null);
+    prisma.exportJob.findUnique.mockResolvedValue(readyJob);
     const res = await request(app)
       .get('/api/v1/exports/job-1')
       .set('Authorization', 'Bearer role:ADMIN')
-      .set('x-test-scope', 'leader-99');
+      .set('x-test-scope', 'none');
     expect(res.status).toBe(404);
   });
 });
@@ -382,48 +345,14 @@ describe('export routes: download token issuance', () => {
     expect(res.status).toBe(410);
   });
 
-  it('returns 404 for an out-of-scope job without leaking existence', async () => {
+  it('returns 404 to a user without admin scope', async () => {
     const { prisma, app } = buildHarness();
-    prisma.exportJob.findUnique.mockResolvedValue({
-      ...readyJob,
-      scopeSnapshot: { kind: 'leader', leaderId: 'leader-42' },
-    });
-    prisma.leader.findUnique.mockResolvedValue(null);
+    prisma.exportJob.findUnique.mockResolvedValue(readyJob);
     const res = await request(app)
       .post('/api/v1/exports/job-1/download-token')
       .set('Authorization', 'Bearer role:ADMIN')
-      .set('x-test-scope', 'leader-99');
+      .set('x-test-scope', 'none');
     expect(res.status).toBe(404);
-    expect(res.body.message).toBe('Export not found');
-  });
-
-  it('issues a token to the leader who owns the job', async () => {
-    const { prisma, app } = buildHarness();
-    prisma.exportJob.findUnique.mockResolvedValue({
-      ...readyJob,
-      scopeSnapshot: { kind: 'leader', leaderId: 'leader-42' },
-    });
-    const res = await request(app)
-      .post('/api/v1/exports/job-1/download-token')
-      .set('Authorization', 'Bearer role:LEADER')
-      .set('x-test-scope', 'leader-42');
-    expect(res.status).toBe(200);
-    expect(res.body.token).toMatch(/^[0-9a-f]{64}$/);
-  });
-
-  it('issues a token to the coordinator that owns the job leader', async () => {
-    const { prisma, app } = buildHarness();
-    prisma.exportJob.findUnique.mockResolvedValue({
-      ...readyJob,
-      scopeSnapshot: { kind: 'leader', leaderId: 'leader-42' },
-    });
-    prisma.leader.findUnique.mockResolvedValue({ coordinatorId: 'coordinator-7' });
-    const res = await request(app)
-      .post('/api/v1/exports/job-1/download-token')
-      .set('Authorization', 'Bearer role:COORDINATOR')
-      .set('x-test-scope', 'coord-7');
-    expect(res.status).toBe(200);
-    expect(res.body.token).toMatch(/^[0-9a-f]{64}$/);
   });
 });
 
@@ -441,7 +370,7 @@ describe('export routes: download', () => {
       'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
     );
     expect(res.headers['content-disposition']).toContain(
-      'attachment; filename="promoted-2026-09-06-1432.xlsx"',
+      'attachment; filename="citizens-2026-09-06-1432.xlsx"',
     );
     expect(res.headers['cache-control']).toBe('no-store');
     expect(res.text).toBe('<xlsx>');
@@ -449,14 +378,9 @@ describe('export routes: download', () => {
 
   it('serves download without any session scope (token is the gate)', async () => {
     const { prisma, app, getStream } = buildHarness();
-    prisma.exportJob.findUnique.mockResolvedValue({
-      ...readyJob,
-      scopeSnapshot: { kind: 'leader', leaderId: 'leader-42' },
-    });
+    prisma.exportJob.findUnique.mockResolvedValue(readyJob);
     getStream.mockResolvedValue({ stream: Readable.from(['ok']) });
-    const res = await request(app)
-      .get('/api/v1/exports/job-1/download?token=abc123')
-      .set('x-test-scope', 'leader-99');
+    const res = await request(app).get('/api/v1/exports/job-1/download?token=abc123');
     expect(res.status).toBe(200);
     expect(res.text).toBe('ok');
   });
@@ -611,31 +535,17 @@ describe('export routes: download', () => {
 });
 
 describe('export service scope contract', () => {
-  it('does not allow one leader scope to access another leader job', async () => {
-    await expect(
-      scopeAllows(
-        { kind: 'leader', leaderId: 'leader-99' },
-        { kind: 'leader', leaderId: 'leader-42' },
-        {} as never,
-      ),
-    ).resolves.toBe(false);
+  it('allows admin scope to access retained export jobs', () => {
+    expect(scopeAllows({ kind: 'admin' }, { kind: 'admin' })).toBe(true);
   });
 
-  it('allows a coordinator whose leader owns the job', async () => {
-    const { prisma } = buildHarness();
-    prisma.leader.findUnique.mockResolvedValue({ coordinatorId: 'coordinator-7' });
-    await expect(
-      scopeAllows(
-        { kind: 'coordinator', coordinatorId: 'coordinator-7' },
-        { kind: 'leader', leaderId: 'leader-42' },
-        prisma as never,
-      ),
-    ).resolves.toBe(true);
+  it('denies users without admin scope', () => {
+    expect(scopeAllows({ kind: 'none' }, { kind: 'admin' })).toBe(false);
   });
 
-  it('accepts the simpatizantes alias and rejects pagination in filters', () => {
-    expect(resolveExportModule('simpatizantes').module).toBe('promoted');
-    expect(() => resolveExportModule('leaders').filterSchema.parse({ page: 1 })).toThrow();
+  it('rejects removed module aliases', () => {
+    expect(() => resolveExportModule('simpatizantes')).toThrow('Unsupported export module');
+    expect(() => resolveExportModule('leaders')).toThrow('Unsupported export module');
   });
 });
 

@@ -14,8 +14,8 @@
  * }
  * ```
  *
- * For tests that need to patch the typed `env` config object (e.g. OCR provider
- * tests that read `env.INE_OCR_ENABLED`), use `withEnvConfig` instead.
+ * For tests that need to patch the typed `env` config object, use
+ * `withEnvConfig` instead.
  */
 
 /**
@@ -26,7 +26,7 @@
  * - Safe to call multiple times; each call returns an independent restore.
  *
  * @example
- * const restore = withEnv({ LOG_LEVEL: 'debug', INE_OCR_ENABLED: 'true' });
+ * const restore = withEnv({ LOG_LEVEL: 'debug', FEATURE_ENABLED: 'true' });
  * try {
  *   // code under test reads process.env.LOG_LEVEL
  * } finally {
@@ -59,13 +59,13 @@ export function withEnv(values: Record<string, string | undefined>): () => void 
  * `config/env.config.ts`) and returns a restore function.
  *
  * Use this when the code under test reads from the imported `env` object rather
- * than `process.env` directly (e.g. `env.INE_OCR_ENABLED`).
+ * than `process.env` directly.
  *
  * @example
  * import { env } from '../../config/env.config';
- * const restore = withEnvConfig({ INE_OCR_ENABLED: false });
+ * const restore = withEnvConfig(env, { LOG_LEVEL: 'debug' });
  * try {
- *   // code under test reads env.INE_OCR_ENABLED
+ *   // code under test reads env.LOG_LEVEL
  * } finally {
  *   restore();
  * }

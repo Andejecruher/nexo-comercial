@@ -36,8 +36,6 @@
     "prisma:studio": "prisma studio --schema=./prisma/schema.prisma",
     "generate:drive-token": "ts-node --project scripts/tsconfig.json scripts/driver/generate-token-drive.ts",
     "departments:repair-slugs": "ts-node --project scripts/tsconfig.json scripts/migrations/repair-department-slugs.ts",
-    "promovidos:backfill-fingerprints": "ts-node --project scripts/tsconfig.json scripts/promovidos/backfill-fingerprints.ts",
-    "promovidos:backfill-sex-blind-index": "ts-node --project scripts/tsconfig.json scripts/promovidos/backfill-sex-blind-index.ts",
     "diagnose:riva": "ts-node --transpile-only --project scripts/tsconfig.json scripts/diagnostics/riva-stt-diagnose.ts",
     "postinstall": "prisma generate --schema=./prisma/schema.prisma",
     "prepare": "node -e \"process.exit(require('fs').existsSync('node_modules/.bin/husky') ? 0 : 1)\" && husky install || true",

@@ -9,7 +9,6 @@ describe('export Cloud Task', () => {
   it('processes /tasks/export through the worker', async () => {
     const app = createWorkerApp({
       prisma: {} as never,
-      ineOcrService: {} as never,
       inboxProcessor: {} as never,
       outboxProcessor: {} as never,
       syncMedia: jest.fn(async () => undefined),

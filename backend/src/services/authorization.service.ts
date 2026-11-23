@@ -1,4 +1,3 @@
-import { AppError } from '../utils/app-error';
 import type { PrismaService } from './prisma.service';
 
 export type AuthenticatedUserProfile = {
@@ -76,33 +75,5 @@ export class AuthorizationService {
   async getUserPermissionSlugs(userId: string): Promise<string[]> {
     const profile = await this.getAuthenticatedUserProfile(userId);
     return profile?.permissions ?? [];
-  }
-
-  /**
-   * RN4: el email es obligatorio para la creación de entidades con acceso al panel.
-   */
-  assertRequiredEmail(email: string | undefined | null, entity: 'coordinator' | 'leader'): void {
-    const label = entity === 'coordinator' ? 'coordinador' : 'líder';
-    if (!email || !email.trim()) {
-      throw AppError.badRequest(`El email es obligatorio para el ${label}`);
-    }
-  }
-
-  /**
-   * RN7: un usuario no puede ser dueño de una coordinación y un liderazgo simultáneamente.
-   */
-  async assertUserEntityOwnership(email: string): Promise<void> {
-    const user = await this.prisma.user.findUnique({
-      where: { email },
-      select: {
-        id: true,
-        coordinator: { select: { id: true } },
-        leader: { select: { id: true } },
-      },
-    });
-
-    if (user?.coordinator || user?.leader) {
-      throw AppError.conflict('El email ya está vinculado a otra entidad');
-    }
   }
 }

@@ -1,22 +1,23 @@
-import { env } from '../../../config/env.config';
 import { GoogleDocumentAiOcrProvider } from '../../ine/google-document-ai-ocr.provider';
 import { GoogleConfigurationError } from '../../ine/google-auth';
-import type { OcrProvider as IneOcrProvider } from '../../ine/ocr.provider';
+import type { OcrProvider as SharedOcrProvider } from '../../ine/ocr.provider';
 import type { OcrProvider, OcrProviderOutput } from '../contracts';
 import { StageError } from '../pipeline-runner';
 
-// The existing INE configuration validates this set as JPEG, PNG, and PDF only.
-export const DOCUMENT_AI_OCR_MIME_TYPES: readonly string[] =
-  env.INE_UPLOAD_ALLOWED_MIME_TYPES.split(',').map((mimeType) => mimeType.trim());
+export const DOCUMENT_AI_OCR_MIME_TYPES = [
+  'image/jpeg',
+  'image/png',
+  'application/pdf',
+] as const;
 
-/** Adapts the existing INE OCR implementation without duplicating Google API logic. */
+/** Adapts the shared Document AI implementation without duplicating Google API logic. */
 export class DocumentAiOcrProvider implements OcrProvider {
   readonly id = 'document-ai';
   readonly supportedMimeTypes = DOCUMENT_AI_OCR_MIME_TYPES;
-  private provider?: IneOcrProvider;
+  private provider?: SharedOcrProvider;
 
   constructor(
-    private readonly createProvider: () => IneOcrProvider = () => new GoogleDocumentAiOcrProvider(),
+    private readonly createProvider: () => SharedOcrProvider = () => new GoogleDocumentAiOcrProvider(),
   ) {}
 
   async extractText(input: Parameters<OcrProvider['extractText']>[0]): Promise<OcrProviderOutput> {

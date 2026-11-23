@@ -33,7 +33,6 @@ import {
   PERMISSIONS,
   slugsForGroup,
   slugsForModule,
-  slugsForModuleActions,
 } from '../../../prisma/seed/core/permissions.seed';
 
 /**
@@ -49,16 +48,11 @@ const ROLE_PERMISSIONS: Record<string, string[]> = {
     ...slugsForModule('departamentos'),
     ...slugsForModule('barrios'),
     ...slugsForModule('etiquetas'),
-    ...slugsForModule('catalogo_electoral'),
     ...slugsForModule('analytics'),
   ],
-  CAPTURISTA: [
-    ...slugsForModuleActions('indicadores_precampana', ['view', 'export']),
-    ...slugsForModule('promovidos'),
-    ...slugsForModule('eventos'),
-  ],
+  CAPTURISTA: [...slugsForModule('eventos')],
   OPERADOR_CHAT: [...slugsForGroup('whatsapp')],
-  LIDER: [...slugsForModuleActions('indicadores_precampana', ['view', 'export'])],
+  LIDER: [],
 };
 
 /** Permisos efectivos para un conjunto de roles (unión con dedupe). */

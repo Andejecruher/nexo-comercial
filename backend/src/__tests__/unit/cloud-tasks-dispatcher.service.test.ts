@@ -40,7 +40,7 @@ describe('CloudTasksDispatcher', () => {
     );
     await dispatcher.dispatchBatchEvent('phone', 1);
     await dispatcher.dispatchOutboxEvent('outbox');
-    await dispatcher.dispatchOcrJob('ocr');
+    await dispatcher.dispatchExportJob('export');
     expect(
       createTask.mock.calls.map(([request]) => (request as { parent: string }).parent),
     ).toEqual(['ai', 'delivery', 'documents']);

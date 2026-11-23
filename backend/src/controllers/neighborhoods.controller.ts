@@ -46,7 +46,6 @@ export class NeighborhoodsController {
         targetId: neighborhood.id,
         metadata: {
           name: neighborhood.name,
-          sectionId: neighborhood.sectionId,
           postalCode: neighborhood.postalCode,
           municipality: neighborhood.municipality,
         },
@@ -75,7 +74,6 @@ export class NeighborhoodsController {
         targetId: id,
         metadata: {
           name: data.name,
-          sectionId: data.sectionId,
           postalCode: data.postalCode,
           municipality: data.municipality,
         },

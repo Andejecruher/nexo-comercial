@@ -5,9 +5,9 @@ import { GCSFileStorageProvider } from '../../../services/ine/gcs-file-storage.p
 function job(id: string, extra = {}) {
   return {
     id,
-    module: 'promoted',
+    module: 'citizens',
     status: 'ready',
-    filePath: `exports/promoted/${id}.xlsx`,
+    filePath: `exports/citizens/${id}.xlsx`,
     scopeSnapshot: { kind: 'admin' },
     expiresAt: new Date(Date.now() + 86400000),
     ...extra,
@@ -63,7 +63,7 @@ it('starts all export signatures together, isolates a bad object and hides every
   // The database and scope checks precede signing.
   for (let n = 0; n < 10; n++) await Promise.resolve();
   expect(storage.getSignedUrl).toHaveBeenCalledTimes(3);
-  expect(storage.getSignedUrl).toHaveBeenCalledWith('exports/promoted/a.xlsx', 7200000);
+  expect(storage.getSignedUrl).toHaveBeenCalledWith('exports/citizens/a.xlsx', 7200000);
   complete.reverse().forEach((finish) => finish());
   await pending;
   expect(next).not.toHaveBeenCalled();
@@ -77,16 +77,16 @@ it('starts all export signatures together, isolates a bad object and hides every
   expect(payload.items[1].cdn_url).toBeNull();
   expect(payload.items[0].cdn_url).toMatch(/^https:/);
   expect(payload.items[2].cdn_url).toMatch(/^https:/);
-  expect(JSON.stringify(payload)).not.toMatch(/filePath|driveFileId|exports\/promoted|credential/);
+  expect(JSON.stringify(payload)).not.toMatch(/filePath|driveFileId|exports\/citizens|credential/);
 });
 
 it('does not sign expired, unfinished or unauthorized exports', async () => {
   const { controller, req, res, json, storage } = setup([
     job('expired', { expiresAt: new Date(0) }),
     job('pending', { status: 'processing' }),
-    job('foreign', { scopeSnapshot: { kind: 'leader', leaderId: 'other' } }),
+    job('foreign'),
   ]);
-  req.scope = { kind: 'leader', leaderId: 'own' } as never;
+  req.scope = { kind: 'none' };
   await controller.list(req, res, jest.fn());
   expect(storage.getSignedUrl).not.toHaveBeenCalled();
   expect(json).toHaveBeenCalledWith({ items: [] });
@@ -111,10 +111,10 @@ it('requests v4 read access for exactly two hours', async () => {
   const provider = new GCSFileStorageProvider(storage as never, 'voz_ciudadana', signer);
   const now = Date.now();
   jest.spyOn(Date, 'now').mockReturnValue(now);
-  await expect(provider.getSignedUrl('exports/promoted/a.xlsx')).resolves.toMatch(/^https:/);
+  await expect(provider.getSignedUrl('exports/citizens/a.xlsx')).resolves.toMatch(/^https:/);
   expect(signer.getSignedUrl).toHaveBeenCalledWith({
     bucket: 'voz_ciudadana',
-    objectName: 'exports/promoted/a.xlsx',
+    objectName: 'exports/citizens/a.xlsx',
     method: 'GET',
     expires: new Date(now + 7200000),
   });
