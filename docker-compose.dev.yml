@@ -192,6 +192,9 @@ services:
       - '${FRONTEND_PUBLIC_PORT:-3000}:3000'
     volumes:
       - ./frontend:/workspace/frontend
+      # Aísla la caché de Next del host: el bind mount de ./frontend expondría
+      # un .next host (root/propietario distinto) y artefactos de otra sesión.
+      - frontend_next_dev:/workspace/frontend/.next
       - ./pnpm-lock.yaml:/workspace/pnpm-lock.yaml:ro
       - ./pnpm-workspace.yaml:/workspace/pnpm-workspace.yaml:ro
       - ./package.json:/workspace/package.json:ro
@@ -297,3 +300,4 @@ volumes:
   backend_pkg_node_modules_dev:
   frontend_workspace_node_modules_dev:
   frontend_pkg_node_modules_dev:
+  frontend_next_dev:

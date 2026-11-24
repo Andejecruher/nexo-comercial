@@ -1,13 +1,14 @@
 import { AppProviders } from '@/components/providers/app-providers';
 import { brandChrome, buildOpenGraph, buildTwitter, siteConfig } from '@/lib/seo';
 import type { Metadata, Viewport } from 'next';
-import { Montserrat } from 'next/font/google';
+import localFont from 'next/font/local';
 import './globals.css';
 
-const montserrat = Montserrat({
-  subsets: ['latin'],
+const montserrat = localFont({
+  src: './fonts/montserrat-latin-variable.woff2',
   variable: '--font-montserrat',
-  weight: ['400', '500', '600', '700', '800', '900'],
+  weight: '100 900',
+  display: 'swap',
   preload: false,
 });
 
