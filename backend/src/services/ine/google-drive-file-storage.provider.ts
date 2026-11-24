@@ -1,4 +1,4 @@
-import { google } from 'googleapis';
+import { auth, drive, drive_v3 } from '@googleapis/drive';
 import { Readable } from 'stream';
 import { env } from '../../config/env.config';
 import {
@@ -20,11 +20,11 @@ export class GoogleDriveFileStorageProvider implements FileStorageProvider {
     return { folderId: env.GOOGLE_DRIVE_FOLDER_ID };
   }
 
-  driveClient(): ReturnType<typeof google.drive> {
+  driveClient(): drive_v3.Drive {
     const credentials = googleDriveOAuthCredentials();
-    const oauth2Client = new google.auth.OAuth2(credentials.clientId, credentials.clientSecret);
+    const oauth2Client = new auth.OAuth2(credentials.clientId, credentials.clientSecret);
     oauth2Client.setCredentials({ refresh_token: credentials.refreshToken });
-    return google.drive({ version: 'v3', auth: oauth2Client });
+    return drive({ version: 'v3', auth: oauth2Client });
   }
 
   providerError(operation: 'UPLOAD' | 'DOWNLOAD' | 'DELETE', error: unknown): GoogleProviderError {
