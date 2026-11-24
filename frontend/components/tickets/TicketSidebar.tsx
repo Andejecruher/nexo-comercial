@@ -9,8 +9,8 @@
  * - Confirmaciones para acciones críticas (cerrar, handover)
  */
 
-import { TicketPriorityBadge } from '@/components/tickets/TicketPriorityBadge';
-import { TicketStatusBadge } from '@/components/tickets/TicketStatusBadge';
+import { TicketPriorityBadge } from '@/components/shared/tickets/TicketPriorityBadge';
+import { TicketStatusBadge } from '@/components/shared/tickets/TicketStatusBadge';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -32,11 +32,11 @@ import {
 } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
 import type { useAssignTicket } from '@/hooks/tickets/useAssignTicket';
-import type { PanelUserDto } from '@/lib/admin-users-api';
-import type { Department } from '@/lib/catalog-api';
-import { FLOW_STATE_LABELS } from '@/lib/conversation-fsm';
-import type { ConversationActionFlags } from '@/lib/conversation-ui-actions';
-import type { TicketDetailDto } from '@/lib/tickets-api';
+import type { PanelUserDto } from '@/lib/shared/admin-users-api';
+import type { Department } from '@/lib/shared/catalog-api';
+import { FLOW_STATE_LABELS } from '@/lib/shared/conversation-fsm';
+import type { ConversationActionFlags } from '@/lib/shared/conversation-ui-actions';
+import type { TicketDetailDto } from '@/lib/shared/tickets-api';
 import { Building2, RefreshCw, User, UserCheck } from 'lucide-react';
 import { memo, useCallback, useState } from 'react';
 

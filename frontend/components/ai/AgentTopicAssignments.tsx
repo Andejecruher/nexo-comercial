@@ -2,8 +2,8 @@
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import type { AgentTopicAssignment, AiAgentTopic, AiPrompt, AiTopic } from '@/lib/ai-api';
-import { agentsApi } from '@/lib/ai-api';
+import type { AgentTopicAssignment, AiAgentTopic, AiPrompt, AiTopic } from '@/lib/shared/ai-api';
+import { agentsApi } from '@/lib/shared/ai-api';
 import { useState } from 'react';
 import { toast } from 'sonner';
 

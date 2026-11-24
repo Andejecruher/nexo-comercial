@@ -7,10 +7,10 @@
  * Reutiliza el historial canónico de mensajes en modo consulta.
  */
 
-import { MessageHistory, type HistoryProps } from '@/components/domain/messaging/MessageHistory';
+import { MessageHistory, type HistoryProps } from '@/components/shared/messaging/MessageHistory';
 import { Skeleton } from '@/components/ui/skeleton';
 import { TypingIndicator } from '@/components/ui/typing-indicator';
-import type { MessageWithStatusesDto } from '@/lib/conversations-api';
+import type { MessageWithStatusesDto } from '@/lib/shared/conversations-api';
 import { memo } from 'react';
 
 interface TicketChatProps extends Pick<

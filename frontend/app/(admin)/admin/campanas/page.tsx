@@ -1,5 +1,5 @@
-import { PermissionGate } from '@/components/auth/PermissionGate';
-import { CampaignList } from '@/components/campaigns/CampaignPages';
+import { PermissionGate } from '@/components/shared/PermissionGate';
+import { CampaignList } from '@/components/campanas/CampaignPages';
 export default function Page() {
   return (
     <PermissionGate

@@ -9,7 +9,7 @@
  * - Notifica error vía toast
  */
 
-import { ticketsApi } from '@/lib/tickets-api';
+import { ticketsApi } from '@/lib/shared/tickets-api';
 import { useCallback, useState } from 'react';
 import { toast } from 'sonner';
 

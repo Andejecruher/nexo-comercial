@@ -1,10 +1,10 @@
 import {
   AvisoPrivacidadContent,
   avisoPrivacidadToc,
-} from '@/components/legal/aviso-privacidad-content';
-import { LegalDocument } from '@/components/legal/legal-document';
-import { legalConfig, legalRoutes } from '@/lib/legal-config';
-import { createPageMetadata } from '@/lib/seo';
+} from '@/components/politica-y-privacidad/aviso-privacidad-content';
+import { LegalDocument } from '@/components/shared/legal/legal-document';
+import { legalConfig, legalRoutes } from '@/lib/shared/legal-config';
+import { createPageMetadata } from '@/lib/shared/seo';
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = createPageMetadata({

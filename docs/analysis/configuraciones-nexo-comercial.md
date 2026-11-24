@@ -13,13 +13,13 @@
 
 ## 1. Resumen ejecutivo
 
-- **[CONFIRMADO]** Ya existe una vista `Configuraciones` en `/admin/settings` protegida por el permiso frontend `manage:settings`. En su primera versión agrupa: listado real de usuarios del panel (solo lectura), y accesos a catálogos ya administrables (`/admin/barrios`, `/admin/etiquetas`, `/admin/departamentos`) y al panel avanzado de IA (`/admin/ai`). Evidencia: `frontend/components/admin/settings-view.tsx`, `frontend/app/(admin)/admin/settings/page.tsx`, `frontend/components/admin/sidebar.tsx:38-48`.
+- **[CONFIRMADO]** Ya existe una vista `Configuraciones` en `/admin/settings` protegida por el permiso frontend `manage:settings`. En su primera versión agrupa: listado real de usuarios del panel (solo lectura), y accesos a catálogos ya administrables (`/admin/barrios`, `/admin/etiquetas`, `/admin/departamentos`) y al panel avanzado de IA (`/admin/ai`). Evidencia: `frontend/components/configuracion/settings-view.tsx`, `frontend/app/(admin)/admin/settings/page.tsx`, `frontend/components/shared/sidebar.tsx:38-48`.
 - **[CONFIRMADO]** Los catálogos linkeados (barrios, etiquetas, departamentos, agentes/tools/topics/prompts/lines de IA) son CRUD completos ya cableados contra el backend, con RBAC por rol.
 - **[CONFIRMADO]** No existe una capa central `SystemConfig` en Prisma; toda la configuración operativa vive en tres capas separadas y no unificadas:
   1. Variables de entorno validadas por Zod (`backend/src/config/env.config.ts`).
   2. Constantes de código (`config/messaging.constants.ts`, `config/meta.config.ts`, `config/conversation-states.ts`, `ai/orchestrator/orchestrator.ts`, `ai/fsm/fsm-guards.ts`, `services/analytics/analytics.service.ts`, entre otros).
   3. Datos persistidos editables desde el panel (catálogos y tablas IA).
-- **[PARCIAL]** El permiso `manage:settings` existe **solo en frontend** (`frontend/lib/auth-guards.ts:22`); el backend usa exclusivamente roles (`SUPERADMIN | COORDINADOR | OPERADOR_CHAT | ANALISTA`) vía `requireRole`/`checkRole`. No hay endpoint que valide `manage:settings` como permiso propio.
+- **[PARCIAL]** El permiso `manage:settings` existe **solo en frontend** (`frontend/lib/shared/auth-guards.ts:22`); el backend usa exclusivamente roles (`SUPERADMIN | COORDINADOR | OPERADOR_CHAT | ANALISTA`) vía `requireRole`/`checkRole`. No hay endpoint que valide `manage:settings` como permiso propio.
 - **[RIESGO]** Hay contenido ciudadano y políticas de negocio hardcodeados que hoy no pueden editarse sin redeploy: catálogo `MUNICIPAL_INFO` de la tool IA, `SLA_FIRST_RESPONSE_MINUTES`, mensajes de fallback del orquestador, `REGISTERING_FLOW_PROMPT_INSTRUCTION`.
 - **Conclusión** (detallada en §12): el proyecto está **`LISTO CON PRERREQUISITOS`** para planificar una siguiente iteración de Configuraciones. Existen bases sólidas (RBAC backend, RCUD de catálogos, AuditLog, admin IA, `PermissionGate`) pero faltan piezas específicas (permisos backend, `SystemConfig`, UI para preferencias/newsletter/audit) antes de expandir la sección.
 
@@ -27,7 +27,7 @@
 
 ## 2. Módulos y arquitectura relevante
 
-Fuentes: `docs/backend-modules-map.md`, `docs/ARQUITECTURA.md`, `backend/src/routes/index.ts`, `backend/prisma/schema.prisma`, `frontend/components/admin/sidebar.tsx`.
+Fuentes: `docs/backend-modules-map.md`, `docs/ARQUITECTURA.md`, `backend/src/routes/index.ts`, `backend/prisma/schema.prisma`, `frontend/components/shared/sidebar.tsx`.
 
 | Módulo                           | Certeza      | Rol                                                                   | Elementos con potencial de configuración                                                           |
 | -------------------------------- | ------------ | --------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------- |
@@ -77,7 +77,7 @@ Notas relevantes de RBAC efectivo en backend:
 
 Evidencia clave:
 
-```18:43:frontend/components/admin/settings-view.tsx
+```18:43:frontend/components/configuracion/settings-view.tsx
 const SETTINGS_LINKS = [
   {
     href: '/admin/barrios',
@@ -102,7 +102,7 @@ const SETTINGS_LINKS = [
 ];
 ```
 
-```117:121:frontend/components/admin/settings-view.tsx
+```117:121:frontend/components/configuracion/settings-view.tsx
             <Button type="button" variant="outline" size="sm" disabled>
               Alta y roles no disponibles
             </Button>
@@ -123,7 +123,7 @@ export default function AdminSettingsPage() {
 
 Permisos frontend:
 
-```27:40:frontend/lib/auth-guards.ts
+```27:40:frontend/lib/shared/auth-guards.ts
 const ROLE_PERMISSIONS: Record<UserRole, Permission[]> = {
   SUPERADMIN: [..., 'manage:users', 'manage:settings', 'assign:roles'],
   COORDINADOR: [..., 'manage:settings'],
@@ -153,8 +153,8 @@ const ROLE_PERMISSIONS: Record<UserRole, Permission[]> = {
 | Colas y retries                                                                                     | `backend/src/config/messaging.constants.ts:41-66` (`QUEUE_CONFIG`)                                                                               | Constantes                         | Procesadores inbox/outbox, WhatsApp   | Ajuste requiere redeploy                                                        | Config técnica                 |
 | API version Meta                                                                                    | `backend/src/config/meta.config.ts:5` (`META_API_VERSION = 'v20.0'`)                                                                             | Constante                          | WhatsAppProvider                      | Depende de deprecaciones Meta                                                   | Config técnica                 |
 | Bounding box Cintalapa                                                                              | `messaging.constants.ts:72-76`                                                                                                                   | Constante                          | Validación IA                         | Invariante geográfico municipal                                                 | No editable (invariante)       |
-| Presencia online admin                                                                              | `frontend/components/admin/admin-layout.tsx:30-42`                                                                                               | Estado local UI                    | Solo cosmético                        | No persiste ni notifica                                                         | No (o backlog UX)              |
-| Notificaciones vista `/admin/notificaciones`                                                        | `frontend/components/admin/notifications-view.tsx` + `lib/mock-notifications.ts`                                                                 | Datos mock                         | Vista admin                           | Falso positivo funcional                                                        | Debería marcarse o rediseñarse |
+| Presencia online admin                                                                              | `frontend/components/shared/admin-layout.tsx:30-42`                                                                                               | Estado local UI                    | Solo cosmético                        | No persiste ni notifica                                                         | No (o backlog UX)              |
+| Notificaciones vista `/admin/notificaciones`                                                        | `frontend/components/notificaciones/notifications-view.tsx` + `lib/mock-notifications.ts`                                                                 | Datos mock                         | Vista admin                           | Falso positivo funcional                                                        | Debería marcarse o rediseñarse |
 | `Ticket.closeReason` valores                                                                        | Prisma `String?` libre + enum en JSON Schema de la tool `close-conversation` (`backend/src/ai/tools/close-conversation.tool.ts:17`)              | Divergencia entre DB y contrato IA | Cierre de tickets                     | Puede aceptarse cualquier string fuera del enum                                 | Candidato a catálogo           |
 
 Variables de entorno con connotación de negocio (más candidatas a exponer con supervisión):
@@ -167,7 +167,7 @@ Variables de entorno con connotación de negocio (más candidatas a exponer con 
 Anomalías detectadas:
 
 - **[CONFIRMADO]** `ANTHROPIC_API_KEY` está declarado como opcional en el schema Zod; los entornos sin provider Anthropic pueden arrancar sin esa llave.
-- **[CONFIRMADO]** `frontend/lib/conversation-fsm.ts` mantiene una tabla de transiciones que diverge de `backend/src/config/conversation-states.ts` (por ejemplo, permite regresos a `BOT_FLOW` que backend no acepta). El backend es autoridad; el frontend puede mostrar acciones no permitidas.
+- **[CONFIRMADO]** `frontend/lib/shared/conversation-fsm.ts` mantiene una tabla de transiciones que diverge de `backend/src/config/conversation-states.ts` (por ejemplo, permite regresos a `BOT_FLOW` que backend no acepta). El backend es autoridad; el frontend puede mostrar acciones no permitidas.
 - **[CONFIRMADO]** El seed cifra `whatsappAppSecret` y `whatsappAccessToken` antes de persistirlos.
 
 ---
@@ -312,7 +312,7 @@ Orden lógico sugerido de integración (solo secuenciación, no plan de trabajo)
 - **[CONFIRMADO]** `whatsappAppSecret` y `whatsappAccessToken` se cifran tanto en el controller como en `backend/prisma/seed/dev/ai-module.seed.ts`.
 - **[RIESGO — Alto]** Slugs de departamento sin FK; renombrar rompe históricos de tickets/asignaciones/conversaciones. Bloquear rename es más barato que introducir FK.
 - **[CONFIRMADO]** `conversations.routes.ts`, `messages.routes.ts`, `handover.routes.ts` y `analytics.routes.ts` exigen JWT más `requireRole`; los scopes vigentes están documentados en `docs/reference/protected-endpoints.md`.
-- **[RIESGO — Alto]** Divergencia FSM frontend/backend (`frontend/lib/conversation-fsm.ts` vs `backend/src/config/conversation-states.ts`). UI puede sugerir acciones que el backend rechazará.
+- **[RIESGO — Alto]** Divergencia FSM frontend/backend (`frontend/lib/shared/conversation-fsm.ts` vs `backend/src/config/conversation-states.ts`). UI puede sugerir acciones que el backend rechazará.
 - **[CONFIRMADO]** `ANTHROPIC_API_KEY` está declarada como opcional en el schema Zod para no bloquear entornos que no usan ese provider.
 - **[RIESGO — Medio]** Doble definición de límites del orquestador (`orchestrator.ts` vs `fsm-guards.ts`); un env cambia solo un path.
 - **[RIESGO — Medio]** Cache de `CommunicationLine` con TTL 60s y sin invalidación manual desde panel; rotaciones de credenciales quedan opacas por hasta 60 s.

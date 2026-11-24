@@ -1,4 +1,4 @@
-import { CitizenProfilePageView } from '@/components/admin/citizen-profile-page-view';
+import { CitizenProfilePageView } from '@/components/ciudadanos/citizen-profile-page-view';
 
 interface CitizenProfilePageProps {
   params: Promise<{ id: string }>;

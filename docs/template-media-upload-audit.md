@@ -122,7 +122,7 @@ configurable default remains v23.0; no upgrade was necessary to fix framing.
 Runtime changes: `backend/src/utils/multipart.ts`,
 `backend/src/services/templates/template-management.service.ts`,
 `backend/src/routes/templates.routes.ts`, and
-`frontend/components/templates/TemplateForm.tsx`. The API client, templates API
+`frontend/components/plantillas/TemplateForm.tsx`. The API client, templates API
 and template schema were inspected and left unchanged.
 
 Regression tests: backend `multipart.test.ts`, `template-media-upload.test.ts`

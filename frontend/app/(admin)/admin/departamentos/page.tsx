@@ -1,4 +1,4 @@
-import { DepartmentsView } from '@/components/admin/departments-view';
+import { DepartmentsView } from '@/components/departamentos/departments-view';
 
 export default function AdminDepartamentosPage() {
   return (

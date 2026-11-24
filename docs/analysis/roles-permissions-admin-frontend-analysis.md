@@ -30,15 +30,15 @@ La recomendación principal es implementar una sección de **Accesos** dentro de
 Archivos a revisar/reutilizar:
 
 - `frontend/app/(admin)/layout.tsx`
-- `frontend/components/admin/admin-layout.tsx`
-- `frontend/components/admin/sidebar.tsx`
-- `frontend/lib/api-client.ts`
-- `frontend/hooks/useAuth.ts`
-- `frontend/hooks/usePermissions.ts`
-- `frontend/lib/auth-guards.ts`
-- `frontend/lib/auth-storage.ts`
-- `frontend/lib/catalog-api.ts`
-- `frontend/lib/admin-users-api.ts`
+- `frontend/components/shared/admin-layout.tsx`
+- `frontend/components/shared/sidebar.tsx`
+- `frontend/lib/shared/api-client.ts`
+- `frontend/hooks/shared/useAuth.ts`
+- `frontend/hooks/shared/usePermissions.ts`
+- `frontend/lib/shared/auth-guards.ts`
+- `frontend/lib/shared/auth-storage.ts`
+- `frontend/lib/shared/catalog-api.ts`
+- `frontend/lib/shared/admin-users-api.ts`
 - `frontend/components/domain/catalogs/*`
 - `frontend/components/ui/*`
 
@@ -311,7 +311,7 @@ Notas de ajuste al modelo real:
 
 ### Servicio API recomendado
 
-`frontend/lib/roles-permissions-api.ts`:
+`frontend/lib/shared/roles-permissions-api.ts`:
 
 - `rolesPermissionsApi.listRoles()` → GET `/admin/roles`.
 - `rolesPermissionsApi.getRole(id)` → GET `/admin/roles/:id`.

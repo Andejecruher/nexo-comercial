@@ -1,5 +1,5 @@
-import { PublicFooter } from '@/components/public/public-footer';
-import { PublicNav } from '@/components/public/public-nav';
+import { PublicFooter } from '@/components/shared/public/public-footer';
+import { PublicNav } from '@/components/shared/public/public-nav';
 
 /**
  * Layout de las páginas públicas de contenido (documentos legales).
@@ -8,7 +8,7 @@ import { PublicNav } from '@/components/public/public-nav';
 export default function PublicLayout({ children }: { children: React.ReactNode }) {
   return (
     <>
-      <PublicNav variant="solid" />
+      <PublicNav />
       <main>{children}</main>
       <PublicFooter />
     </>

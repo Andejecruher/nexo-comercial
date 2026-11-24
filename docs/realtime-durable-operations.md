@@ -133,7 +133,7 @@ works for every metric below.
 ### Frontend telemetry beacon
 
 - Endpoint: `POST /api/v1/realtime/telemetry` (JWT auth, tiny body, returns 204).
-- Sent fire-and-forget by `frontend/lib/realtime/telemetry.ts`; deduped per
+- Sent fire-and-forget by `frontend/lib/shared/realtime/telemetry.ts`; deduped per
   `eventId|status` within a browser session.
 - Enabled by default; disable with `NEXT_PUBLIC_REALTIME_TELEMETRY=false`.
 - Only ticket lifecycle events are reported: `eventType` in

@@ -1,5 +1,5 @@
-import { AppProviders } from '@/components/providers/app-providers';
-import { brandChrome, buildOpenGraph, buildTwitter, siteConfig } from '@/lib/seo';
+import { AppProviders } from '@/components/shared/providers/app-providers';
+import { brandChrome, buildOpenGraph, buildTwitter, siteConfig } from '@/lib/shared/seo';
 import type { Metadata, Viewport } from 'next';
 import localFont from 'next/font/local';
 import './globals.css';

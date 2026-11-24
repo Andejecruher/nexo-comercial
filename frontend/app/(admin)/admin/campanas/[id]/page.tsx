@@ -1,5 +1,5 @@
-import { PermissionGate } from '@/components/auth/PermissionGate';
-import { CampaignAnalytics } from '@/components/campaigns/CampaignPages';
+import { PermissionGate } from '@/components/shared/PermissionGate';
+import { CampaignAnalytics } from '@/components/campanas/CampaignPages';
 export default async function Page({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   return (

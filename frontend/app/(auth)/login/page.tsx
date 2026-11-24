@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import { Suspense } from 'react';
-import { LoginForm } from '@/components/auth/LoginForm';
-import { BrandLogo } from '@/components/brand/brand-logo';
+import { LoginForm } from '@/components/login/LoginForm';
+import { BrandLogo } from '@/components/shared/brand/brand-logo';
 
 export const metadata: Metadata = {
   title: 'Iniciar sesión | Nexo Comercial',

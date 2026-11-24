@@ -2,7 +2,7 @@
 
 > **Guía de referencia para el equipo.** Cubre fundamentos del protocolo, comportamiento en el entorno de desarrollo local, arquitectura en GCP (Cloud Run + Pub/Sub) y el flujo aplicado al sistema de notificaciones de Nexo Comercial.
 >
-> **Stack real del proyecto:** Node.js + Express + **Socket.IO** en el backend (`backend/src/services/realtime/websocket-gateway.service.ts`), Next.js + `socket.io-client` en el frontend (`frontend/lib/realtime/realtime-manager.ts`), y **`@socket.io/gcp-pubsub-adapter`** como broker entre instancias de Cloud Run (no Redis).
+> **Stack real del proyecto:** Node.js + Express + **Socket.IO** en el backend (`backend/src/services/realtime/websocket-gateway.service.ts`), Next.js + `socket.io-client` en el frontend (`frontend/lib/shared/realtime/realtime-manager.ts`), y **`@socket.io/gcp-pubsub-adapter`** como broker entre instancias de Cloud Run (no Redis).
 
 ---
 
@@ -161,7 +161,7 @@ httpServer.listen(8000, () => console.log('WS en :8000'));
 ### 2.4 Inspección y depuración en dev
 
 - **Logs del gateway:** el backend emite logs estructurados con `logRealtimeBoundary` en cada `emit`. Filtra por `WebsocketGatewayService`.
-- **Logs del cliente:** `frontend/lib/realtime/realtime-manager.ts` hace `console.info/warn/error` JSON con `component: 'RealtimeManager'`.
+- **Logs del cliente:** `frontend/lib/shared/realtime/realtime-manager.ts` hace `console.info/warn/error` JSON con `component: 'RealtimeManager'`.
 - **Chrome DevTools → Network → WS:** filtra por `socket.io`, abre el frame y mira los paquetes EIO (handshake, `40` connect, `42` event, `2` ping, `3` pong).
 - **Socket.IO admin UI:** en dev puede montarse `@socket.io/admin-ui` temporalmente para ver rooms y sockets conectados.
 
@@ -353,7 +353,7 @@ El método `emitDurableEvent` del gateway decide la room destino según el tipo 
 
 ### 4.4 Reconexión automática y manejo de pérdida de red en el cliente
 
-El `RealtimeManager` (`frontend/lib/realtime/realtime-manager.ts`) implementa varias capas de resiliencia:
+El `RealtimeManager` (`frontend/lib/shared/realtime/realtime-manager.ts`) implementa varias capas de resiliencia:
 
 1. **Reconexión con backoff exponencial** (Socket.IO nativo):
    ```ts
@@ -479,8 +479,8 @@ gcloud logging read 'resource.type="cloud_run_revision" AND \
 - `docs/realtime-durable-operations.md` — detalles del outbox durable.
 - `backend/src/services/realtime/websocket-gateway.service.ts` — gateway Socket.IO.
 - `backend/src/services/realtime/realtime-event.contracts.ts` — contratos durable/efímero.
-- `frontend/lib/realtime/realtime-manager.ts` — manager del cliente.
-- `frontend/lib/realtime/types.ts` — type guards de payloads.
+- `frontend/lib/shared/realtime/realtime-manager.ts` — manager del cliente.
+- `frontend/lib/shared/realtime/types.ts` — type guards de payloads.
 
 ---
 

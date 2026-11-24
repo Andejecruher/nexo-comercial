@@ -1,4 +1,4 @@
-import { CitizensView } from '@/components/admin/citizens-view';
+import { CitizensView } from '@/components/ciudadanos/citizens-view';
 
 export default function AdminCiudadanosPage() {
   return (

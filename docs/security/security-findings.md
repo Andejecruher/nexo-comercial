@@ -86,7 +86,7 @@ Ordenados por severidad. La severidad asume datos ciudadanos reales y usuarios i
 **Severidad:** Medio
 **Estado:** Confirmado
 **Componente:** Frontend auth storage
-**Archivos afectados:** `frontend/lib/auth-storage.ts:42-60,129-140`
+**Archivos afectados:** `frontend/lib/shared/auth-storage.ts:42-60,129-140`
 
 **Descripción:** ambos tokens viven en `localStorage`; el access token también va a una cookie no `HttpOnly`.
 
@@ -131,7 +131,7 @@ Ordenados por severidad. La severidad asume datos ciudadanos reales y usuarios i
 **Severidad:** Medio
 **Estado:** Confirmado
 **Componente:** UI RBAC
-**Archivos afectados:** `frontend/lib/auth-guards.ts:27-40`; páginas admin; rutas backend
+**Archivos afectados:** `frontend/lib/shared/auth-guards.ts:27-40`; páginas admin; rutas backend
 
 **Descripción:** frontend concede ciudadanos a operador/analista y eventos a analista, mientras backend los deniega. Además, el sidebar no filtra.
 
@@ -211,7 +211,7 @@ Ordenados por severidad. La severidad asume datos ciudadanos reales y usuarios i
 **Severidad:** Bajo
 **Estado:** Confirmado; explotación según semántica de `router.push`/navegador
 **Componente:** Login frontend
-**Archivos afectados:** `frontend/components/auth/LoginForm.tsx:49-61`
+**Archivos afectados:** `frontend/components/login/LoginForm.tsx:49-61`
 
 **Descripción:** `redirectTo` se toma del query string y se pasa sin allowlist a `router.push`.
 

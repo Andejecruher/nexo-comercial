@@ -1,5 +1,5 @@
-import { SettingsView } from '@/components/admin/settings-view';
-import { PermissionGate } from '@/components/auth/PermissionGate';
+import { SettingsView } from '@/components/configuracion/settings-view';
+import { PermissionGate } from '@/components/shared/PermissionGate';
 
 export default function AdminSettingsPage() {
   return (

@@ -29,7 +29,7 @@ ProtectedRoute → RealtimeProvider → AdminLayout
 
 ## Navegación
 
-`AdminSidebar` declara elementos estáticos y no usa `PermissionGate` ni roles (`frontend/components/admin/sidebar.tsx:25-49,128-273`). Todos los autenticados ven enlaces que pueden terminar en fallback frontend o 403 backend.
+`AdminSidebar` declara elementos estáticos y no usa `PermissionGate` ni roles (`frontend/components/shared/sidebar.tsx:25-49,128-273`). Todos los autenticados ven enlaces que pueden terminar en fallback frontend o 403 backend.
 
 ## Autoridad
 

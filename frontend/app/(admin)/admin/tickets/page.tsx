@@ -1,4 +1,4 @@
-import { PermissionGate } from '@/components/auth/PermissionGate';
+import { PermissionGate } from '@/components/shared/PermissionGate';
 import { TicketsListView } from '@/components/tickets/TicketsListView';
 
 export default function AdminTicketsPage() {

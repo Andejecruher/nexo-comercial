@@ -230,7 +230,7 @@ de texto. No se marca ese caso multimedia como completado.
   propagación de `communicationLineId`.
 - `frontend/components/domain/messaging/`: renderizador común, contenido privado,
   controles existentes, contactos, selección de plantilla y preview de audio.
-- `frontend/hooks/useConversationMessages.ts`, clientes HTTP y contratos realtime.
+- `frontend/hooks/conversaciones/useConversationMessages.ts`, clientes HTTP y contratos realtime.
 
 ## Migración y despliegue
 

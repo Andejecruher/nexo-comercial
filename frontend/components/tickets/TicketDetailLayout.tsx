@@ -19,11 +19,11 @@ import {
 } from '@/components/ui/sheet';
 import { useAssignTicket } from '@/hooks/tickets/useAssignTicket';
 import { useTicketDetail } from '@/hooks/tickets/useTicketDetail';
-import { useAuth } from '@/hooks/useAuth';
-import { useDepartments } from '@/hooks/useDepartments';
-import { usePermissions } from '@/hooks/usePermissions';
-import { adminUsersApi, type PanelUserDto } from '@/lib/admin-users-api';
-import { getConversationActionFlags } from '@/lib/conversation-ui-actions';
+import { useAuth } from '@/hooks/shared/useAuth';
+import { useDepartments } from '@/hooks/shared/useDepartments';
+import { usePermissions } from '@/hooks/shared/usePermissions';
+import { adminUsersApi, type PanelUserDto } from '@/lib/shared/admin-users-api';
+import { getConversationActionFlags } from '@/lib/shared/conversation-ui-actions';
 import { SlidersHorizontal } from 'lucide-react';
 import Link from 'next/link';
 import { useCallback, useEffect, useMemo, useState } from 'react';

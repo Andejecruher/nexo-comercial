@@ -1,4 +1,4 @@
-import { cn } from '@/lib/utils';
+import { cn } from '@/lib/shared/utils';
 
 /** Staggered start delay per dot — creates the left-to-right wave. */
 const DOT_DELAYS_MS = [0, 160, 320] as const;

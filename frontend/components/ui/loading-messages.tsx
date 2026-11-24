@@ -1,5 +1,5 @@
 import { TypingDots } from '@/components/ui/typing-indicator';
-import { cn } from '@/lib/utils';
+import { cn } from '@/lib/shared/utils';
 
 export interface LoadingMessagesProps {
   /** Visible status text — also announced to screen readers via role="status". */

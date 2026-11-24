@@ -22,8 +22,8 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { useAgents } from '@/hooks/ai/useAgents';
-import { useLines } from '@/hooks/ai/useLines';
-import type { AiAgent } from '@/lib/ai-api';
+import { useLines } from '@/hooks/shared/useLines';
+import type { AiAgent } from '@/lib/shared/ai-api';
 import { Bot, Plus, RefreshCw, Search } from 'lucide-react';
 import { useState } from 'react';
 

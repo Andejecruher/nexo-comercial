@@ -12,8 +12,12 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
-import type { AiAgent, AIProvider, UpdateAgentPayload } from '@/lib/ai-api';
-import { AI_PROVIDER_LABELS, AI_PROVIDER_MODELS, NVIDIA_MODEL_HELP } from '@/lib/ai-model-config';
+import type { AiAgent, AIProvider, UpdateAgentPayload } from '@/lib/shared/ai-api';
+import {
+  AI_PROVIDER_LABELS,
+  AI_PROVIDER_MODELS,
+  NVIDIA_MODEL_HELP,
+} from '@/lib/ai/ai-model-config';
 import { Loader2, Save } from 'lucide-react';
 import { useEffect, useState } from 'react';
 

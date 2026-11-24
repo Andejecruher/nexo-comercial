@@ -248,12 +248,12 @@ duplicar entrega.
 
 | Archivo                                                                                                                         | Responsabilidad                                                                                                                                                                                                                                              |
 | ------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `frontend/lib/realtime/realtime-manager.ts`                                                                                     | **El cliente WS**. `io(WS_URL + '/admin')`, autoConnect off, reconnection Infinity, auth callback dinámico (token fresco en cada reconexión), dedupe LRU de eventIds, resubscribe de rooms, toasts, eventos de ventana (online/visibility/token refrescado). |
-| `frontend/lib/realtime/types.ts`                                                                                                | Guards de payload (`isDurableEventPayload`, etc.).                                                                                                                                                                                                           |
-| `frontend/lib/realtime/event-router.ts` + `realtime-user-events.ts`                                                             | Dispatch a consumidores + eventos semánticos derivados (`NUEVO_TICKET`, …).                                                                                                                                                                                  |
-| `frontend/stores/use-connection-store.ts` / `use-subscription-store.ts` / `use-notification-store.ts` / `use-presence-store.ts` | Estado zustand: conexión, rooms activos, notificaciones (EN MEMORIA), presencia.                                                                                                                                                                             |
-| `frontend/hooks/useConversationThread.ts` (+ hermanos)                                                                          | Patrón **"replay-vía-REST"**: al transicionar de desconectado→conectado, re-ejecuta los fetch de conversación/mensajes (líneas 92-101).                                                                                                                      |
-| `frontend/lib/realtime/sound-player.ts`, `hooks/useRealtimeSounds.ts`                                                           | Sonidos + notificaciones de escritorio.                                                                                                                                                                                                                      |
+| `frontend/lib/shared/realtime/realtime-manager.ts`                                                                                     | **El cliente WS**. `io(WS_URL + '/admin')`, autoConnect off, reconnection Infinity, auth callback dinámico (token fresco en cada reconexión), dedupe LRU de eventIds, resubscribe de rooms, toasts, eventos de ventana (online/visibility/token refrescado). |
+| `frontend/lib/shared/realtime/types.ts`                                                                                                | Guards de payload (`isDurableEventPayload`, etc.).                                                                                                                                                                                                           |
+| `frontend/lib/shared/realtime/event-router.ts` + `realtime-user-events.ts`                                                             | Dispatch a consumidores + eventos semánticos derivados (`NUEVO_TICKET`, …).                                                                                                                                                                                  |
+| `frontend/store/shared/use-connection-store.ts` / `use-subscription-store.ts` / `use-notification-store.ts` / `use-presence-store.ts` | Estado zustand: conexión, rooms activos, notificaciones (EN MEMORIA), presencia.                                                                                                                                                                             |
+| `frontend/hooks/conversaciones/useConversationThread.ts` (+ hermanos)                                                                          | Patrón **"replay-vía-REST"**: al transicionar de desconectado→conectado, re-ejecuta los fetch de conversación/mensajes (líneas 92-101).                                                                                                                      |
+| `frontend/lib/shared/realtime/sound-player.ts`, `hooks/useRealtimeSounds.ts`                                                           | Sonidos + notificaciones de escritorio.                                                                                                                                                                                                                      |
 
 ### Infraestructura / configuración
 
@@ -465,7 +465,7 @@ Reglas:
 7. `backend/src/routes/pubsub.routes.ts` + `middlewares/pubsub-push-auth.middleware.ts` — la frontera HTTP con Pub/Sub.
 8. `backend/src/worker.ts` + `worker-app.ts` — el otro proceso.
 9. `backend/src/services/events/inbox-processor.service.ts` y `outbox-processor.service.ts` — las colas Postgres.
-10. Frontend: `frontend/lib/realtime/realtime-manager.ts` → stores → `frontend/hooks/useConversationThread.ts` (patrón replay-vía-REST).
+10. Frontend: `frontend/lib/shared/realtime/realtime-manager.ts` → stores → `frontend/hooks/conversaciones/useConversationThread.ts` (patrón replay-vía-REST).
 11. `docs/deploy/deploy-gcp.yml` — qué config corre realmente en prod.
 
 ### Comandos de inspección en vivo
@@ -614,7 +614,7 @@ queda por ver para cerrar los pendientes):
   `RealtimeOutboxEvent`) — ya vista a nivel campos; falta revisar índices del claim.
 4. Configuración real de los topics/subscriptions de Pub/Sub en GCP (gcloud describe)
   para verificar `enable_message_ordering`.
-5. `frontend/lib/realtime/types.ts` y `realtime-user-events.ts` — mapa completo de
+5. `frontend/lib/shared/realtime/types.ts` y `realtime-user-events.ts` — mapa completo de
   eventos que consume la UI.
 6. `backend/src/services/message.service.ts` — productor de eventos cuando el admin
   envía mensajes (el otro origen de eventos, además del webhook).
@@ -623,5 +623,5 @@ queda por ver para cerrar los pendientes):
 
 *Generado a partir de: docker-compose.{dev,qa,prod}.yml, backend/src/{server,worker,worker-app}.ts,
 backend/src/config/env.config.ts, backend/src/services/realtime/*, backend/src/services/events/*,
-backend/src/routes/pubsub.routes.ts, frontend/lib/realtime/*, frontend/hooks/useConversationThread.ts,
+backend/src/routes/pubsub.routes.ts, frontend/lib/realtime/*, frontend/hooks/conversaciones/useConversationThread.ts,
 docs/deploy/deploy-gcp.yml, backend/prisma/schema.prisma.*

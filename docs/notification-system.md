@@ -467,7 +467,7 @@ Si `socketEventName` es `admin.notification`, el gateway ya lo enruta a todos po
 
 **Paso 2 — Frontend: extender el tipo `AdminNotificationPayload`**
 
-En `frontend/lib/realtime/types.ts`:
+En `frontend/lib/shared/realtime/types.ts`:
 
 ```typescript
 export interface AdminNotificationPayload {
@@ -483,7 +483,7 @@ Actualizar el schema Zod `adminNotificationPayloadSchema` en el mismo archivo.
 
 ### Paso 3 — Frontend: mostrar en la campana
 
-En `frontend/components/admin/notifications-bell.tsx`, agregar el `type` nuevo al mapeo de `toDisplayNotification`.
+En `frontend/components/shared/notifications-bell.tsx`, agregar el `type` nuevo al mapeo de `toDisplayNotification`.
 
 ---
 
@@ -541,7 +541,7 @@ Frontend: registrar un consumer en el hook apropiado para `conversation.typing` 
 ### Patrón estándar (con filtro por conversación)
 
 ```typescript
-import { useRealtimeManager } from '@/components/providers/realtime-provider';
+import { useRealtimeManager } from '@/components/shared/providers/realtime-provider';
 import { useEffect } from 'react';
 
 export function useMyFeature(conversationId: string) {

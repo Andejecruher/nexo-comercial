@@ -10,7 +10,7 @@ import { ToolForm } from '@/components/ai/ToolForm';
 import { ToolList } from '@/components/ai/ToolList';
 import { TopicForm } from '@/components/ai/TopicForm';
 import { AgentTopicAssignments } from '@/components/ai/AgentTopicAssignments';
-import { DepartmentForm } from '@/components/domain/catalogs/DepartmentForm';
+import { DepartmentForm } from '@/components/shared/catalogs/DepartmentForm';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -28,11 +28,11 @@ import type {
   CreateTopicPayload,
   UpdateAgentPayload,
   UpdateLinePayload,
-} from '@/lib/ai-api';
-import { agentsApi, linesApi, promptsApi, toolsApi, topicsApi } from '@/lib/ai-api';
-import { AI_PROVIDER_LABELS } from '@/lib/ai-model-config';
-import type { Department } from '@/lib/catalog-api';
-import { departmentsApi } from '@/lib/catalog-api';
+} from '@/lib/shared/ai-api';
+import { agentsApi, linesApi, promptsApi, toolsApi, topicsApi } from '@/lib/shared/ai-api';
+import { AI_PROVIDER_LABELS } from '@/lib/ai/ai-model-config';
+import type { Department } from '@/lib/shared/catalog-api';
+import { departmentsApi } from '@/lib/shared/catalog-api';
 import {
   BookOpen,
   Bot,

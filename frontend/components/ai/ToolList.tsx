@@ -2,7 +2,7 @@
 
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import type { AiTool } from '@/lib/ai-api';
+import type { AiTool } from '@/lib/shared/ai-api';
 import { ExternalLink, Loader2, Wrench, Zap } from 'lucide-react';
 
 interface ToolListProps {

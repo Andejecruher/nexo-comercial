@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import { Suspense } from 'react';
-import { AuthPageLoader, AuthPageShell } from '@/components/auth/auth-page-shell';
-import { ResetPasswordForm } from '@/components/auth/ResetPasswordForm';
+import { AuthPageLoader, AuthPageShell } from '@/components/shared/auth-page-shell';
+import { ResetPasswordForm } from '@/components/reset-password/ResetPasswordForm';
 
 export const metadata: Metadata = {
   title: 'Restablecer contraseña | Nexo Comercial',

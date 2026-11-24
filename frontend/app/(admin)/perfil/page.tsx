@@ -7,8 +7,8 @@ import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { authStorage } from '@/lib/auth-storage';
-import { profileApi, type ProfileFields, type UserProfile } from '@/lib/profile-api';
+import { authStorage } from '@/lib/shared/auth-storage';
+import { profileApi, type ProfileFields, type UserProfile } from '@/lib/perfil/profile-api';
 
 const schema = z.object({
   nombre: z.string().trim().min(2, 'Ingresá al menos 2 caracteres.').max(255),

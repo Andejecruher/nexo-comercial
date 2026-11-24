@@ -1,7 +1,7 @@
 'use client';
 
 import { Input } from '@/components/ui/input';
-import { cn } from '@/lib/utils';
+import { cn } from '@/lib/shared/utils';
 import { forwardRef } from 'react';
 import PhoneInput, { parsePhoneNumber, type Country, type Value } from 'react-phone-number-input';
 import flags from 'react-phone-number-input/flags';

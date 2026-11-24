@@ -9,8 +9,8 @@ import {
   mergeDateAndTime,
   parseDateTimeInput,
   type DateTimePickerMode,
-} from '@/lib/date-time-picker';
-import { cn } from '@/lib/utils';
+} from '@/lib/shared/date-time-picker';
+import { cn } from '@/lib/shared/utils';
 import { CalendarClock } from 'lucide-react';
 import { useEffect, useId, useMemo, useState } from 'react';
 import { es } from 'date-fns/locale';

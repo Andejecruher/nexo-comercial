@@ -16,10 +16,10 @@
 | Librería de base | **shadcn/ui** — estilo `new-york`, baseColor `neutral`, RSC `true`, CSS variables `true` | `frontend/components.json` |
 | Primitivos | Radix UI (`@radix-ui/react-*`) | `frontend/components/ui/*` |
 | Variantes | `class-variance-authority` (CVA) + `VariantProps` | `frontend/components/ui/button.tsx`, etc. |
-| Utilidad de clases | `cn(...)` = `twMerge(clsx(inputs))` | `frontend/lib/utils.ts` |
+| Utilidad de clases | `cn(...)` = `twMerge(clsx(inputs))` | `frontend/lib/shared/utils.ts` |
 | Iconografía | **lucide-react** (única librería de iconos) | global |
 | Notificaciones | **Sonner** vía `CustomToaster` (el `toast.tsx` Radix legado está sin usar) | `frontend/components/ui/toaster-custom.tsx` |
-| Breakpoint móvil (JS) | `768px` (`MOBILE_BREAKPOINT`) | `frontend/components/ui/use-mobile.tsx` |
+| Breakpoint móvil (JS) | `768px` (`MOBILE_BREAKPOINT`) | `frontend/hooks/shared/ui-use-mobile.tsx` |
 
 **Regla de oro:** un componente nuevo se arma con primitivos de `frontend/components/ui/*` + tokens semánticos (`bg-card`, `text-muted-foreground`, `border-input`). **Nunca** se hardcodean colores hex ni escalas de gris ad-hoc (`bg-gray-500`, `text-zinc-400`).
 
@@ -916,7 +916,7 @@ Todo string visible (labels, botones, placeholders, errores, vacíos, `aria-labe
 ```tsx
 // components/<dominio>/<X>StatusBadge.tsx
 import { Badge } from '@/components/ui/badge';
-import { cn } from '@/lib/utils';
+import { cn } from '@/lib/shared/utils';
 
 export const X_STATUS_CONFIG: Record<XStatus, { label: string; className: string }> = {
   PENDING: { label: 'Pendiente', className: 'border-amber-200 bg-amber-50 text-amber-700' },
@@ -1065,9 +1065,9 @@ Ver la evidencia en §2.2.4: Tailwind v4 no aplica `cursor: pointer` a botones. 
 | `frontend/components/ui/field.tsx` · `label.tsx` · `alert.tsx` | Composición y validación |
 | `frontend/components/ui/skeleton.tsx` · `spinner.tsx` · `empty.tsx` · `progress.tsx` | Estados |
 | `frontend/components/ui/toaster-custom.tsx` · `sonner.tsx` | Notificaciones |
-| `frontend/components/tickets/TicketStatusBadge.tsx` · `TicketPriorityBadge.tsx` · `TicketTable.tsx` | Referencia de dominio (estados + tabla) |
-| `frontend/components/admin/team/StatusBadges.tsx` · `UsersTable.tsx` | Referencia de badges y vacío con `Empty` |
-| `frontend/components/public/public-nav.tsx` · `public-footer.tsx` · `eventos-section.tsx` | Familia de CTAs públicas |
-| `frontend/lib/utils.ts` | `cn()` |
+| `frontend/components/shared/tickets/TicketStatusBadge.tsx` · `TicketPriorityBadge.tsx` · `TicketTable.tsx` | Referencia de dominio (estados + tabla) |
+| `frontend/components/equipo/StatusBadges.tsx` · `UsersTable.tsx` | Referencia de badges y vacío con `Empty` |
+| `frontend/components/shared/public/public-nav.tsx` · `public-footer.tsx` · `eventos-section.tsx` | Familia de CTAs públicas |
+| `frontend/lib/shared/utils.ts` | `cn()` |
 | `frontend/components.json` | Config shadcn/ui |
 | `docs/ux-writing-es-mx.md` | Reglas de texto de la interfaz |

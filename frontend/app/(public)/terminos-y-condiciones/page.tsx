@@ -1,7 +1,7 @@
-import { LegalDocument } from '@/components/legal/legal-document';
-import { TerminosContent, terminosToc } from '@/components/legal/terminos-content';
-import { legalConfig, legalRoutes } from '@/lib/legal-config';
-import { createPageMetadata } from '@/lib/seo';
+import { LegalDocument } from '@/components/shared/legal/legal-document';
+import { TerminosContent, terminosToc } from '@/components/terminos-y-condiciones/terminos-content';
+import { legalConfig, legalRoutes } from '@/lib/shared/legal-config';
+import { createPageMetadata } from '@/lib/shared/seo';
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = createPageMetadata({

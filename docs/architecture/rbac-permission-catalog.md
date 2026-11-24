@@ -470,7 +470,7 @@ DB query per guarded request.
 | `backend/src/middlewares/permission.middleware.ts` | `requirePermissions` middleware |
 | `backend/src/services/authorization.service.ts` | `getAuthenticatedUserProfile` |
 | `backend/src/services/auth.service.ts` | `login()` / `me()` return permissions |
-| `frontend/lib/auth-guards.ts` | Guard factory (server-driven) |
-| `frontend/lib/auth-storage.ts` | `UserRole` type, `StoredUser.permissions` |
-| `frontend/hooks/usePermissions.ts` | Hook exposing `can()`, `guards`, `roles` |
-| `frontend/components/admin/sidebar.tsx` | `NAV_ITEMS` with `requiredPermissions` |
+| `frontend/lib/shared/auth-guards.ts` | Guard factory (server-driven) |
+| `frontend/lib/shared/auth-storage.ts` | `UserRole` type, `StoredUser.permissions` |
+| `frontend/hooks/shared/usePermissions.ts` | Hook exposing `can()`, `guards`, `roles` |
+| `frontend/components/shared/sidebar.tsx` | `NAV_ITEMS` with `requiredPermissions` |

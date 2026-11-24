@@ -20,8 +20,12 @@ import {
 } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
-import type { AiAgent, AIProvider, CreateAgentPayload } from '@/lib/ai-api';
-import { AI_PROVIDER_LABELS, AI_PROVIDER_MODELS, NVIDIA_MODEL_HELP } from '@/lib/ai-model-config';
+import type { AiAgent, AIProvider, CreateAgentPayload } from '@/lib/shared/ai-api';
+import {
+  AI_PROVIDER_LABELS,
+  AI_PROVIDER_MODELS,
+  NVIDIA_MODEL_HELP,
+} from '@/lib/ai/ai-model-config';
 import { useEffect, useState } from 'react';
 
 interface AgentFormProps {

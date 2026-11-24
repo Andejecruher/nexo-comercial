@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
-import { AuthPageShell } from '@/components/auth/auth-page-shell';
-import { ForgotPasswordForm } from '@/components/auth/ForgotPasswordForm';
+import { AuthPageShell } from '@/components/shared/auth-page-shell';
+import { ForgotPasswordForm } from '@/components/forgot-password/ForgotPasswordForm';
 
 export const metadata: Metadata = {
   title: 'Recuperar contraseña | Nexo Comercial',

@@ -3,7 +3,7 @@
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
-import type { AiAgent } from '@/lib/ai-api';
+import type { AiAgent } from '@/lib/shared/ai-api';
 import { Bot, ChevronRight, Pencil, Trash2 } from 'lucide-react';
 import Link from 'next/link';
 

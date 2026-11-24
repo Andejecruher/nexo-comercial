@@ -19,7 +19,7 @@ import {
 } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
-import type { AiTool, AIToolKind, AIToolHttpMethod, CreateToolPayload } from '@/lib/ai-api';
+import type { AiTool, AIToolKind, AIToolHttpMethod, CreateToolPayload } from '@/lib/shared/ai-api';
 import { useEffect, useState } from 'react';
 
 interface ToolFormProps {

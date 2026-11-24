@@ -25,10 +25,10 @@ import {
   type TicketFilters,
   type TicketPriorityFilter,
   type TicketStatusFilter,
-} from '@/lib/tickets-api';
-import { useRealtimeManager } from '@/components/providers/realtime-provider';
-import { isDurableEventPayload } from '@/lib/realtime/types';
-import { useConnectionStore } from '@/stores/use-connection-store';
+} from '@/lib/shared/tickets-api';
+import { useRealtimeManager } from '@/components/shared/providers/realtime-provider';
+import { isDurableEventPayload } from '@/lib/shared/realtime/types';
+import { useConnectionStore } from '@/store/shared/use-connection-store';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import {
   useCallback,

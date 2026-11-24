@@ -4,7 +4,7 @@ import { LineForm } from '@/components/ai/LineForm';
 import { Badge } from '@/components/ui/badge';
 import { TableStatusBadge } from '@/components/ui/table-status-badge';
 import { Button } from '@/components/ui/button';
-import { PaginationControls } from '@/components/domain/catalogs/PaginationControls';
+import { PaginationControls } from '@/components/shared/catalogs/PaginationControls';
 import { TableAction } from '@/components/ui/table-action';
 import { TableEmptyState, TableSkeleton } from '@/components/ui/table-states';
 import { Input } from '@/components/ui/input';
@@ -17,8 +17,8 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { useAgents } from '@/hooks/ai/useAgents';
-import { useLines } from '@/hooks/ai/useLines';
-import type { CommunicationLine } from '@/lib/ai-api';
+import { useLines } from '@/hooks/shared/useLines';
+import type { CommunicationLine } from '@/lib/shared/ai-api';
 import { Phone, Plus, RefreshCw, Search, Settings, Wifi, WifiOff } from 'lucide-react';
 import { useState } from 'react';
 

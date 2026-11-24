@@ -67,10 +67,10 @@ Leyenda: ✅ confirmado, ⚠️ parcial/inconsistente, ❌ denegado, ❓ no demo
 
 ## Fuente de verdad
 
-Para seguridad REST prevalecen los routers backend, no `frontend/lib/auth-guards.ts`. La matriz se deriva de:
+Para seguridad REST prevalecen los routers backend, no `frontend/lib/shared/auth-guards.ts`. La matriz se deriva de:
 
 - `backend/src/routes/*.routes.ts`
 - `backend/src/middlewares/rbac.ts`
 - `backend/src/routes/index.ts`
-- `frontend/lib/auth-guards.ts`
-- `frontend/components/auth/PermissionGate.tsx`
+- `frontend/lib/shared/auth-guards.ts`
+- `frontend/components/shared/PermissionGate.tsx`

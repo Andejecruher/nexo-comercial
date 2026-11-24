@@ -6,7 +6,7 @@ import {
   type CreateAgentPayload,
   type UpdateAgentPayload,
   agentsApi,
-} from '@/lib/ai-api';
+} from '@/lib/shared/ai-api';
 import { useCallback, useEffect, useState } from 'react';
 import { toast } from 'sonner';
 

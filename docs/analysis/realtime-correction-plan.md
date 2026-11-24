@@ -52,7 +52,7 @@ La entrega se divide en cambios pequeños con pruebas de comportamiento. Pueden 
 
 **Prioridad:** P0. **Dependencias:** ninguna.
 
-Extender instrumentación en [observabilidad backend](/workspace/voz-ciudadana/backend/src/services/realtime/realtime-observability.service.ts:46), [telemetría frontend](/workspace/voz-ciudadana/frontend/lib/realtime/telemetry.ts:65) y [ruta de telemetría](/workspace/voz-ciudadana/backend/src/routes/realtime-telemetry.routes.ts:22). Registrar ingreso, commit, claim, publish, push, emit, recepción y actualización visible para inbound y tickets. Propagar correlation ID desde webhook hasta worker; añadir `surface` para distinguir campana, toast y bandeja. IDs en logs/trazas, no como labels de alta cardinalidad.
+Extender instrumentación en [observabilidad backend](/workspace/voz-ciudadana/backend/src/services/realtime/realtime-observability.service.ts:46), [telemetría frontend](/workspace/voz-ciudadana/frontend/lib/shared/realtime/telemetry.ts:65) y [ruta de telemetría](/workspace/voz-ciudadana/backend/src/routes/realtime-telemetry.routes.ts:22). Registrar ingreso, commit, claim, publish, push, emit, recepción y actualización visible para inbound y tickets. Propagar correlation ID desde webhook hasta worker; añadir `surface` para distinguir campana, toast y bandeja. IDs en logs/trazas, no como labels de alta cardinalidad.
 
 Crear fixtures y escenarios de regresión para: IA bloqueada, ruta cloud_tasks sin reconciliación, ventana de 5 s, ráfaga de más de 30 s, crash post-commit, duplicate webhook y layout real recibiendo nuevo ticket. Activar en CI la integración de dos gateways con emulador Pub/Sub; el test existente hace skip sin emulador. [Suite existente](/workspace/voz-ciudadana/backend/src/__tests__/unit/realtime/websocket-gateway.adapter.fanout.test.ts:34).
 
@@ -132,9 +132,9 @@ Emitir `conversation.message.new` para el saliente y patches de resumen. Typing/
 
 **Prioridad:** P0 para campana/bandeja; P1 para mejoras adicionales de tickets. **Dependencias:** consumidores opcionales pueden prepararse con cambio 1; activación completa después de 3–4.
 
-En [RealtimeManager](/workspace/voz-ciudadana/frontend/lib/realtime/realtime-manager.ts:227), conservar event ID en `admin.notification` y llevarlo al store. Concentrar toast/sonido/preferencias en [useRealtimeNotifications](/workspace/voz-ciudadana/frontend/hooks/useRealtimeNotifications.ts:93); el manager recibe/enruta/actualiza, y una sola capa decide presentación. Incluir `NUEVO_TICKET`, distinguir ticket ID de conversation ID y corregir la navegación de avisos para la ruta real de detalle.
+En [RealtimeManager](/workspace/voz-ciudadana/frontend/lib/shared/realtime/realtime-manager.ts:227), conservar event ID en `admin.notification` y llevarlo al store. Concentrar toast/sonido/preferencias en [useRealtimeNotifications](/workspace/voz-ciudadana/frontend/hooks/shared/useRealtimeNotifications.ts:93); el manager recibe/enruta/actualiza, y una sola capa decide presentación. Incluir `NUEVO_TICKET`, distinguir ticket ID de conversation ID y corregir la navegación de avisos para la ruta real de detalle.
 
-Actualizar [useAdminInboxConversations](/workspace/voz-ciudadana/frontend/hooks/useAdminInboxConversations.ts:524) e [inbox-sync](/workspace/voz-ciudadana/frontend/lib/realtime/inbox-sync.ts:31): patch inmediato de filas existentes; upsert si el evento incluye datos completos/autorizados; si no, consultar la fila faltante con coalescing de ventana fija. Evitar debounce que se reinicia indefinidamente por ráfagas y REST viejo que reemplaza cambios nuevos.
+Actualizar [useAdminInboxConversations](/workspace/voz-ciudadana/frontend/hooks/conversaciones/useAdminInboxConversations.ts:524) e [inbox-sync](/workspace/voz-ciudadana/frontend/lib/shared/realtime/inbox-sync.ts:31): patch inmediato de filas existentes; upsert si el evento incluye datos completos/autorizados; si no, consultar la fila faltante con coalescing de ventana fija. Evitar debounce que se reinicia indefinidamente por ráfagas y REST viejo que reemplaza cambios nuevos.
 
 Añadir consumidor en [useTickets](/workspace/voz-ciudadana/frontend/hooks/tickets/useTickets.ts:134), primero refetch coalesced por lifecycle y luego upsert por ticket ID. Los filtros y páginas cargadas deben preservarse. Polling queda como reparación y fallback.
 
@@ -148,7 +148,7 @@ Campana/store se actualizan inmediatamente. Para toasts en ráfaga, agrupar por 
 
 **Prioridad:** P1. **Dependencias:** IDs/versión del cambio 7, notificaciones durables del 4.
 
-Modificar [gateway](/workspace/voz-ciudadana/backend/src/services/realtime/websocket-gateway.service.ts:202), manager, [subscription store](/workspace/voz-ciudadana/frontend/stores/use-subscription-store.ts:11), hooks de threads/ticket detail y [NotificationsController](/workspace/voz-ciudadana/backend/src/controllers/notifications.controller.ts:57).
+Modificar [gateway](/workspace/voz-ciudadana/backend/src/services/realtime/websocket-gateway.service.ts:202), manager, [subscription store](/workspace/voz-ciudadana/frontend/store/shared/use-subscription-store.ts:11), hooks de threads/ticket detail y [NotificationsController](/workspace/voz-ciudadana/backend/src/controllers/notifications.controller.ts:57).
 
 Registrar listeners antes de subscribe. Añadir acknowledgement después de autorización y `await join`, con respuesta de error/timeout manejada. Implementar refcount por room; solo el último consumidor hace unsubscribe. Reconexión: preparar buffer → join confirmado → snapshot/delta → merge de buffer → live; bloquear respuestas de snapshots anteriores mediante request generation/version.
 

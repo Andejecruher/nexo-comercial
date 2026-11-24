@@ -1,7 +1,7 @@
 'use client';
 
-import { BrandLogo } from '@/components/brand/brand-logo';
-import { useAuth } from '@/hooks/useAuth';
+import { BrandLogo } from '@/components/shared/brand/brand-logo';
+import { useAuth } from '@/hooks/shared/useAuth';
 import { Eye, MapPin, Megaphone, Search } from 'lucide-react';
 import Link from 'next/link';
 

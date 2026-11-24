@@ -14,7 +14,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
-import type { AiTool, AiTopic, AiPrompt, CreateTopicPayload } from '@/lib/ai-api';
+import type { AiTool, AiTopic, AiPrompt, CreateTopicPayload } from '@/lib/shared/ai-api';
 import { X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 

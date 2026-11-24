@@ -37,7 +37,7 @@ Evidencia:
 - controller/device ID: `backend/src/controllers/auth.controller.ts:25-54`;
 - credenciales/roles/tokens: `backend/src/services/auth.service.ts:78-126`;
 - firmas JWT: `backend/src/utils/token.util.ts:28-71`;
-- almacenamiento cliente: `frontend/lib/auth-storage.ts:42-75`.
+- almacenamiento cliente: `frontend/lib/shared/auth-storage.ts:42-75`.
 
 ## Claims
 
@@ -98,7 +98,7 @@ La evicción FIFO se implementa sobre `refresh_sessions`, ordenando por `created
 
 - `authMiddleware` solo verifica JWT y copia claims a `req.user` (`backend/src/middlewares/auth.middleware.ts:18-49`).
 - `/auth/me` sí consulta DB y rechaza usuario inexistente/inactivo (`auth.service.ts:230-246`).
-- El frontend restaura directamente `StoredUser` si el access token local no expiró; no llama `/auth/me` en esa ruta (`frontend/hooks/useAuth.ts:85-110`).
+- El frontend restaura directamente `StoredUser` si el access token local no expiró; no llama `/auth/me` en esa ruta (`frontend/hooks/shared/useAuth.ts:85-110`).
 
 Por tanto, roles/desactivación cambian efectivamente al renovar o consultar `/me`, pero no en cada request.
 
@@ -111,7 +111,7 @@ Por tanto, roles/desactivación cambian efectivamente al renovar o consultar `/m
 
 ## Almacenamiento del navegador
 
-`vc_access_token`, `vc_refresh_token`, `vc_user` y `vc_device_id` viven en `localStorage`. Además, el access token se copia a `vc_access_token` cookie `SameSite=Strict`, pero sin `Secure` ni `HttpOnly` explícitos (`frontend/lib/auth-storage.ts:51-60`).
+`vc_access_token`, `vc_refresh_token`, `vc_user` y `vc_device_id` viven en `localStorage`. Además, el access token se copia a `vc_access_token` cookie `SameSite=Strict`, pero sin `Secure` ni `HttpOnly` explícitos (`frontend/lib/shared/auth-storage.ts:51-60`).
 
 Consecuencias comprobadas:
 

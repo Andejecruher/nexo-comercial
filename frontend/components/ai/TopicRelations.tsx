@@ -2,7 +2,7 @@
 
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import type { AiTopic, AiTool } from '@/lib/ai-api';
+import type { AiTopic, AiTool } from '@/lib/shared/ai-api';
 import { BookOpen, Hash, Loader2, Wrench } from 'lucide-react';
 
 interface TopicRelationsProps {
