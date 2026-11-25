@@ -484,6 +484,7 @@ Healthcheck sugerido: /health
 Operacion realtime (Railway + Vercel):
 
 - Backend en Railway: exponer WebSocket en la misma URL HTTP del servicio.
+- En Vercel, configurar **Root Directory** como `frontend` en Project Settings > Build and Deployment. `frontend/vercel.json` declara Next.js, `pnpm build` y `.next` como salida.
 - Frontend en Vercel: apuntar `NEXT_PUBLIC_WS_URL` al dominio backend de Railway.
 - Si frontend y backend viven en dominios distintos, definir `WS_CORS_ORIGIN` con el dominio exacto del frontend (evitar `*` en produccion).
 - Fallback: si el socket no conecta, el frontend mantiene polling automaticamente.
