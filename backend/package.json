@@ -32,7 +32,6 @@
     "prisma:seed:dev": "ts-node --project prisma/seed/tsconfig.json prisma/seed/index.ts dev",
     "prisma:seed:ai": "ts-node --project prisma/seed/tsconfig.json prisma/seed/index.ts dev",
     "prisma:seed:all": "ts-node --project prisma/seed/tsconfig.json prisma/seed/index.ts all",
-    "prisma:seed:test": "ts-node --project prisma/seed/tsconfig.json prisma/seed/index.ts test",
     "prisma:studio": "prisma studio --schema=./prisma/schema.prisma",
     "generate:drive-token": "ts-node --project scripts/tsconfig.json scripts/driver/generate-token-drive.ts",
     "departments:repair-slugs": "ts-node --project scripts/tsconfig.json scripts/migrations/repair-department-slugs.ts",

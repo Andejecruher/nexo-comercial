@@ -52,9 +52,9 @@ Registro CRM, no cuenta autenticable (`schema.prisma:140-168`). Tiene datos pers
 | `ANALISTA`         | ✅         | ✅     | ✅      | ✅       | Analytics y lectura de conversaciones                 |
 | `isSuperuser=true` | ✅ columna | ❌     | ❌      | ❌       | 🧟 Legado                                             |
 
-Los roles se insertan por migración y seed:
+Los roles se insertan con el seeder core después de crear la tabla en la línea base:
 
-- `backend/prisma/migrations/00000000000023_seed_panel_roles/migration.sql`
+- `backend/prisma/migrations/00000000000020_create_roles/migration.sql`
 - `backend/prisma/seed/core/roles.seed.ts`
 
 ## Permisos explícitos e implícitos

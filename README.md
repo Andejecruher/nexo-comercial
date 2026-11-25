@@ -132,9 +132,9 @@ Detalle completo — formula del presupuesto, techo real de la instancia, migrac
 
 ## Async XLSX exports
 
-Set `ENABLE_XLSX_EXPORT=true` to enable filtered XLSX exports for promoted citizens,
-leaders, coordinators, and citizens. The API stores a job for 24 hours, dispatches it
-to the worker, streams the workbook to a private Google Drive `exports/<module>`
+Set `ENABLE_XLSX_EXPORT=true` to enable filtered XLSX exports for citizens. The API
+stores a job for 24 hours, dispatches it to the worker, streams the workbook to a
+private Google Drive `exports/<module>`
 folder, and serves an authenticated streaming download.
 
 - `EXPORT_JOB_TTL_MS` defaults to `86400000` (24 hours).
@@ -146,8 +146,8 @@ folder, and serves an authenticated streaming download.
 
 The worker reconciliation loop removes expired Drive files and their jobs. Roll back
 by setting `ENABLE_XLSX_EXPORT=false`; this returns `503` before job creation and
-hides the admin button. The `export_jobs` migration is independent of source tables
-and can be reverted without changing promoted, leader, coordinator, or citizen data.
+hides the admin button. The consolidated `export_jobs` table migration does not
+change citizen data.
 
 Production enables the feature with `ENABLE_XLSX_EXPORT=true` on `nexo-api` and
 `nexo-worker` (see `docs/DEPLOYMENT_GCP.md`). In `cloud_tasks` the API enqueues
@@ -316,11 +316,10 @@ pnpm --dir backend prisma:seed:dev    # dev only (superadmin + AI module)
 pnpm --dir backend prisma:seed:ai     # alias for dev-only AI seed
 ```
 
-`all` runs core + dev + test path. It also requires `SUPERADMIN_PASSWORD`:
+`all` runs core + dev. It also requires `SUPERADMIN_PASSWORD`:
 
 ```bash
-pnpm --dir backend prisma:seed:all    # core + dev + test fixtures
-pnpm --dir backend prisma:seed:test   # test fixtures only
+pnpm --dir backend prisma:seed:all    # core + dev
 ```
 
 Docker Compose execution:
@@ -343,6 +342,12 @@ Before running any seed that creates the superadmin, define in `backend/.env`:
 - `SUPERADMIN_FULL_NAME`
 
 `SUPERADMIN_PASSWORD` has no development default; it must be provided explicitly.
+
+### Database baseline
+
+The active Prisma migrations recreate the current schema from an **empty PostgreSQL 16 database**. They replace the historical migration chain and must not be deployed to a database that already records the old migrations in `_prisma_migrations`.
+
+For a new local database, set `DATABASE_URL`, then run `pnpm --dir backend migrate:deploy` and `pnpm --dir backend prisma:seed:core`. See [`docs/database-refactor/DATABASE_CHANGELOG.md`](docs/database-refactor/DATABASE_CHANGELOG.md) and [`docs/database-refactor/DATABASE_VALIDATION.md`](docs/database-refactor/DATABASE_VALIDATION.md) for the scope and checks.
 
 ### Frontend (scripts)
 
@@ -479,6 +484,7 @@ Healthcheck sugerido: /health
 Operacion realtime (Railway + Vercel):
 
 - Backend en Railway: exponer WebSocket en la misma URL HTTP del servicio.
+- En Vercel, configurar **Root Directory** como `frontend` en Project Settings > Build and Deployment. `frontend/vercel.json` declara Next.js, `pnpm build` y `.next` como salida.
 - Frontend en Vercel: apuntar `NEXT_PUBLIC_WS_URL` al dominio backend de Railway.
 - Si frontend y backend viven en dominios distintos, definir `WS_CORS_ORIGIN` con el dominio exacto del frontend (evitar `*` en produccion).
 - Fallback: si el socket no conecta, el frontend mantiene polling automaticamente.

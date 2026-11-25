@@ -9,8 +9,9 @@ No requiere Redis ni BullMQ.
 
 Modelo ORM: `backend/prisma/schema.prisma`, modelos `Campaign`,
 `CampaignRecipient` y `CampaignAttachment`. SQL completo:
-`backend/prisma/migrations/20261014060000_whatsapp_campaigns/migration.sql` y
-`backend/prisma/migrations/20261014080000_campaign_attachments/migration.sql`.
+`backend/prisma/migrations/00000000000040_create_campaigns/migration.sql`,
+`backend/prisma/migrations/00000000000052_create_campaign_recipients/migration.sql` y
+`backend/prisma/migrations/00000000000051_create_campaign_attachments/migration.sql`.
 
 | Tabla | Información |
 | --- | --- |

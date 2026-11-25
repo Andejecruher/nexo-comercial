@@ -25,7 +25,8 @@ backend/
   src/controllers/webhook.controller.ts    # Extensión del controlador existente
   src/middlewares/metaSignature.middleware.ts
   src/middlewares/idempotency.middleware.ts
-  prisma/migrations/20261014000000_template_management/migration.sql
+  prisma/migrations/00000000000012_create_managed_templates/migration.sql
+  prisma/migrations/00000000000022_create_template_status_events/migration.sql
 ```
 
 Se reutilizan la autenticación Bearer, el refresco de sesión y los permisos `plantillas.view`, `plantillas.create`, `plantillas.update`, `plantillas.delete` del proyecto. La autorización de plantillas tiene alcance global, igual que el módulo ya definido en el catálogo de permisos. No se introduce un ACL por línea; si el proyecto incorpora restricciones por WABA, deben aplicarse tanto a REST como al stream.

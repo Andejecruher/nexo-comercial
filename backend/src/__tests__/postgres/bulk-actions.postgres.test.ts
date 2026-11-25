@@ -1,37 +1,29 @@
 import { afterAll, beforeAll, beforeEach, describe, expect, it, jest } from '@jest/globals';
 import { PrismaClient } from '@prisma/client';
 import { randomUUID } from 'crypto';
-import { readFileSync } from 'fs';
-import { resolve } from 'path';
 import { AuthorizationService } from '../../services/authorization.service';
 import { BulkActionQueue } from '../../services/bulk/bulk-action-queue.service';
 import { BulkActionWorker } from '../../services/bulk/bulk-action-worker.service';
 import { BULK_PERMISSIONS } from '../../services/bulk/bulk-action.schema';
 import type { PrismaService } from '../../services/prisma.service';
+import { dropIsolatedDatabase, migrateIsolatedDatabase } from './baseline-schema';
 
-// Only a uniquely named temporary schema is created and removed; public data is untouched.
-const schema = `bulk_test_${randomUUID().replaceAll('-', '')}`;
-const url = new URL(process.env.DATABASE_URL!);
-url.searchParams.set('schema', schema);
-const prisma = new PrismaClient({ datasources: { db: { url: url.toString() } } });
-const db = prisma as PrismaService;
-const queue = new BulkActionQueue(db);
+// Each suite owns a fresh database; the caller database is untouched.
+const database = `bulk_test_${randomUUID().replaceAll('-', '')}`;
+const admin = new PrismaClient();
+let prisma: PrismaClient;
+let db: PrismaService;
+let queue: BulkActionQueue;
 const actor = randomUUID();
 const transfer = jest.fn<() => Promise<never>>();
 const makeWorker = () => new BulkActionWorker(db, { transfer } as never, {} as never, {} as never);
 
 beforeAll(async () => {
-  await prisma.$executeRawUnsafe(`CREATE SCHEMA "${schema}"`);
-  const sql = readFileSync(
-    resolve(
-      __dirname,
-      '../../../prisma/migrations/20261014170000_conversation_bulk_jobs/migration.sql',
-    ),
-    'utf8',
-  );
-  for (const statement of sql.split(';').filter((part) => part.trim()))
-    await prisma.$executeRawUnsafe(statement);
-});
+  const url = await migrateIsolatedDatabase(admin, database);
+  prisma = new PrismaClient({ datasources: { db: { url: url.toString() } } });
+  db = prisma as PrismaService;
+  queue = new BulkActionQueue(db);
+}, 60000);
 beforeEach(async () => {
   await prisma.conversationBulkJob.deleteMany({ where: { actorId: actor } });
   transfer.mockReset();
@@ -42,8 +34,9 @@ beforeEach(async () => {
 });
 afterAll(async () => {
   jest.restoreAllMocks();
-  await prisma.$executeRawUnsafe(`DROP SCHEMA IF EXISTS "${schema}" CASCADE`);
   await prisma.$disconnect();
+  await dropIsolatedDatabase(admin, database);
+  await admin.$disconnect();
 });
 
 describe('durable bulk queue with PostgreSQL', () => {
