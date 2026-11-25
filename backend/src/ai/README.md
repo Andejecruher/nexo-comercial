@@ -262,10 +262,10 @@ Se conserva esquema enriquecido actual (sin simplificar). El siguiente mapeo acl
 
 ## 9) Migraciones del modulo AI (alineado a flujo containerizado)
 
-Estado: se genero migracion real (create-only), sin tocar schema actual.
+Estado: el esquema efectivo del módulo IA forma parte de la línea base consolidada para instalaciones nuevas.
 
-- Carpeta: `backend/prisma/migrations/20260503014435_ai_orchestration_module`
-- SQL: `backend/prisma/migrations/20260503014435_ai_orchestration_module/migration.sql`
+- Tablas de IA: `backend/prisma/migrations/00000000000001_create_ai_agents/migration.sql` y las migraciones por tabla relacionadas.
+- Claves cíclicas: `backend/prisma/migrations/00000000000059_add_shared_constraints/migration.sql`.
 
 Convencion del proyecto:
 

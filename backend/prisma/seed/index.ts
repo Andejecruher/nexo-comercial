@@ -5,11 +5,11 @@ import { seedPermissions } from './core/permissions.seed';
 import { seedRolePermissions } from './core/role-permissions.seed';
 import { seedRoles } from './core/roles.seed';
 
-type SeedScope = 'all' | 'core' | 'dev' | 'test';
+type SeedScope = 'all' | 'core' | 'dev';
 
 function parseScope(): SeedScope {
   const arg = process.argv[2]?.toLowerCase();
-  if (arg === 'all' || arg === 'dev' || arg === 'test') return arg;
+  if (arg === 'all' || arg === 'dev') return arg;
   return 'core';
 }
 
@@ -47,11 +47,6 @@ async function main(): Promise<void> {
 
     if (scope === 'all' || scope === 'dev') {
       await seedDev(prisma);
-    }
-
-    if (scope === 'all' || scope === 'test') {
-      const { seedTestFixtures } = await import('./test/fixtures.seed');
-      await seedTestFixtures(prisma);
     }
 
     console.log('🎉 Seed complete');

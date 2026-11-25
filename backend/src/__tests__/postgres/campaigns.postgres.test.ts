@@ -1,16 +1,15 @@
 import { CampaignMessageService } from '../../services/campaigns/campaign-message.service';
 import { randomUUID } from 'crypto';
-import { readFileSync } from 'fs';
-import { join } from 'path';
 import { PrismaClient } from '@prisma/client';
 import { CampaignStatusService } from '../../services/campaigns/campaign-status.service';
 import { CampaignWorkerService } from '../../services/campaigns/campaign-worker.service';
 import { CampaignService } from '../../services/campaigns/campaign.service';
 import { WhatsAppLineConfigResolver } from '../../services/whatsapp/whatsapp-line-config.resolver';
+import { dropIsolatedDatabase, migrateIsolatedDatabase } from './baseline-schema';
 
 // Isolated temporary schema: never migrates or deletes application tables.
 describe('campaigns — real PostgreSQL', () => {
-  const schema = `campaign_test_${randomUUID().replace(/-/g, '')}`;
+  const database = `campaign_test_${randomUUID().replace(/-/g, '')}`;
   const userId = randomUUID(),
     lineId = randomUUID();
   let admin: PrismaClient, prisma: PrismaClient;
@@ -18,42 +17,21 @@ describe('campaigns — real PostgreSQL', () => {
     jest.spyOn(CampaignMessageService.prototype, 'sync').mockResolvedValue(undefined);
   });
   beforeAll(async () => {
-    const url = new URL(process.env.DATABASE_URL!);
-    if (!['localhost', '127.0.0.1', 'postgres'].includes(url.hostname))
-      throw new Error('This suite requires local PostgreSQL');
     admin = new PrismaClient();
-    await admin.$executeRawUnsafe(`CREATE SCHEMA "${schema}"`);
-    url.searchParams.set('schema', schema);
+    const url = await migrateIsolatedDatabase(admin, database);
     prisma = new PrismaClient({ datasources: { db: { url: url.toString() } } });
-    for (const table of ['users', 'communication_lines', 'citizens'])
-      await prisma.$executeRawUnsafe(`CREATE TABLE "${table}" (id UUID PRIMARY KEY)`);
-    await prisma.$executeRawUnsafe('CREATE TABLE messages (idempotency_key VARCHAR(255))');
-    const migration = readFileSync(
-      join(__dirname, '../../../prisma/migrations/20261014060000_whatsapp_campaigns/migration.sql'),
-      'utf8',
-    );
-    for (const statement of migration.split(';').filter((s) => s.trim()))
-      await prisma.$executeRawUnsafe(statement);
-    const attachmentMigration = readFileSync(
-      join(
-        __dirname,
-        '../../../prisma/migrations/20261014080000_campaign_attachments/migration.sql',
-      ),
-      'utf8',
-    );
-    for (const statement of attachmentMigration.split(';').filter((s) => s.trim()))
-      await prisma.$executeRawUnsafe(statement);
-    await prisma.$executeRawUnsafe(
-      'CREATE TABLE rate_limit_counters (scope VARCHAR(50), bucket_key VARCHAR(255), window_start TIMESTAMPTZ, count INT, updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(), PRIMARY KEY(scope, bucket_key, window_start))',
-    );
-    await prisma.$executeRaw`INSERT INTO users (id) VALUES (${userId}::uuid)`;
-    await prisma.$executeRaw`INSERT INTO communication_lines (id) VALUES (${lineId}::uuid)`;
-  }, 30000);
+    await prisma.user.create({
+      data: { id: userId, email: `${userId}@example.invalid`, hashedPassword: 'test-only' },
+    });
+    await prisma.communicationLine.create({
+      data: { id: lineId, externalIdentifier: '12345', displayName: 'Test line' },
+    });
+  }, 60000);
   afterAll(async () => {
     jest.restoreAllMocks();
     await prisma?.$disconnect();
     if (admin) {
-      await admin.$executeRawUnsafe(`DROP SCHEMA IF EXISTS "${schema}" CASCADE`);
+      await dropIsolatedDatabase(admin, database);
       await admin.$disconnect();
     }
   });

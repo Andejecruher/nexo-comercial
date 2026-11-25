@@ -4,6 +4,7 @@ import {
   Prisma,
   PrismaClient,
 } from '@prisma/client';
+import { isDeepStrictEqual } from 'node:util';
 
 const DEFAULT_DEPARTMENT_TIMEZONE = 'America/Mexico_City';
 const ALL_DAYS = [
@@ -421,40 +422,76 @@ async function synchronizeDepartmentSchedule(
   departmentId: string,
   schedule: WeeklyScheduleSeed[],
 ): Promise<{ days: number; intervals: number }> {
-  const openDays = schedule.filter((day) => day.isOpen).map((day) => day.dayOfWeek);
-  const closedDays = schedule.filter((day) => !day.isOpen).map((day) => day.dayOfWeek);
   await tx.departmentSchedule.createMany({
     data: schedule.map((day) => ({ departmentId, dayOfWeek: day.dayOfWeek, isOpen: day.isOpen })),
     skipDuplicates: true,
   });
-  if (openDays.length > 0)
-    await tx.departmentSchedule.updateMany({
-      where: { departmentId, dayOfWeek: { in: openDays } },
-      data: { isOpen: true },
-    });
-  if (closedDays.length > 0)
-    await tx.departmentSchedule.updateMany({
-      where: { departmentId, dayOfWeek: { in: closedDays } },
-      data: { isOpen: false },
-    });
   const rows = await tx.departmentSchedule.findMany({
     where: { departmentId, dayOfWeek: { in: schedule.map((day) => day.dayOfWeek) } },
-    select: { id: true, dayOfWeek: true },
+    select: { id: true, dayOfWeek: true, isOpen: true },
   });
-  const scheduleIds = new Map(rows.map((row) => [row.dayOfWeek, row.id]));
-  await tx.departmentScheduleInterval.deleteMany({
-    where: { scheduleId: { in: rows.map((row) => row.id) } },
-  });
-  const intervals = schedule.flatMap((day) => {
-    const scheduleId = scheduleIds.get(day.dayOfWeek);
-    if (!scheduleId) throw new Error(`No se creó el horario ${day.dayOfWeek}.`);
-    return day.intervals.map((interval, sortOrder) => ({ scheduleId, ...interval, sortOrder }));
-  });
-  if (intervals.length > 0) await tx.departmentScheduleInterval.createMany({ data: intervals });
+  const schedules = new Map(rows.map((row) => [row.dayOfWeek, row]));
+  let intervalCount = 0;
+  for (const day of schedule) {
+    const row = schedules.get(day.dayOfWeek);
+    if (!row) throw new Error(`No se creó el horario ${day.dayOfWeek}.`);
+    if (row.isOpen !== day.isOpen) {
+      await tx.departmentSchedule.update({ where: { id: row.id }, data: { isOpen: day.isOpen } });
+    }
+    await synchronizeIntervals(tx, 'schedule', row.id, day.intervals);
+    intervalCount += day.intervals.length;
+  }
   await tx.departmentSchedule.deleteMany({
     where: { departmentId, dayOfWeek: { notIn: schedule.map((day) => day.dayOfWeek) } },
   });
-  return { days: schedule.length, intervals: intervals.length };
+  return { days: schedule.length, intervals: intervalCount };
+}
+
+async function synchronizeIntervals(
+  tx: DepartmentTx,
+  kind: 'schedule' | 'exception',
+  parentId: string,
+  intervals: TimeIntervalSeed[],
+): Promise<void> {
+  const existing =
+    kind === 'schedule'
+      ? await tx.departmentScheduleInterval.findMany({
+          where: { scheduleId: parentId },
+          select: { id: true, startTime: true, endTime: true, sortOrder: true },
+        })
+      : await tx.departmentExceptionInterval.findMany({
+          where: { exceptionId: parentId },
+          select: { id: true, startTime: true, endTime: true, sortOrder: true },
+        });
+  const key = (startTime: string, endTime: string) => `${startTime}|${endTime}`;
+  const existingByRange = new Map(existing.map((row) => [key(row.startTime, row.endTime), row]));
+  const wanted = new Set(intervals.map((row) => key(row.startTime, row.endTime)));
+  const obsoleteIds = existing
+    .filter((row) => !wanted.has(key(row.startTime, row.endTime)))
+    .map((row) => row.id);
+  if (obsoleteIds.length) {
+    if (kind === 'schedule')
+      await tx.departmentScheduleInterval.deleteMany({ where: { id: { in: obsoleteIds } } });
+    else await tx.departmentExceptionInterval.deleteMany({ where: { id: { in: obsoleteIds } } });
+  }
+  for (const [sortOrder, interval] of intervals.entries()) {
+    const row = existingByRange.get(key(interval.startTime, interval.endTime));
+    if (kind === 'schedule') {
+      if (row && row.sortOrder !== sortOrder)
+        await tx.departmentScheduleInterval.update({ where: { id: row.id }, data: { sortOrder } });
+      else if (!row)
+        await tx.departmentScheduleInterval.create({
+          data: { scheduleId: parentId, ...interval, sortOrder },
+        });
+    } else {
+      if (row && row.sortOrder !== sortOrder)
+        await tx.departmentExceptionInterval.update({ where: { id: row.id }, data: { sortOrder } });
+      else if (!row)
+        await tx.departmentExceptionInterval.create({
+          data: { exceptionId: parentId, ...interval, sortOrder },
+        });
+    }
+  }
 }
 
 function exceptionKey(
@@ -513,17 +550,8 @@ async function synchronizeDepartmentExceptions(
     if (!existingId) created += 1;
     synchronized.push({ id: row.id, exception });
   }
-  await tx.departmentExceptionInterval.deleteMany({
-    where: { exceptionId: { in: synchronized.map((row) => row.id) } },
-  });
-  const intervals = synchronized.flatMap(({ id, exception }) =>
-    exception.intervals.map((interval, sortOrder) => ({
-      exceptionId: id,
-      ...interval,
-      sortOrder,
-    })),
-  );
-  if (intervals.length > 0) await tx.departmentExceptionInterval.createMany({ data: intervals });
+  for (const { id, exception } of synchronized)
+    await synchronizeIntervals(tx, 'exception', id, exception.intervals);
   return { created, updated: exceptions.length - created };
 }
 
@@ -533,29 +561,42 @@ async function seedDepartment(
 ): Promise<SeedDepartmentResult> {
   const existing = await prisma.department.findUnique({
     where: { slug: data.slug },
-    select: { id: true },
-  });
-  const department = await prisma.department.upsert({
-    where: { slug: data.slug },
-    update: {
-      name: data.name,
-      description: data.description,
-      serviceHours: data.serviceHours,
-      serviceSchedule: scheduleToLegacyJson(data.schedule),
-      keywords: data.keywords,
-      isActive: data.isActive,
+    select: {
+      id: true,
+      name: true,
+      description: true,
+      serviceHours: true,
+      serviceSchedule: true,
+      keywords: true,
+      isActive: true,
     },
-    create: {
-      slug: data.slug,
-      name: data.name,
-      description: data.description,
-      serviceHours: data.serviceHours,
-      serviceSchedule: scheduleToLegacyJson(data.schedule),
-      keywords: data.keywords,
-      isActive: data.isActive,
-    },
-    select: { id: true },
   });
+  const desiredSchedule = scheduleToLegacyJson(data.schedule);
+  const isCurrent =
+    existing?.name === data.name &&
+    existing.description === data.description &&
+    existing.serviceHours === data.serviceHours &&
+    isDeepStrictEqual(existing.serviceSchedule, desiredSchedule) &&
+    isDeepStrictEqual(existing.keywords, data.keywords) &&
+    existing.isActive === data.isActive;
+  const values = {
+    slug: data.slug,
+    name: data.name,
+    description: data.description,
+    serviceHours: data.serviceHours,
+    serviceSchedule: desiredSchedule,
+    keywords: data.keywords,
+    isActive: data.isActive,
+  };
+  const department = isCurrent
+    ? existing
+    : await prisma.department.upsert({
+        where: { slug: data.slug },
+        update: values,
+        create: values,
+        select: { id: true },
+      });
+  if (!department) throw new Error(`No se pudo crear el departamento ${data.slug}.`);
   const schedule = await prisma.$transaction(
     (tx) => synchronizeDepartmentSchedule(tx, department.id, data.schedule),
     SEED_TRANSACTION_OPTIONS,

@@ -179,6 +179,16 @@ jobs:
           git fetch origin "${{ github.base_ref }}"
           base="origin/${{ github.base_ref }}"
           changed=$(git diff --diff-filter=DM --name-only "$base"...HEAD -- 'backend/prisma/migrations/*/migration.sql' || true)
+          if [ "${{ github.head_ref }}" = 'refactor/database-baseline' ]; then
+            deleted=$(git diff --diff-filter=D --name-only "$base"...HEAD -- 'backend/prisma/migrations/*/migration.sql' | wc -l)
+            added=$(git diff --diff-filter=A --name-only "$base"...HEAD -- 'backend/prisma/migrations/*/migration.sql' | wc -l)
+            if [ "$deleted" -eq 78 ] && [ "$added" -gt 0 ] && [ -f docs/database-refactor/DATABASE_SCHEMA_COMPARISON.md ]; then
+              echo 'OK: reemplazo excepcional de la línea base documentado en la rama autorizada.'
+              exit 0
+            fi
+            echo '::error::La rama de línea base debe retirar las 78 migraciones históricas, añadir la línea base y documentar la comparación.'
+            exit 1
+          fi
           if [ -n "$changed" ]; then
             echo "::error::Las migraciones versionadas son forward-only: no elimines ni modifiques una migration.sql ya commiteada. Crea una nueva migracion correctiva."
             echo "Archivos afectados:"

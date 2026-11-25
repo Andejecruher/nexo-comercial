@@ -1,6 +1,4 @@
 import { randomUUID } from 'crypto';
-import { readFileSync } from 'fs';
-import { join } from 'path';
 
 import { PrismaClient } from '@prisma/client';
 import request from 'supertest';
@@ -12,92 +10,25 @@ import { EventRepository } from '../../repositories/event.repository';
 import { PrismaService } from '../../services/prisma.service';
 import { PublicEventosService } from '../../services/public-eventos.service';
 import { createTestApp } from '../setup/test-app';
-
-async function applyMigration(prisma: PrismaClient, migrationDir: string): Promise<void> {
-  const migration = readFileSync(join(__dirname, migrationDir), 'utf8');
-  // Plpgsql function bodies ($$ ... $$) contain inner semicolons: extract the
-  // whole CREATE FUNCTION statement and split only the remaining statements.
-  const functionMatch = migration.match(/CREATE (?:OR REPLACE )?FUNCTION[\s\S]*?\$\$;/);
-  if (functionMatch && functionMatch.index !== undefined) {
-    const before = migration.slice(0, functionMatch.index).split(';');
-    const after = migration.slice(functionMatch.index + functionMatch[0].length).split(';');
-    for (const statement of before.filter((s) => s.trim())) {
-      await prisma.$executeRawUnsafe(statement);
-    }
-    await prisma.$executeRawUnsafe(functionMatch[0]);
-    for (const statement of after.filter((s) => s.trim())) {
-      await prisma.$executeRawUnsafe(statement);
-    }
-    return;
-  }
-  for (const statement of migration.split(';').filter((s) => s.trim())) {
-    await prisma.$executeRawUnsafe(statement);
-  }
-}
+import { dropIsolatedDatabase, migrateIsolatedDatabase } from './baseline-schema';
 
 describe('event visibility — real PostgreSQL', () => {
-  const schema = `event_visibility_test_${randomUUID().replace(/-/g, '')}`;
+  const database = `event_visibility_test_${randomUUID().replace(/-/g, '')}`;
   let admin: PrismaClient;
   let prisma: PrismaClient;
   let repository: EventRepository;
 
   beforeAll(async () => {
-    const url = new URL(process.env.DATABASE_URL!);
-    if (!['localhost', '127.0.0.1', 'postgres'].includes(url.hostname)) {
-      throw new Error('This suite requires local PostgreSQL');
-    }
-
     admin = new PrismaClient();
-    await admin.$executeRawUnsafe(`CREATE SCHEMA "${schema}"`);
-    url.searchParams.set('schema', schema);
+    const url = await migrateIsolatedDatabase(admin, database);
     prisma = new PrismaClient({ datasources: { db: { url: url.toString() } } });
-
-    await prisma.$executeRawUnsafe(
-      "CREATE TYPE event_status AS ENUM ('draft', 'published', 'completed', 'cancelled')",
-    );
-    await prisma.$executeRawUnsafe(
-      "CREATE TYPE event_type AS ENUM ('townhall', 'community', 'volunteer', 'campaign', 'rally')",
-    );
-    await prisma.$executeRawUnsafe('CREATE TABLE users (id UUID PRIMARY KEY)');
-    await prisma.$executeRawUnsafe(`
-      CREATE TABLE events (
-        id UUID PRIMARY KEY,
-        title VARCHAR(255) NOT NULL,
-        slug VARCHAR(255) NOT NULL UNIQUE,
-        description TEXT,
-        event_type event_type NOT NULL DEFAULT 'townhall',
-        status event_status NOT NULL DEFAULT 'draft',
-        starts_at TIMESTAMPTZ NOT NULL,
-        ends_at TIMESTAMPTZ,
-        location_name VARCHAR(255),
-        neighborhood VARCHAR(255),
-        address VARCHAR(500),
-        latitude DECIMAL(10, 7),
-        longitude DECIMAL(10, 7),
-        capacity INTEGER,
-        organizer_user_id UUID,
-        created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-        updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
-      )
-    `);
-
-    // Mirror the production migration chain: visibility column first,
-    // then the 'internal' -> 'private' rename that drops the details table.
-    await applyMigration(
-      prisma,
-      '../../../prisma/migrations/20261109000000_event_visibility/migration.sql',
-    );
-    await applyMigration(
-      prisma,
-      '../../../prisma/migrations/20261109010000_event_visibility_private/migration.sql',
-    );
     repository = new EventRepository(prisma as unknown as PrismaService);
-  });
+  }, 60000);
 
   afterAll(async () => {
     await prisma?.$disconnect();
     if (admin) {
-      await admin.$executeRawUnsafe(`DROP SCHEMA IF EXISTS "${schema}" CASCADE`);
+      await dropIsolatedDatabase(admin, database);
       await admin.$disconnect();
     }
   });
@@ -109,9 +40,9 @@ describe('event visibility — real PostgreSQL', () => {
   async function createEvent(input: { visibility: 'public' | 'private'; startsAt: Date }) {
     const id = randomUUID();
     await prisma.$executeRaw`
-      INSERT INTO events (id, title, slug, status, starts_at, visibility)
+      INSERT INTO events (id, title, slug, status, starts_at, visibility, updated_at)
       VALUES (${id}::uuid, ${`${input.visibility} event`}, ${`${input.visibility}-${id}`},
-        'published'::event_status, ${input.startsAt}, ${input.visibility}::event_visibility)
+        'published'::event_status, ${input.startsAt}, ${input.visibility}::event_visibility, now())
     `;
     return id;
   }

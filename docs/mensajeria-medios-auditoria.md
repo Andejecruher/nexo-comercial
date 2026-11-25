@@ -234,11 +234,11 @@ de texto. No se marca ese caso multimedia como completado.
 
 ## Migración y despliegue
 
-Migración aditiva:
-`backend/prisma/migrations/20261018000000_message_media_history/migration.sql`.
-Añade enum values, columnas nullable/metadatos de proceso de adjuntos, índices y
-línea opcional de notificaciones. Los adjuntos anteriores quedan en `legacy`.
-No elimina filas ni requiere reconstruir el catálogo histórico.
+La línea base para instalaciones nuevas incorpora estos campos directamente en
+`backend/prisma/migrations/00000000000049_create_attachments/migration.sql` y
+`backend/prisma/migrations/00000000000050_create_messages/migration.sql`, junto con
+los enums y los índices correspondientes. No se debe aplicar esta línea base sobre
+una base que tenga el historial anterior registrado en `_prisma_migrations`.
 
 Orden recomendado:
 
