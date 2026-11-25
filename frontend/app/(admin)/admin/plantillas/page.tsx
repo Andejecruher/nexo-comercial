@@ -1,5 +1,5 @@
-import { PermissionGate } from '@/components/auth/PermissionGate';
-import { TemplatesPage } from '@/components/templates/TemplatesPage';
+import { PermissionGate } from '@/components/shared/PermissionGate';
+import { TemplatesPage } from '@/components/plantillas/TemplatesPage';
 export default function Page() {
   return (
     <PermissionGate

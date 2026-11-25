@@ -35,14 +35,14 @@ ENV WATCHPACK_POLLING=true
 
 # Fuera de /workspace/frontend: el bind-mount ./frontend:/workspace/frontend oculta el tree del host
 # y el script en el repo suele venir sin +x → "permission denied" al ejecutar el ENTRYPOINT.
-COPY frontend/scripts/docker-dev-entrypoint.sh /usr/local/bin/voz-frontend-dev-entrypoint.sh
-RUN chmod +x /usr/local/bin/voz-frontend-dev-entrypoint.sh
+COPY frontend/scripts/docker-dev-entrypoint.sh /usr/local/bin/nexo-frontend-dev-entrypoint.sh
+RUN chmod +x /usr/local/bin/nexo-frontend-dev-entrypoint.sh
 
 WORKDIR /workspace/frontend
 
 EXPOSE 3000
 
-ENTRYPOINT ["/usr/local/bin/voz-frontend-dev-entrypoint.sh"]
+ENTRYPOINT ["/usr/local/bin/nexo-frontend-dev-entrypoint.sh"]
 CMD ["pnpm", "exec", "next", "dev", "--hostname", "0.0.0.0", "--port", "3000"]
 
 # ── Build Next.js ──────────────────────────────────────────────────────────

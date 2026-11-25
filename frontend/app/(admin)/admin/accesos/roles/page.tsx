@@ -1,4 +1,4 @@
-import { RolesView } from '@/components/admin/access-control/RolesView';
+import { RolesView } from '@/components/accesos/RolesView';
 
 export default function AdminAccessRolesPage() {
   return <RolesView />;

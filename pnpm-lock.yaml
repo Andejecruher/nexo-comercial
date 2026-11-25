@@ -19,6 +19,9 @@ importers:
       '@google-cloud/tasks':
         specifier: ^6.3.0
         version: 6.3.0(supports-color@8.1.1)
+      '@googleapis/drive':
+        specifier: ^22.0.0
+        version: 22.0.0(supports-color@8.1.1)
       '@grpc/grpc-js':
         specifier: 1.14.4
         version: 1.14.4
@@ -64,9 +67,6 @@ importers:
       google-auth-library:
         specifier: ^10.9.1
         version: 10.9.1(supports-color@8.1.1)
-      googleapis:
-        specifier: ^174.0.1
-        version: 174.0.1(supports-color@8.1.1)
       helmet:
         specifier: ^7.1.0
         version: 7.2.0
@@ -939,6 +939,10 @@ packages:
   '@google-cloud/tasks@6.3.0':
     resolution: {integrity: sha512-80I5otVKL+cWY2fzMVs7vj5qOQ+JDCxO7Kem90P33JsR6EZDg0dRquHkSqsNH5NbAEOW9g1WAq9O5S8jPiE14g==}
     engines: {node: '>=18'}
+
+  '@googleapis/drive@22.0.0':
+    resolution: {integrity: sha512-u21JQPR5mGKt8OqjsDndb+l5b44IXCKTum+P1Q1rlWmi2pUNZqcNeq7csx06xlwj+UeZv5/ZhhhAjziVZu86Dg==}
+    engines: {node: '>=12.0.0'}
 
   '@grpc/grpc-js@1.14.4':
     resolution: {integrity: sha512-k9Dj3DV/itK9D06Y8f190Qgop7/Ui+D0njFV3LHMPwPT75DpXLQohE9Wmz0QElrJnzsjB7KPWiKJbOl7IPDArQ==}
@@ -4524,10 +4528,6 @@ packages:
     resolution: {integrity: sha512-7g1yzQKx0mmNTjiK0H9dJ8eqKqDBveES9vLHeg5neb3BMQy/d1oQefIMhIpOVT8a+f+LOcixMEdRbFIW/cQUJw==}
     engines: {node: '>=18'}
 
-  googleapis@174.0.1:
-    resolution: {integrity: sha512-51B9r4WnyAyUXvsDhDswpSVZbqx3afSBEzrzshxBivysBKsB6kJ+X5CVOybRV/R3HIURiR01uHXLGkEm7On3dA==}
-    engines: {node: '>=18'}
-
   gopd@1.2.0:
     resolution: {integrity: sha512-ZUKRh6/kUFoAiTAtTYPZJ3hw9wNxx+BIBOijnlG9PnrJsCcSjs1wyyD6vJpaYtgnzDrKYRSqf3OO6Rfa93xsRg==}
     engines: {node: '>= 0.4'}
@@ -7558,6 +7558,12 @@ snapshots:
   '@google-cloud/tasks@6.3.0(supports-color@8.1.1)':
     dependencies:
       google-gax: 5.0.8(supports-color@8.1.1)
+    transitivePeerDependencies:
+      - supports-color
+
+  '@googleapis/drive@22.0.0(supports-color@8.1.1)':
+    dependencies:
+      googleapis-common: 8.0.3(supports-color@8.1.1)
     transitivePeerDependencies:
       - supports-color
 
@@ -11467,13 +11473,6 @@ snapshots:
       google-logging-utils: 1.1.3
       qs: 6.15.1
       url-template: 2.0.8
-    transitivePeerDependencies:
-      - supports-color
-
-  googleapis@174.0.1(supports-color@8.1.1):
-    dependencies:
-      google-auth-library: 10.5.0(supports-color@8.1.1)
-      googleapis-common: 8.0.3(supports-color@8.1.1)
     transitivePeerDependencies:
       - supports-color
 

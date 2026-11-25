@@ -1,7 +1,7 @@
 'use client';
 
 import { Badge } from '@/components/ui/badge';
-import type { AiAgent, AiTool, AiTopic, AiPrompt, CommunicationLine } from '@/lib/ai-api';
+import type { AiAgent, AiTool, AiTopic, AiPrompt, CommunicationLine } from '@/lib/shared/ai-api';
 import { Bot, FileText, Phone, BookOpen, Wrench, ArrowRight } from 'lucide-react';
 
 interface RelationshipGraphProps {

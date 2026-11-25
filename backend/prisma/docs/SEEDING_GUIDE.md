@@ -1,6 +1,6 @@
 # Seeding Guide
 
-This document describes the seeder architecture, idempotency rules, and operational commands for the `voz-ciudadana` backend after the baseline reorganization.
+This document describes the seeder architecture, idempotency rules, and operational commands for the `nexo-comercial` backend after the baseline reorganization.
 
 ## Current seeders
 

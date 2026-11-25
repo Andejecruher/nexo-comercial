@@ -25,7 +25,6 @@ export class GoogleDocumentAiOcrProvider implements OcrProvider {
   }
 
   private configuration(): { projectId: string; location: string; processorId: string } {
-    if (!env.INE_OCR_ENABLED) throw new GoogleConfigurationError('INE_OCR_DISABLED');
     const projectId = env.GOOGLE_CLOUD_PROJECT_ID;
     const location = env.DOCUMENT_AI_LOCATION;
     const processorId = env.DOCUMENT_AI_PROCESSOR_ID;
@@ -147,8 +146,8 @@ function anchorsOverlap(
 function boxOf(layout: Record<string, unknown> | undefined): BoundingBox | undefined {
   const boundingPoly = getRecord(layout?.boundingPoly);
   // Prefer normalized vertices (0..1). Fall back to absolute vertices, which
-  // require page width/height to interpret; for INE separation we only need
-  // relative positions, so normalizedVertices are sufficient when present.
+  // require page width/height to interpret. Normalized vertices are preferred
+  // because downstream multimodal pipelines compare relative positions.
   const verts = getArray(boundingPoly?.normalizedVertices).length
     ? getArray(boundingPoly?.normalizedVertices)
     : getArray(boundingPoly?.vertices);

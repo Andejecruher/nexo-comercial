@@ -1,4 +1,4 @@
-import { PermissionGate } from '@/components/auth/PermissionGate';
+import { PermissionGate } from '@/components/shared/PermissionGate';
 import { TicketDetailLayout } from '@/components/tickets/TicketDetailLayout';
 
 interface TicketDetailPageProps {

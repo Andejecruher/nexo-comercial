@@ -82,7 +82,7 @@ async function withTemporaryInput<T>(
   source: Buffer,
   run: (inputFilePath: string) => Promise<T>,
 ): Promise<T> {
-  const directory = await mkdtemp(join(tmpdir(), 'voz-media-'));
+  const directory = await mkdtemp(join(tmpdir(), 'nexo-media-'));
   const inputFilePath = join(directory, 'input.media');
   try {
     await writeFile(inputFilePath, source, { mode: 0o600 });

@@ -13,7 +13,7 @@ import {
 } from '@/components/ui/alert-dialog';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { PaginationControls } from '@/components/domain/catalogs/PaginationControls';
+import { PaginationControls } from '@/components/shared/catalogs/PaginationControls';
 import { TableAction } from '@/components/ui/table-action';
 import { TableEmptyState, TableSkeleton } from '@/components/ui/table-states';
 import { Input } from '@/components/ui/input';
@@ -34,7 +34,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { useTools } from '@/hooks/ai/useTools';
-import type { AiTool } from '@/lib/ai-api';
+import type { AiTool } from '@/lib/shared/ai-api';
 import { Pencil, Plus, RefreshCw, Search, Trash2, Wrench } from 'lucide-react';
 import { useState } from 'react';
 

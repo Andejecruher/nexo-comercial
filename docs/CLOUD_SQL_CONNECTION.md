@@ -1,24 +1,27 @@
-# Arquitectura de Conexión a Cloud SQL — Voz Ciudadana
+# Arquitectura de Conexión a Cloud SQL — Nexo Comercial
+
+> Esta guía es el presupuesto de conexiones de la construcción vigente, la misma que ya funciona. Los servicios son `nexo-api`, `nexo-worker` y `nexo-realtime-relay`. El workflow documentado está en `docs/deploy/deploy-gcp.yml` y no se ejecuta.
+
 
 **Tipo de documento:** Contexto base inmutable para agentes de IA (Gemini y similares).
-**Propósito:** Explicar, sin re-escanear el código, cómo `voz-api`, `voz-worker` y los Jobs de migración/seeds se conectan a PostgreSQL (Cloud SQL), cómo se construye `DATABASE_URL`, cómo se resuelven las credenciales y cuál es el presupuesto de conexiones.
+**Propósito:** Explicar, sin re-escanear el código, cómo `nexo-api`, `nexo-worker` y los Jobs de migración/seeds se conectan a PostgreSQL (Cloud SQL), cómo se construye `DATABASE_URL`, cómo se resuelven las credenciales y cuál es el presupuesto de conexiones.
 
 **Fuentes analizadas (snapshot):**
 
-| Archivo | Rol |
-| --- | --- |
-| `backend/prisma/schema.prisma` | Datasource y modelos |
-| `backend/src/config/env.config.ts` | Validación Zod de variables |
-| `backend/src/database/datasource-url.ts` | **Constructor de la URL de conexión** |
-| `backend/src/database/prisma-client-options.ts` | Opciones del cliente Prisma |
-| `backend/src/database/prisma.ts` | Singleton del cliente |
-| `.github/workflows/deploy-gcp.yml` | Deploy GCP (referencia canónica) |
-| `.github/workflows/backend-ci.yml` / `quality.yml` | CI (Postgres ephemeral) |
-| `docker-compose.dev.yml` / `.prod` / `.qa` | Topología local / Compose |
-| `Makefile` | Deploy GCP manual (via stale, alineado con el workflow) |
-| `docs/DEPLOYMENT_GCP.md` | SOP de infraestructura (SAs, Secret Manager, IAM) |
-| `deploy-infrastructure.sh` | Cloud Tasks / Pub/Sub / Scheduler (no SQL) |
-| `.dockerignore` | Exclusión de `.env*` del build context |
+| Archivo                                            | Rol                                                     |
+| -------------------------------------------------- | ------------------------------------------------------- |
+| `backend/prisma/schema.prisma`                     | Datasource y modelos                                    |
+| `backend/src/config/env.config.ts`                 | Validación Zod de variables                             |
+| `backend/src/database/datasource-url.ts`           | **Constructor de la URL de conexión**                   |
+| `backend/src/database/prisma-client-options.ts`    | Opciones del cliente Prisma                             |
+| `backend/src/database/prisma.ts`                   | Singleton del cliente                                   |
+| `docs/deploy/deploy-gcp.yml`                       | Deploy GCP (referencia canónica)                        |
+| `.github/workflows/backend-ci.yml` / `quality.yml` | CI (Postgres ephemeral)                                 |
+| `docker-compose.dev.yml` / `.prod` / `.qa`         | Topología local / Compose                               |
+| `Makefile`                                         | Deploy GCP manual (via stale, alineado con el workflow) |
+| `docs/DEPLOYMENT_GCP.md`                           | SOP de infraestructura (SAs, Secret Manager, IAM)       |
+| `deploy-infrastructure.sh`                         | Cloud Tasks / Pub/Sub / Scheduler (no SQL)              |
+| `.dockerignore`                                    | Exclusión de `.env*` del build context                  |
 
 **Versionado:** Prisma `5.22.0` (CLI y cliente, pinned en el workspace; `backend-ci.yml` verifica que exista un solo specifier).
 
@@ -49,20 +52,20 @@ Reglas del resolver:
 
 ### 1.2 Topología local (Docker Compose) vs producción (GCP)
 
-| | **Local / Compose** | **Producción GCP (Cloud Run)** |
-| --- | --- | --- |
-| Motor | `postgres:16-alpine` (contenedor) | Cloud SQL PostgreSQL 16 gestionado |
-| Host | `postgres` (nombre de servicio en la red de compose) o `localhost` en CI | `localhost` (socket del sidecar de Cloud SQL) |
-| Puerto | `5432` | socket Unix, sin puerto TCP |
-| Forma de la URL | `postgresql://voz:secret@postgres:5432/vozcuidadana` | vía `CLOUDSQL_*` (socket): `postgresql://<user>:<pass>@localhost/<db>?host=/cloudsql/<PROJECT>:us-central1:voz-ciudadana&connection_limit=N` |
-| Origen de credenciales | `.env` / `backend/.env` (opcionales) o defaults del compose | Secret Manager (`DB_USER`, `DB_PASS`, `DB_NAME`, `INSTANCE_CONNECTION_NAME`, `DATABASE_URL`) |
-| Quién resuelve la URL | `resolveDatasourceUrl()` cae a `env.DATABASE_URL` | `resolveDatasourceUrl()` reconstruye desde `CLOUDSQL_*` |
-| Migraciones | servicio `migrator` (`prisma migrate deploy`) | Cloud Run Job `voz-migrator` (`voz-prod-migrate.sh`) con `DATABASE_URL` directamente (Prisma CLI lee `env("DATABASE_URL")` del schema) |
-| Límite de pool | sin `PRISMA_CONNECTION_LIMIT` → default de código (api 10, worker 8) | explícito: API `5`, worker `2`, relay `2` (§3.1) |
+|                        | **Local / Compose**                                                      | **Producción GCP (Cloud Run)**                                                                                                                |
+| ---------------------- | ------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------- |
+| Motor                  | `postgres:16-alpine` (contenedor)                                        | Cloud SQL PostgreSQL 16 gestionado                                                                                                            |
+| Host                   | `postgres` (nombre de servicio en la red de compose) o `localhost` en CI | `localhost` (socket del sidecar de Cloud SQL)                                                                                                 |
+| Puerto                 | `5432`                                                                   | socket Unix, sin puerto TCP                                                                                                                   |
+| Forma de la URL        | `postgresql://nexo:secret@postgres:5432/nexocomercial`                   | vía `CLOUDSQL_*` (socket): `postgresql://<user>:<pass>@localhost/<db>?host=/cloudsql/<PROJECT>:us-central1:nexo-comercial&connection_limit=N` |
+| Origen de credenciales | `.env` / `backend/.env` (opcionales) o defaults del compose              | Secret Manager (`DB_USER`, `DB_PASS`, `DB_NAME`, `INSTANCE_CONNECTION_NAME`, `DATABASE_URL`)                                                  |
+| Quién resuelve la URL  | `resolveDatasourceUrl()` cae a `env.DATABASE_URL`                        | `resolveDatasourceUrl()` reconstruye desde `CLOUDSQL_*`                                                                                       |
+| Migraciones            | servicio `migrator` (`prisma migrate deploy`)                            | Cloud Run Job `nexo-migrator` (`nexo-prod-migrate.sh`) con `DATABASE_URL` directamente (Prisma CLI lee `env("DATABASE_URL")` del schema)      |
+| Límite de pool         | sin `PRISMA_CONNECTION_LIMIT` → default de código (api 10, worker 8)     | explícito: API `5`, worker `2`, relay `2` (§3.1)                                                                                              |
 
 **Detalle clave:** el Secret `DATABASE_URL` de GCP guarda la forma `@localhost/` con `connection_limit=1`, obligatoria para la CLI de Prisma (`docs/DEPLOYMENT_GCP.md:749-755`). En los containers de la aplicación `DATABASE_URL` se monta **pero queda sin efecto** para Prisma Client (lo reemplaza `resolveDatasourceUrl`); sigue siendo la fuente de verdad para el migrador/seeds, que usan la CLI.
 
-Los archivos `.env` quedan fuera del build de imágenes (`.dockerignore:20-22` excluye `**/.env*` salvo `.env.example`). Compose los carga opcionalmente (`required: false` en `env_file`); los defaults del stack son `voz`/`secret`/`vozcuidadana`.
+Los archivos `.env` quedan fuera del build de imágenes (`.dockerignore:20-22` excluye `**/.env*` salvo `.env.example`). Compose los carga opcionalmente (`required: false` en `env_file`); los defaults del stack son `voz`/`secret`/`nexocomercial`.
 
 ---
 
@@ -72,22 +75,22 @@ Los archivos `.env` quedan fuera del build de imágenes (`.dockerignore:20-22` e
 
 **Se usa el Cloud SQL Auth Proxy embebido (sockets Unix), NO IP privada a través del VPC Connector.**
 
-- Servicios Cloud Run: `--add-cloudsql-instances="$INST_CN"` (`deploy-gcp.yml`, pasos *Deploy voz-api* y *Deploy voz-worker*). Cloud Run inyecta un sidecar que expone el socket Unix en `/cloudsql/<PROJECT>:us-central1:voz-ciudadana`, y la URL reconstruida apunta ahí (`host=/cloudsql/...`).
+- Servicios Cloud Run: `--add-cloudsql-instances="$INST_CN"` (`deploy-gcp.yml`, pasos *Deploy nexo-api* y *Deploy nexo-worker*). Cloud Run inyecta un sidecar que expone el socket Unix en `/cloudsql/<PROJECT>:us-central1:nexo-comercial`, y la URL reconstruida apunta ahí (`host=/cloudsql/...`).
 - Jobs: `--set-cloudsql-instances="$INST_CN"` (`deploy-gcp.yml`, paso *Create/update migrator job*; `Makefile:294`). No se intercambian los flags (`docs/DEPLOYMENT_GCP.md:757-760`).
-- `gcloud` build `INST_CN = ${GCP_PROJECT_ID}:${GCP_REGION}:${DB_INSTANCE}` (workflow `env: GCP_REGION=us-central1, DB_INSTANCE=voz-ciudadana`). No existe VPC connector: el egress no SQL sale por la ruta pública por defecto de Cloud Run.
+- `gcloud` build `INST_CN = ${GCP_PROJECT_ID}:${GCP_REGION}:${DB_INSTANCE}` (workflow `env: GCP_REGION=us-central1, DB_INSTANCE=nexo-comercial`). No existe VPC connector: el egress no SQL sale por la ruta pública por defecto de Cloud Run.
 
-**VPC Connector y Memorystore:** el Serverless VPC Access Connector (`voz-connector`) y Memorystore for Redis **fueron removidos de la topología**; no hay `--vpc-connector` ni `--vpc-egress` en ningún deploy. Como `gcloud run deploy` **hereda la configuración de la revisión anterior**, cada deploy declara además `--clear-vpc-connector` para evacuar cualquier referencia residual al conector borrado en servicios desplegados mientras la topología aún era privada (fallaría con *"VPC connector ... does not exist"* al crear la revisión). La instancia Cloud SQL conserva IP pública pero **sin redes autorizadas** (`--assign-ip`, `--ssl-mode=ALLOW_UNENCRYPTED_AND_ENCRYPTED`); el único camino de entrada de la app es el socket del Cloud SQL Auth Proxy embebido. El frontend (`voz-frontend`) no tiene `--add-cloudsql-instances`: **nunca toca la base**.
+**VPC Connector y Memorystore:** el Serverless VPC Access Connector (`voz-connector`) y Memorystore for Redis **fueron removidos de la topología**; no hay `--vpc-connector` ni `--vpc-egress` en ningún deploy. Como `gcloud run deploy` **hereda la configuración de la revisión anterior**, cada deploy declara además `--clear-vpc-connector` para evacuar cualquier referencia residual al conector borrado en servicios desplegados mientras la topología aún era privada (fallaría con *"VPC connector ... does not exist"* al crear la revisión). La instancia Cloud SQL conserva IP pública pero **sin redes autorizadas** (`--assign-ip`, `--ssl-mode=ALLOW_UNENCRYPTED_AND_ENCRYPTED`); el único camino de entrada de la app es el socket del Cloud SQL Auth Proxy embebido. El frontend (`nexo-frontend`) no tiene `--add-cloudsql-instances`: **nunca toca la base**.
 
 **Resumen del camino de datos:**
 `Prisma Client → TCP localhost → socket /cloudsql/<conn> → sidecar (Auth Proxy) → Cloud SQL (IP pública, TLS)`. El tráfico dentro del sandbox de Cloud Run es local; el sidecar termina la conexión segura hacia la instancia.
 
 ### 2.2 Resolución de credenciales (Secret Manager)
 
-| Momento | Mecanismo |
-| --- | --- |
+| Momento                     | Mecanismo                                                                                                                                                                                                                                                                                                                                    |
+| --------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | **Deploy (GitHub Actions)** | Autenticación con WIF: `google-github-actions/auth@v3` + `workload_identity_provider` + `service_account=$GH_SA_CICD` (`deploy-gcp.yml`, paso *auth*). `gcloud run deploy --set-secrets="VAR=SECRET_NAME:latest"` crea **referencias a secretos**; Cloud Run las materializa al crear la revisión. Los valores reales nunca viven en GitHub. |
-| **Runtime** | El container recibe las variables como env: `DATABASE_URL, CLOUDSQL_DB_USER, CLOUDSQL_DB_PASS, CLOUDSQL_DB_NAME, CLOUDSQL_INSTANCE_CONNECTION_NAME` + JWT/WhatsApp/IA/etc. (`deploy-gcp.yml`, pasos *Deploy voz-api* y *Deploy voz-worker*). `resolveDatasourceUrl()` ensambla la URL de socket con esos valores en el arranque. |
-| **Migrador / seeds** | Jobs con `--set-secrets="DATABASE_URL=DATABASE_URL:latest,..."` y `--set-cloudsql-instances` (`deploy-gcp.yml`, paso *Create/update migrator job*; `Makefile:294-295`). La CLI de Prisma consume `DATABASE_URL` (socket URL). |
+| **Runtime**                 | El container recibe las variables como env: `DATABASE_URL, CLOUDSQL_DB_USER, CLOUDSQL_DB_PASS, CLOUDSQL_DB_NAME, CLOUDSQL_INSTANCE_CONNECTION_NAME` + JWT/WhatsApp/IA/etc. (`deploy-gcp.yml`, pasos *Deploy nexo-api* y *Deploy nexo-worker*). `resolveDatasourceUrl()` ensambla la URL de socket con esos valores en el arranque.           |
+| **Migrador / seeds**        | Jobs con `--set-secrets="DATABASE_URL=DATABASE_URL:latest,..."` y `--set-cloudsql-instances` (`deploy-gcp.yml`, paso *Create/update migrator job*; `Makefile:294-295`). La CLI de Prisma consume `DATABASE_URL` (socket URL).                                                                                                                |
 
 El accesso a cada secreto es por binding granular: `roles/secretmanager.secretAccessor` otorgado a la **SA runtime** y a la **SA deploy** por secreto (`docs/DEPLOYMENT_GCP.md:880-896`). Los secretos DB: `DATABASE_URL, DB_USER, DB_PASS, DB_NAME, INSTANCE_CONNECTION_NAME` (`DEPLOYMENT_GCP.md:800-826`).
 
@@ -101,14 +104,14 @@ El accesso a cada secreto es por binding granular: `roles/secretmanager.secretAc
 
 El pool de Prisma es **por proceso**, es decir por instancia de Cloud Run. `concurrency` y `timeout` **no** multiplican conexiones: un contenedor con `concurrency=80` y `connection_limit=5` abre como máximo 5 conexiones y las multiplexa entre requests. Lo que sí multiplica es el **número de instancias**.
 
-| Servicio | `PRISMA_CONNECTION_LIMIT` | `max-instances` | Peor caso | Fuente de verdad |
-| --- | --- | --- | --- | --- |
-| `voz-api` | **5** | **5** | 25 | `deploy-gcp.yml` env `DB_CONNECTION_LIMIT` / `DB_MAX_INSTANCES` |
-| `voz-worker` | **2** | **5** | 10 | `deploy-gcp.yml` env `DB_WORKER_CONNECTION_LIMIT` / `DB_MAX_INSTANCES` |
-| `voz-realtime-relay` | **2** | **2** | 4 | `deploy-gcp.yml` env `DB_RELAY_CONNECTION_LIMIT` / `DB_RELAY_MAX_INSTANCES` |
-| `voz-migrator` / seeds (Jobs) | — (`connection_limit=1` del Secret) | 1 task | 1 | `deploy-gcp.yml`, paso *Create/update migrator job* |
-| `voz-frontend` | — | 10 | 0 | Sin `--add-cloudsql-instances`: nunca toca la base |
-| **Total peor caso** | | | **40** | |
+| Servicio                       | `PRISMA_CONNECTION_LIMIT`           | `max-instances` | Peor caso | Fuente de verdad                                                            |
+| ------------------------------ | ----------------------------------- | --------------- | --------- | --------------------------------------------------------------------------- |
+| `nexo-api`                     | **5**                               | **5**           | 25        | `deploy-gcp.yml` env `DB_CONNECTION_LIMIT` / `DB_MAX_INSTANCES`             |
+| `nexo-worker`                  | **2**                               | **5**           | 10        | `deploy-gcp.yml` env `DB_WORKER_CONNECTION_LIMIT` / `DB_MAX_INSTANCES`      |
+| `nexo-realtime-relay`          | **2**                               | **2**           | 4         | `deploy-gcp.yml` env `DB_RELAY_CONNECTION_LIMIT` / `DB_RELAY_MAX_INSTANCES` |
+| `nexo-migrator` / seeds (Jobs) | — (`connection_limit=1` del Secret) | 1 task          | 1         | `deploy-gcp.yml`, paso *Create/update migrator job*                         |
+| `nexo-frontend`                | —                                   | 10              | 0         | Sin `--add-cloudsql-instances`: nunca toca la base                          |
+| **Total peor caso**            |                                     |                 | **40**    |                                                                             |
 
 Reglas del pool:
 
@@ -150,8 +153,8 @@ gcloud sql instances describe "$DB_INSTANCE" \
 Peor caso con la configuración de §3.1:
 
 ```text
-voz-api     =  5 × 5 =  25
-voz-worker  =  5 × 2 =  10
+nexo-api     =  5 × 5 =  25
+nexo-worker  =  5 × 2 =  10
 voz-relay   =  2 × 2 =   4
 migrator    =            1
 ────────────────────────────
@@ -171,18 +174,18 @@ Con un tier `db-g1-small` (1 vCPU compartida, 1.7 GB) el techo ronda las **50-60
 
 ### 3.4 Variables de entorno de la base de datos
 
-| Variable | Dónde vive | Qué controla | Valor vigente |
-| --- | --- | --- | --- |
-| `DATABASE_URL` | Secret Manager (`DATABASE_URL`) | Fuente de Prisma **CLI** (migrator/seeds) y fallback local cuando faltan las `CLOUDSQL_*`. Forma obligatoria `...@localhost/<db>?host=/cloudsql/<conn>&connection_limit=1`. | `connection_limit=1` |
-| `CLOUDSQL_DB_USER`, `CLOUDSQL_DB_PASS`, `CLOUDSQL_DB_NAME`, `CLOUDSQL_INSTANCE_CONNECTION_NAME` | Secret Manager (`DB_USER`, `DB_PASS`, `DB_NAME`, `INSTANCE_CONNECTION_NAME`) | Componentes con los que `resolveDatasourceUrl()` reconstruye la URL en runtime. Su presencia **activa** el camino del socket e invalida el `connection_limit` del Secret. | prod |
-| `PRISMA_CONNECTION_LIMIT` | env directo en Cloud Run (no es secreto) | Tamaño del pool de Prisma de ese contenedor. Rango 1-40. | API `5`, worker `2`, relay `2` |
-| `CLOUDSQL_USE_PGBOUNCER` | env directo | Solo añade `&pgbouncer=true` a la URL. **No** crea ni enruta a un pooler; no hay Managed Connection Pooling habilitado. | ausente |
+| Variable                                                                                        | Dónde vive                                                                   | Qué controla                                                                                                                                                                | Valor vigente                  |
+| ----------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------ |
+| `DATABASE_URL`                                                                                  | Secret Manager (`DATABASE_URL`)                                              | Fuente de Prisma **CLI** (migrator/seeds) y fallback local cuando faltan las `CLOUDSQL_*`. Forma obligatoria `...@localhost/<db>?host=/cloudsql/<conn>&connection_limit=1`. | `connection_limit=1`           |
+| `CLOUDSQL_DB_USER`, `CLOUDSQL_DB_PASS`, `CLOUDSQL_DB_NAME`, `CLOUDSQL_INSTANCE_CONNECTION_NAME` | Secret Manager (`DB_USER`, `DB_PASS`, `DB_NAME`, `INSTANCE_CONNECTION_NAME`) | Componentes con los que `resolveDatasourceUrl()` reconstruye la URL en runtime. Su presencia **activa** el camino del socket e invalida el `connection_limit` del Secret.   | prod                           |
+| `PRISMA_CONNECTION_LIMIT`                                                                       | env directo en Cloud Run (no es secreto)                                     | Tamaño del pool de Prisma de ese contenedor. Rango 1-40.                                                                                                                    | API `5`, worker `2`, relay `2` |
+| `CLOUDSQL_USE_PGBOUNCER`                                                                        | env directo                                                                  | Solo añade `&pgbouncer=true` a la URL. **No** crea ni enruta a un pooler; no hay Managed Connection Pooling habilitado.                                                     | ausente                        |
 
 Regla práctica: `DATABASE_URL` la consume el CLI de Prisma (1 conexión, jobs); `PRISMA_CONNECTION_LIMIT` lo consume cada contenedor de la aplicación. Son **dos presupuestos distintos**; no los mezcles al sumar.
 
 ### 3.5 Migraciones sin consumir el pool de los contenedores
 
-`prisma migrate deploy` corre en un **Cloud Run Job independiente** (`voz-migrator`), nunca dentro de `voz-api`/`voz-worker`:
+`prisma migrate deploy` corre en un **Cloud Run Job independiente** (`nexo-migrator`), nunca dentro de `nexo-api`/`nexo-worker`:
 
 - `--tasks=1 --max-retries=0` → una sola conexión, sin paralelismo.
 - Usa el Secret `DATABASE_URL` (`connection_limit=1`), no las `CLOUDSQL_*`.
@@ -196,12 +199,12 @@ Regla práctica: `DATABASE_URL` la consume el CLI de Prisma (1 conexión, jobs);
 
 Identidades que **participan en la conexión a Cloud SQL** y su IAM. Los roles se otorgan a nivel proyecto o recurso según `docs/DEPLOYMENT_GCP.md` sección 3 y 6.
 
-| Identidad | Se usa en | Roles requeridos para la conexión/servicio | Fuente |
-| --- | --- | --- | --- |
-| **`voz-ciudadana-run-sa@<PROJECT>.iam.gserviceaccount.com`** (SA runtime) | `voz-api`, `voz-worker`, Job `voz-migrator`, Jobs seed | `roles/cloudsql.client` (necesario para conectar vía socket del Auth Proxy), `roles/secretmanager.secretAccessor` (por secreto DB y resto), además de `roles/documentai.apiUser`, `roles/cloudtasks.enqueuer`, `roles/pubsub.publisher` | `deploy-gcp.yml` env `SA_RUN`; `DEPLOYMENT_GCP.md:587-595, 880-896` |
-| **`voz-ciudadana-cicd-sa@<PROJECT>.iam.gserviceaccount.com`** (SA deploy, vía WIF) | GitHub Actions (despliega servicios/jobs) | `roles/run.admin`, `roles/artifactregistry.writer`, `roles/iam.serviceAccountUser` (sobre la SA runtime, para `--service-account`), `roles/iam.serviceAccountTokenCreator` (self, smoke worker), `roles/secretmanager.secretAccessor` (valida referencias en deploy), `roles/pubsub.viewer` | `DEPLOYMENT_GCP.md:587-595, 880-896`; deploy-gcp.yml secrets `WIF_PROVIDER`, `GH_SA_CICD` |
+| Identidad                                                                           | Se usa en                                                 | Roles requeridos para la conexión/servicio                                                                                                                                                                                                                                                  | Fuente                                                                                    |
+| ----------------------------------------------------------------------------------- | --------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------- |
+| **`nexo-comercial-run-sa@<PROJECT>.iam.gserviceaccount.com`** (SA runtime)          | `nexo-api`, `nexo-worker`, Job `nexo-migrator`, Jobs seed | `roles/cloudsql.client` (necesario para conectar vía socket del Auth Proxy), `roles/secretmanager.secretAccessor` (por secreto DB y resto), además de `roles/documentai.apiUser`, `roles/cloudtasks.enqueuer`, `roles/pubsub.publisher`                                                     | `deploy-gcp.yml` env `SA_RUN`; `DEPLOYMENT_GCP.md:587-595, 880-896`                       |
+| **`nexo-comercial-cicd-sa@<PROJECT>.iam.gserviceaccount.com`** (SA deploy, vía WIF) | GitHub Actions (despliega servicios/jobs)                 | `roles/run.admin`, `roles/artifactregistry.writer`, `roles/iam.serviceAccountUser` (sobre la SA runtime, para `--service-account`), `roles/iam.serviceAccountTokenCreator` (self, smoke worker), `roles/secretmanager.secretAccessor` (valida referencias en deploy), `roles/pubsub.viewer` | `DEPLOYMENT_GCP.md:587-595, 880-896`; deploy-gcp.yml secrets `WIF_PROVIDER`, `GH_SA_CICD` |
 
-Identidades que **no** intervienen en Cloud SQL (solo invocación de servicios/pub-sub): `cloud-tasks-invoker` (OIDC → `voz-worker`), `pubsub-push-invoker` (push a `/pubsub/*`), service agents de Cloud Tasks/Scheduler/Pub/Sub (creados en `deploy-infrastructure.sh:119-184`). El actual owner del proyecto asigna un único runtime SA compartido (`deploy-infrastructure.sh:8` por defecto, `API_RUNTIME_SERVICE_ACCOUNT == WORKER_RUNTIME_SERVICE_ACCOUNT`).
+Identidades que **no** intervienen en Cloud SQL (solo invocación de servicios/pub-sub): `cloud-tasks-invoker` (OIDC → `nexo-worker`), `pubsub-push-invoker` (push a `/pubsub/*`), service agents de Cloud Tasks/Scheduler/Pub/Sub (creados en `deploy-infrastructure.sh:119-184`). El actual owner del proyecto asigna un único runtime SA compartido (`deploy-infrastructure.sh:8` por defecto, `API_RUNTIME_SERVICE_ACCOUNT == WORKER_RUNTIME_SERVICE_ACCOUNT`).
 
 ---
 
@@ -209,16 +212,16 @@ Identidades que **no** intervienen en Cloud SQL (solo invocación de servicios/p
 
 ```text
                     ┌────────────────────────── GCP us-central1 ──────────────────────────┐
-GitHub Actions ─WIF─► voz-ciudadana-cicd-sa          Secret Manager
+GitHub Actions ─WIF─► nexo-comercial-cicd-sa          Secret Manager
    │ deploy         │  (run.admin + SAUsr)           DATABASE_URL / DB_USER / DB_PASS /
    │                │                                DB_NAME / INSTANCE_CONNECTION_NAME
    ▼                │                                        │ (secretAccessor: runtime SA)
 Artifact Registry   │                                        ▼
-   voz-api / voz-worker / voz-tools ─────────────────► Cloud Run  (revisión materializa secrets)
+   nexo-api / nexo-worker / nexo-tools ─────────────────► Cloud Run  (revisión materializa secrets)
                                              │             │
                                              │  --add-cloudsql-instances  (socket)
                                              │             ▼
-                                             │   /cloudsql/<PROJECT>:us-central1:voz-ciudadana
+                                             │   /cloudsql/<PROJECT>:us-central1:nexo-comercial
 │             │  Cloud SQL Auth Proxy embebido
                                               │             ▼
                                               │   Cloud SQL PostgreSQL 16 (IP pública, sin authorized networks)
@@ -231,5 +234,5 @@ Artifact Registry   │                                        ▼
 - Inyección de URL al cliente: `backend/src/database/prisma-client-options.ts:10`
 - Validación de env: `backend/src/config/env.config.ts:56,61-67`
 - Datasource del schema: `backend/prisma/schema.prisma:5-8`
-- Deploy api/worker/job: `.github/workflows/deploy-gcp.yml` (pasos *Deploy voz-api*, *Deploy voz-worker*, *Deploy voz-realtime-relay*, *Create/update migrator job*)
+- Deploy api/worker/job: `docs/deploy/deploy-gcp.yml` (pasos *Deploy nexo-api*, *Deploy nexo-worker*, *Deploy nexo-realtime-relay*, *Create/update migrator job*)
 - SOP de infra IAM/SQL/secrets: `docs/DEPLOYMENT_GCP.md` secciones 3, 5, 6, 11

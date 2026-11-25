@@ -1,6 +1,10 @@
 # Request-driven background processing
 
-Production can run `voz-worker` with zero minimum instances by setting
+> Esta es la construcción de Cloud Tasks que ya funciona, con el worker `nexo-worker`. Queda documentada y no se ejecuta. `deploy-infrastructure.sh` no llama a GCP. `<GCP_PROJECT_ID>` es un placeholder.
+
+
+
+Production can run `nexo-worker` with zero minimum instances by setting
 `BACKGROUND_EXECUTION_BACKEND=cloud_tasks`. Local and rollback deployments keep
 the default `polling` mode and the existing PostgreSQL polling loops.
 
@@ -13,8 +17,8 @@ the default `polling` mode and the existing PostgreSQL polling loops.
    the Scheduler job:
 
    ```bash
-   PROJECT_ID=voz-ciudadana-505319 \
-   API_RUNTIME_SERVICE_ACCOUNT=voz-ciudadana-run-sa@voz-ciudadana-505319.iam.gserviceaccount.com \
+   PROJECT_ID=<GCP_PROJECT_ID> \
+   API_RUNTIME_SERVICE_ACCOUNT=nexo-comercial-run-sa@<GCP_PROJECT_ID>.iam.gserviceaccount.com \
    ./deploy-infrastructure.sh
    ```
 
@@ -26,7 +30,7 @@ the default `polling` mode and the existing PostgreSQL polling loops.
    script output.
 3. Build the images and apply Prisma migrations, including the inbox/outbox
    lease columns, while the polling worker remains available.
-4. Deploy the API and `voz-worker` with
+4. Deploy the API and `nexo-worker` with
    `BACKGROUND_EXECUTION_BACKEND=cloud_tasks`. The worker deployment sets
    `--min-instances=0`.
 5. After the worker deployment succeeds, the GCP workflow resumes the
@@ -36,8 +40,8 @@ the default `polling` mode and the existing PostgreSQL polling loops.
 
    ```bash
    ACTIVATE_CLOUD_TASKS=true \
-   PROJECT_ID=voz-ciudadana-505319 \
-   API_RUNTIME_SERVICE_ACCOUNT=voz-ciudadana-run-sa@voz-ciudadana-505319.iam.gserviceaccount.com \
+   PROJECT_ID=<GCP_PROJECT_ID> \
+   API_RUNTIME_SERVICE_ACCOUNT=nexo-comercial-run-sa@<GCP_PROJECT_ID>.iam.gserviceaccount.com \
    ./deploy-infrastructure.sh
    ```
 

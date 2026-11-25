@@ -1,6 +1,6 @@
-# Auditoría de Integración Redis — Voz Ciudadana
+# Auditoría de Integración Redis — Nexo Comercial
 
-**Alcance:** Servicios `voz-api` (`backend/src/server.ts`) y `voz-worker` (`backend/src/worker.ts` / `backend/src/worker-app.ts`).
+**Alcance:** Servicios `nexo-api` (`backend/src/server.ts`) y `nexo-worker` (`backend/src/worker.ts` / `backend/src/worker-app.ts`).
 **Fecha de auditoría:** 16 de septiembre de 2026.
 **Revisor:** Arquitecto de Software Senior (Node.js / Redis / GCP).
 
@@ -48,7 +48,7 @@ Observaciones del constructor:
   - `AIStreamPubSubSubscriber` (`ai-stream-pubsub.service.ts:62`) crea **un `new Redis(redisUrl)` nuevo** (no `duplicate()`) para el canal `ai:stream:conversation`.
   - `WebsocketGatewayService.create` (`websocket-gateway.service.ts:325`) crea dos clientes más (`pubClient` + `subClient = pubClient.duplicate()`) para el adapter de Socket.IO.
 
-En `voz-api` (`server.ts:33`) se instancia un único `RedisService` global; en `voz-worker` (`worker.ts:24`) se crea una instancia propia. Cada proceso termina con **entre 1 y 5 sockets Redis abiertos** (cliente principal + duplicados para Pub/Sub + adapter Socket.IO).
+En `nexo-api` (`server.ts:33`) se instancia un único `RedisService` global; en `nexo-worker` (`worker.ts:24`) se crea una instancia propia. Cada proceso termina con **entre 1 y 5 sockets Redis abiertos** (cliente principal + duplicados para Pub/Sub + adapter Socket.IO).
 
 ### 1.3 Estrategia de reintentos, manejo de errores y pool
 
@@ -341,7 +341,7 @@ async sadd(key: string, member: string, ttlSeconds?: number): Promise<void> {
 ### 5.2 Riesgos altos (impacto operativo/costo)
 
 **R5. Múltiples conexiones Redis por proceso sin gestión centralizada.**
-Cada proceso abre: 1 cliente `RedisService` + 1 duplicado en `RealtimeRedisTransport` + 1 `new Redis` en `AIStreamPubSubSubscriber` + 2 en `WebsocketGatewayService.create` (pub + sub adapter). En `voz-api` con WS habilitado son **hasta 5 sockets**. Cloud Run escala `voz-api` hasta `max-instances=10` (`deploy-gcp.yml:362`) y `voz-worker` hasta 20 (`deploy-gcp.yml:409`): potencialmente **150 conexiones** contra Memorystore. Memorystore BASIC soporta hasta ~16k conexiones, pero el costo de connection-setup y el riesgo de agotamiento en picos existe. **Recomendación:** centralizar la creación de clientes en `RedisService` (factory de duplicados) y reusar conexiones; desactivar WS en instancias que no lo necesiten (ya hecho en worker: `WS_ENABLED=false`).
+Cada proceso abre: 1 cliente `RedisService` + 1 duplicado en `RealtimeRedisTransport` + 1 `new Redis` en `AIStreamPubSubSubscriber` + 2 en `WebsocketGatewayService.create` (pub + sub adapter). En `nexo-api` con WS habilitado son **hasta 5 sockets**. Cloud Run escala `nexo-api` hasta `max-instances=10` (`deploy-gcp.yml:362`) y `nexo-worker` hasta 20 (`deploy-gcp.yml:409`): potencialmente **150 conexiones** contra Memorystore. Memorystore BASIC soporta hasta ~16k conexiones, pero el costo de connection-setup y el riesgo de agotamiento en picos existe. **Recomendación:** centralizar la creación de clientes en `RedisService` (factory de duplicados) y reusar conexiones; desactivar WS en instancias que no lo necesiten (ya hecho en worker: `WS_ENABLED=false`).
 
 **R6. Fail-open en idempotencia puede permitir dobles-procesamientos.**
 `idempotency.middleware.ts:79-82` deja pasar el request si Redis falla. Es razonable para no perder mensajes, pero combinado con R1 (Redis caído) puede generar una oleada de dobles-procesamientos que después saturan el retry de Postgres. **Recomendación:** métricas/alarma explícitas en el path fail-open; considerar fail-closed en entornos críticos.

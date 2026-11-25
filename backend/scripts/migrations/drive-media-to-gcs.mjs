@@ -2,7 +2,7 @@
 import 'dotenv/config';
 import { PrismaClient } from '@prisma/client';
 import { Storage } from '@google-cloud/storage';
-import { google } from 'googleapis';
+import { auth, drive as createDrive } from '@googleapis/drive';
 import { createHash } from 'node:crypto';
 import { Transform } from 'node:stream';
 import { pipeline } from 'node:stream/promises';
@@ -26,9 +26,9 @@ async function main() {
     throw new Error(
       'Se requieren las credenciales OAuth existentes de Drive para leer los originales',
     );
-  const oauth = new google.auth.OAuth2(GOOGLE_OAUTH_CLIENT_ID, GOOGLE_OAUTH_CLIENT_SECRET);
+  const oauth = new auth.OAuth2(GOOGLE_OAUTH_CLIENT_ID, GOOGLE_OAUTH_CLIENT_SECRET);
   oauth.setCredentials({ refresh_token: GOOGLE_DRIVE_REFRESH_TOKEN });
-  const drive = google.drive({ version: 'v3', auth: oauth });
+  const drive = createDrive({ version: 'v3', auth: oauth });
   const bucket = new Storage().bucket(bucketName); // GOOGLE_APPLICATION_CREDENTIALS / ADC
   const prisma = new PrismaClient();
   const ancestry = new Map();

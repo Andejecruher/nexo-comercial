@@ -1,5 +1,5 @@
-import { PermissionGate } from '@/components/auth/PermissionGate';
-import { CampaignWizard } from '@/components/campaigns/CampaignWizard';
+import { PermissionGate } from '@/components/shared/PermissionGate';
+import { CampaignWizard } from '@/components/campanas/CampaignWizard';
 export default function Page() {
   return (
     <PermissionGate

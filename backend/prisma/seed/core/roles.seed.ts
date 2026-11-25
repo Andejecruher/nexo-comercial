@@ -1,7 +1,7 @@
 import { PrismaClient } from '@prisma/client';
 
 /**
- * RBAC Role Seed — Voz Ciudadana
+ * RBAC Role Seed — Nexo Comercial
  *
  * Define los roles del sistema. Se persisten con `upsert` usando `slug`
  * como clave única.
@@ -22,12 +22,12 @@ export const PANEL_ROLES: readonly RoleDef[] = [
     name: 'COORDINADOR',
     slug: 'coordinador',
     description:
-      'Coordina operadores y gestiona WhatsApp, campaña y configuración operativa del territorio.',
+      'Coordina operadores y gestiona WhatsApp, eventos y configuración operativa.',
   },
   {
     name: 'CAPTURISTA',
     slug: 'capturista',
-    description: 'Captura y gestiona datos de precampaña: promovidos y eventos.',
+    description: 'Captura y gestiona jornadas y eventos.',
   },
   {
     name: 'OPERADOR_CHAT',
@@ -37,7 +37,7 @@ export const PANEL_ROLES: readonly RoleDef[] = [
   {
     name: 'LIDER',
     slug: 'lider',
-    description: 'Consulta los indicadores de precampaña de su zona.',
+    description: 'Consulta jornadas y eventos.',
   },
 ];
 

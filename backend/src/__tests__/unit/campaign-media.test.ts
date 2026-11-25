@@ -26,7 +26,7 @@ const file = {
   mimeType: 'application/pdf',
   buffer: Buffer.from('%PDF-1.7\nexample'),
 };
-const url = 'https://storage.googleapis.com/voz_ciudadana_public/campanas/Aviso/file.pdf';
+const url = 'https://storage.googleapis.com/nexo_comercial_public/campanas/Aviso/file.pdf';
 const viewUrl = url;
 afterEach(() => jest.restoreAllMocks());
 
@@ -76,6 +76,7 @@ describe('Campaign media', () => {
     const service = new CampaignMediaService(
       { campaignAttachment: { create } } as never,
       storage as never,
+      'nexo_comercial_public',
     );
     return { service, create, storage };
   }
@@ -92,8 +93,8 @@ describe('Campaign media', () => {
         data: expect.objectContaining({
           createdBy: id,
           lineId: id,
-          url: `https://storage.googleapis.com/voz_ciudadana_public/campanas/Aviso/${result.id}-aviso.pdf`,
-          viewUrl: `https://storage.googleapis.com/voz_ciudadana_public/campanas/Aviso/${result.id}-aviso.pdf`,
+          url: `https://storage.googleapis.com/nexo_comercial_public/campanas/Aviso/${result.id}-aviso.pdf`,
+          viewUrl: `https://storage.googleapis.com/nexo_comercial_public/campanas/Aviso/${result.id}-aviso.pdf`,
           mediaType: 'DOCUMENT',
         }),
       }),

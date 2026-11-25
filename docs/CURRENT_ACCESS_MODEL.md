@@ -1,4 +1,4 @@
-# Modelo actual de acceso — Voz Ciudadana
+# Modelo actual de acceso — Nexo Comercial
 
 > Auditoría de código al 2026-07-09. Estado observado en la rama y árbol de trabajo actuales.
 > Este documento describe lo comprobado; no representa una arquitectura objetivo.
@@ -106,7 +106,7 @@ Evidencia: `backend/src/types/auth.types.ts:9-14`, migración `00000000000023_se
 
 Un usuario puede tener cero, uno o varios roles mediante `UserRole`. La autorización aplica semántica **OR**: basta uno de los roles permitidos (`backend/src/middlewares/rbac.ts:28-47`).
 
-No hay permisos persistidos. Los strings frontend `view:dashboard`, `view:inbox`, `view:citizens`, `view:events`, `manage:users`, `manage:settings`, `assign:roles` son una tabla local de presentación (`frontend/lib/auth-guards.ts:16-45`), no claims ni reglas backend.
+No hay permisos persistidos. Los strings frontend `view:dashboard`, `view:inbox`, `view:citizens`, `view:events`, `manage:users`, `manage:settings`, `assign:roles` son una tabla local de presentación (`frontend/lib/shared/auth-guards.ts:16-45`), no claims ni reglas backend.
 
 ## 6. Creación y ciclo de vida
 
@@ -115,7 +115,7 @@ Flujos comprobados:
 1. ✅ Seed core crea roles y catálogos; el superadmin solo se crea en scopes `dev` o `all` y requiere `SUPERADMIN_PASSWORD` (`backend/prisma/seed/dev/superadmin.seed.ts:5-13`).
 2. ✅ `POST /api/v1/auth/register`: un `SUPERADMIN` crea un usuario con uno o más nombres de rol (`auth.routes.ts:50-54`; `auth.service.ts:284-327`).
 3. ✅ `POST /api/v1/admin/users`: un `SUPERADMIN` crea usuario y puede enviar `roleIds`; también puede crear una cuenta sin roles (`users.routes.ts:25-30`; `user.service.ts:7-80`).
-4. ✅ Alta administrativa directa en backend; no hay UI activa de alta/asignación (`frontend/components/admin/settings-view.tsx:109-120`).
+4. ✅ Alta administrativa directa en backend; no hay UI activa de alta/asignación (`frontend/components/configuracion/settings-view.tsx:109-120`).
 5. ❌ Registro público de usuarios de panel.
 6. ❌ Invitación, OAuth, webhook de identidad o creación en primer login.
 
@@ -154,7 +154,7 @@ Limitaciones:
 - ⚠️ `authMiddleware` confía en `isActive` y roles contenidos en el access JWT; no consulta DB por request.
 - ⚠️ Logout revoca refresh, no un access JWT ya emitido.
 - ⚠️ Los rate limits confían directamente en `X-Forwarded-For`; sin una frontera de proxy confiable demostrada, el límite por IP es evadible.
-- ⚠️ Tokens accesibles a JavaScript en `localStorage`; cookie de access token tampoco es `HttpOnly` (`frontend/lib/auth-storage.ts:42-60`).
+- ⚠️ Tokens accesibles a JavaScript en `localStorage`; cookie de access token tampoco es `HttpOnly` (`frontend/lib/shared/auth-storage.ts:42-60`).
 - ❌ Recuperación de contraseña, MFA y verificación de email no demostradas.
 
 ## 8. Autorización
@@ -216,7 +216,7 @@ Respuesta directa: no se puede probar aislamiento A/B porque no existen A y B en
 - ✅ Todo `(admin)` usa `ProtectedRoute`, que espera la restauración/refresh y redirige al login (`frontend/app/(admin)/layout.tsx:26-33`).
 - ⚠️ `proxy.ts` no valida el token; solo redirige `/admin` a una subruta (`frontend/proxy.ts:17-35`).
 - ⚠️ Algunas páginas usan `PermissionGate`; es presentación cliente y usa roles almacenados localmente.
-- ⚠️ El sidebar muestra todas las rutas a todos los usuarios autenticados (`frontend/components/admin/sidebar.tsx:25-49`).
+- ⚠️ El sidebar muestra todas las rutas a todos los usuarios autenticados (`frontend/components/shared/sidebar.tsx:25-49`).
 - ⚠️ Existen divergencias: frontend concede `view:citizens` a `OPERADOR_CHAT` y `ANALISTA`, pero backend exige `SUPERADMIN|COORDINADOR`; concede `view:events` a `ANALISTA`, pero backend exige `SUPERADMIN|COORDINADOR`.
 - ✅ Una llamada directa no omite el RBAC backend en las rutas inventariadas.
 
@@ -286,7 +286,7 @@ Detalle y escenarios: [security-findings.md](security/security-findings.md).
 - `jwt.middleware.ts` es un re-export deprecado todavía importado.
 - `isSuperuser` sigue en schema/documentación antigua sin participar en autorización.
 - Permisos frontend no tienen fuente backend.
-- Documentación previa `docs/analysis/configuraciones-voz-ciudadana.md` conserva afirmaciones anteriores a la incorporación de RBAC en conversaciones/mensajes/handover/analytics; no debe usarse como inventario actual de acceso.
+- Documentación previa `docs/analysis/configuraciones-nexo-comercial.md` conserva afirmaciones anteriores a la incorporación de RBAC en conversaciones/mensajes/handover/analytics; no debe usarse como inventario actual de acceso.
 - Tests de rutas mockean el middleware JWT: prueban wiring RBAC, no criptografía ni estado real de DB.
 
 ## 17. Preguntas abiertas

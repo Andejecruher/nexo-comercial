@@ -1,4 +1,4 @@
-# CONTRIBUTING — Voz Ciudadana
+# CONTRIBUTING — Nexo Comercial
 
 ## Reglas de desarrollo
 

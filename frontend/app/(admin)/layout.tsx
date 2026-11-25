@@ -1,17 +1,16 @@
-import { AdminLayout } from '@/components/admin/admin-layout';
-import { ProtectedRoute } from '@/components/auth/ProtectedRoute';
-import { RealtimeNotificationsLayer } from '@/components/providers/realtime-notifications-layer';
-import { RealtimeProvider } from '@/components/providers/realtime-provider';
-import { createPageMetadata } from '@/lib/seo';
+import { AdminLayout } from '@/components/shared/admin-layout';
+import { ProtectedRoute } from '@/components/shared/ProtectedRoute';
+import { RealtimeNotificationsLayer } from '@/components/shared/providers/realtime-notifications-layer';
+import { RealtimeProvider } from '@/components/shared/providers/realtime-provider';
+import { createPageMetadata } from '@/lib/shared/seo';
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
   ...createPageMetadata({
     title: 'Panel administrativo',
-    description:
-      'Panel interno de gestión social y atención ciudadana — Voz Ciudadana, Cintalapa de Figueroa.',
+    description: 'Panel interno de Nexo Comercial.',
     path: '/admin',
-    openGraphTitle: 'Voz Ciudadana — Panel de gestión social',
+    openGraphTitle: 'Nexo Comercial — Panel',
   }),
   robots: {
     index: false,

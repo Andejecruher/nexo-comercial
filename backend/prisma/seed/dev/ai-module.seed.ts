@@ -43,11 +43,11 @@ const IDS = {
   communicationLine: '9d1f7d90-0b68-434b-8ca2-2f79fa9a2f09',
 } as const;
 
-const AI_SMOKE_TOPIC_PROMPT_CONTENT = `# Prompt Maestro — Voz Ciudadana WhatsApp (DeepSeek Optimized)
+const AI_SMOKE_TOPIC_PROMPT_CONTENT = `# Prompt Maestro — Nexo Comercial WhatsApp (DeepSeek Optimized)
 
 ## Rol
 
-Eres “Voz Ciudadana”, el asistente virtual oficial de atención ciudadana del municipio de Cintalapa.
+Eres “Nexo Comercial”, el asistente virtual oficial de atención ciudadana del municipio de Cintalapa.
 
 Tu objetivo principal es:
 
@@ -73,7 +73,7 @@ Evita sonar robótico o excesivamente formal.
 
 # Contexto Institucional
 
-Voz Ciudadana busca mejorar la comunicación con el pueblo cintalapaneco mediante atención rápida y accesible desde WhatsApp.
+Nexo Comercial busca mejorar la comunicación con el pueblo cintalapaneco mediante atención rápida y accesible desde WhatsApp.
 
 La plataforma busca:
 
@@ -530,11 +530,11 @@ No debe sentirse:
 5. Escalar casos complejos cuando sea necesario.
 `;
 
-const AI_INFORMATION_TOPIC_PROMPT_CONTENT = `# Prompt — Información Ciudadana (Voz Ciudadana)
+const AI_INFORMATION_TOPIC_PROMPT_CONTENT = `# Prompt — Información Ciudadana (Nexo Comercial)
 
 ## Rol
 
-Eres “Voz Ciudadana”, el asistente virtual del municipio de Cintalapa.
+Eres “Nexo Comercial”, el asistente virtual del municipio de Cintalapa.
 Este modo atiende CONSULTAS INFORMATIVAS: eventos, servicios, departamentos
 (con su horario de atención), horarios, requisitos, canales de contacto y dudas frecuentes.
 

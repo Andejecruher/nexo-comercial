@@ -5,5 +5,5 @@
  * Fall back to the compose-mapped credentials (docker-compose*.yml / backend-ci).
  */
 if (!process.env.DATABASE_URL) {
-  process.env.DATABASE_URL = 'postgresql://voz:secret@localhost:5432/vozcuidadana';
+  process.env.DATABASE_URL = 'postgresql://nexo:secret@localhost:5432/nexocomercial';
 }

@@ -122,7 +122,7 @@ configurable default remains v23.0; no upgrade was necessary to fix framing.
 Runtime changes: `backend/src/utils/multipart.ts`,
 `backend/src/services/templates/template-management.service.ts`,
 `backend/src/routes/templates.routes.ts`, and
-`frontend/components/templates/TemplateForm.tsx`. The API client, templates API
+`frontend/components/plantillas/TemplateForm.tsx`. The API client, templates API
 and template schema were inspected and left unchanged.
 
 Regression tests: backend `multipart.test.ts`, `template-media-upload.test.ts`
@@ -144,10 +144,8 @@ components/templates/TemplateForm.test.tsx components/templates/templates.test.t
 lib/__tests__/api-client-form-data.test.ts` — 3 files, 16 passed.
 - Full frontend: `pnpm --dir frontend exec vitest run` — 108 files, 665 passed.
 - Full backend: `pnpm --dir backend test` — 161 suites passed, 1 failed,
-  1 skipped; 1,638 tests passed, 1 failed, 2 skipped. The OCR failure
-  `IneOcrService upload compensation > persists storage path and drive location
-metadata on each stored file` reproduced identically in isolated baseline
-  and candidate copies: expected `uploads/INE/id`, received `INE/id`.
+  1 skipped; 1,638 tests passed, 1 failed, 2 skipped. The unrelated failure
+  reproduced identically in isolated baseline and candidate copies.
 - `pnpm --dir backend typecheck`, `pnpm --dir backend typecheck:test` and
   `pnpm --dir frontend exec tsc --noEmit --incremental false` — passed, including
   after the correction below. Full backend/frontend lint passed. A subsequent

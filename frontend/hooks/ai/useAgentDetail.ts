@@ -1,6 +1,6 @@
 'use client';
 
-import { agentDetailApi, type AgentDetailResponse } from '@/lib/ai-api';
+import { agentDetailApi, type AgentDetailResponse } from '@/lib/shared/ai-api';
 import { useCallback, useEffect, useState } from 'react';
 import { toast } from 'sonner';
 

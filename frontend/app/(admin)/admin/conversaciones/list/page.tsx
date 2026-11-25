@@ -1,4 +1,4 @@
-import { ConversationsInboxView } from '@/components/admin/conversations-inbox-view';
+import { ConversationsInboxView } from '@/components/conversaciones/conversations-inbox-view';
 
 export default function AdminConversacionesPage() {
   return (

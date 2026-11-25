@@ -4,7 +4,7 @@ import { LOGO_CID, brand, logoHttpUrl } from '../../../services/email/templates/
 
 const invitationProps = {
   recipientName: '<Ana>',
-  platformName: 'Voz Ciudadana',
+  platformName: 'Nexo Comercial',
   activationUrl: 'https://app.example.test/activate-account?token=secret-token',
   expirationDate: '15 de julio de 2026',
   expirationTime: '10:00',
@@ -17,7 +17,7 @@ describe('plantillas de correo — cromo compartido', () => {
     const { html } = await renderEmailTemplate('user-invitation', invitationProps);
 
     expect(html).toContain(`cid:${LOGO_CID}`);
-    expect(html).toContain('alt="KAB | Voz Ciudadana"');
+    expect(html).toContain('alt="Nexo Comercial"');
     expect(html).toMatch(/width="48"/);
     expect(html).toMatch(/height="48"/);
     expect(logoHttpUrl()).toContain('/images/email-logo.png');
@@ -43,7 +43,7 @@ describe('plantilla de invitación', () => {
   it('escapa el contenido dinámico y no deja marcadores sin resolver', async () => {
     const rendered = await renderEmailTemplate('user-invitation', invitationProps);
 
-    expect(rendered.subject).toBe('Te invitaron a formar parte de Voz Ciudadana');
+    expect(rendered.subject).toBe('Te invitaron a formar parte de Nexo Comercial');
     expect(rendered.category).toBe('user-invitation');
     expect(rendered.html).toContain('&lt;Ana&gt;');
     expect(rendered.html).not.toContain('<Ana>');
@@ -61,7 +61,7 @@ describe('plantilla de invitación', () => {
       isResend: true,
     });
 
-    expect(rendered.subject).toBe('Nueva invitación para acceder a Voz Ciudadana');
+    expect(rendered.subject).toBe('Nueva invitación para acceder a Nexo Comercial');
   });
 });
 
@@ -69,11 +69,11 @@ describe('plantilla de cuenta activada', () => {
   it('escapa el nombre y enlaza al login', async () => {
     const rendered = await renderEmailTemplate('account-activated', {
       recipientName: '<Ana>',
-      platformName: 'Voz Ciudadana',
+      platformName: 'Nexo Comercial',
       loginUrl: 'https://app.example.test',
     });
 
-    expect(rendered.subject).toBe('Tu cuenta de Voz Ciudadana está activa');
+    expect(rendered.subject).toBe('Tu cuenta de Nexo Comercial está activa');
     expect(rendered.html).toContain('&lt;Ana&gt;');
     expect(rendered.html).toContain('https://app.example.test');
     expect(rendered.html).toContain('Ingresar a la plataforma');
@@ -84,14 +84,14 @@ describe('plantilla de restablecimiento de contraseña', () => {
   it('incluye el enlace, la expiración y la advertencia de seguridad', async () => {
     const rendered = await renderEmailTemplate('password-reset', {
       recipientName: 'Ana',
-      platformName: 'Voz Ciudadana',
+      platformName: 'Nexo Comercial',
       resetUrl: 'https://app.example.test/reset-password?token=abc',
       expirationDate: '15 de julio de 2026',
       expirationTime: '10:00',
       supportEmail: 'soporte@example.test',
     });
 
-    expect(rendered.subject).toBe('Restablece tu contraseña de Voz Ciudadana');
+    expect(rendered.subject).toBe('Restablece tu contraseña de Nexo Comercial');
     expect(rendered.category).toBe('password-reset');
     expect(rendered.html).toContain('https://app.example.test/reset-password?token=abc');
     expect(rendered.html).toContain('15 de julio de 2026');
@@ -103,7 +103,7 @@ describe('plantillas de boletín', () => {
   it('la confirmación incluye el enlace de doble opt-in', async () => {
     const rendered = await renderEmailTemplate('newsletter-confirm', {
       recipientName: 'Ana',
-      platformName: 'Voz Ciudadana',
+      platformName: 'Nexo Comercial',
       confirmUrl: 'https://app.example.test/boletin/confirmar?token=abc',
       expirationDate: '15 de julio de 2026',
       expirationTime: '10:00',
@@ -116,7 +116,7 @@ describe('plantillas de boletín', () => {
 
   it('la bienvenida ofrece siempre el enlace de baja', async () => {
     const rendered = await renderEmailTemplate('newsletter-welcome', {
-      platformName: 'Voz Ciudadana',
+      platformName: 'Nexo Comercial',
       siteUrl: 'https://app.example.test',
       unsubscribeUrl: 'https://app.example.test/boletin/baja?token=xyz',
     });

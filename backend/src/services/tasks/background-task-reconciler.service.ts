@@ -51,28 +51,6 @@ export async function reconcilePendingBackgroundTasks(
       : []),
     reconcileType(
       (cursor, take) =>
-        prisma.ineOcrJob.findMany({
-          where: {
-            OR: [
-              { status: 'queued' },
-              { status: 'retryable', nextAttemptAt: { lte: now } },
-              {
-                status: 'processing',
-                OR: [{ lockedAt: null }, { lockedAt: { lt: staleBefore } }],
-              },
-            ],
-          },
-          select: { id: true },
-          orderBy: { id: 'asc' },
-          take,
-          ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
-        }),
-      (id) => dispatcher.dispatchOcrJob(id),
-      maxPerType,
-      pageSize,
-    ),
-    reconcileType(
-      (cursor, take) =>
         prisma.inboxEvent.findMany({
           where: {
             OR: [

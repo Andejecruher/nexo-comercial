@@ -1,4 +1,4 @@
-# Infraestructura del módulo de IA (Voz Ciudadana)
+# Infraestructura del módulo de IA (Nexo Comercial)
 
 > Documento de arquitectura funcional del módulo IA en backend: cómo se conecta una línea con un agente, cómo se resuelven topics/prompts, cómo se habilitan tools y cómo corre el flujo end-to-end.
 

@@ -1,8 +1,8 @@
 # WebSockets en tiempo real — Dev local y GCP
 
-> **Guía de referencia para el equipo.** Cubre fundamentos del protocolo, comportamiento en el entorno de desarrollo local, arquitectura en GCP (Cloud Run + Pub/Sub) y el flujo aplicado al sistema de notificaciones de Voz Ciudadana.
+> **Guía de referencia para el equipo.** Cubre fundamentos del protocolo, comportamiento en el entorno de desarrollo local, arquitectura en GCP (Cloud Run + Pub/Sub) y el flujo aplicado al sistema de notificaciones de Nexo Comercial.
 >
-> **Stack real del proyecto:** Node.js + Express + **Socket.IO** en el backend (`backend/src/services/realtime/websocket-gateway.service.ts`), Next.js + `socket.io-client` en el frontend (`frontend/lib/realtime/realtime-manager.ts`), y **`@socket.io/gcp-pubsub-adapter`** como broker entre instancias de Cloud Run (no Redis).
+> **Stack real del proyecto:** Node.js + Express + **Socket.IO** en el backend (`backend/src/services/realtime/websocket-gateway.service.ts`), Next.js + `socket.io-client` en el frontend (`frontend/lib/shared/realtime/realtime-manager.ts`), y **`@socket.io/gcp-pubsub-adapter`** como broker entre instancias de Cloud Run (no Redis).
 
 ---
 
@@ -161,7 +161,7 @@ httpServer.listen(8000, () => console.log('WS en :8000'));
 ### 2.4 Inspección y depuración en dev
 
 - **Logs del gateway:** el backend emite logs estructurados con `logRealtimeBoundary` en cada `emit`. Filtra por `WebsocketGatewayService`.
-- **Logs del cliente:** `frontend/lib/realtime/realtime-manager.ts` hace `console.info/warn/error` JSON con `component: 'RealtimeManager'`.
+- **Logs del cliente:** `frontend/lib/shared/realtime/realtime-manager.ts` hace `console.info/warn/error` JSON con `component: 'RealtimeManager'`.
 - **Chrome DevTools → Network → WS:** filtra por `socket.io`, abre el frame y mira los paquetes EIO (handshake, `40` connect, `42` event, `2` ping, `3` pong).
 - **Socket.IO admin UI:** en dev puede montarse `@socket.io/admin-ui` temporalmente para ver rooms y sockets conectados.
 
@@ -173,11 +173,11 @@ httpServer.listen(8000, () => console.log('WS en :8000'));
 
 | Servicio GCP                                                     | Rol en el realtime                                                                | ¿Por qué este y no otro?                                                              |
 | ---------------------------------------------------------------- | --------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------- |
-| **Cloud Run** (`voz-api`)                                        | Termina la conexión WebSocket del cliente y mantiene las rooms Socket.IO locales. | Soporta WebSockets con request-driven; escala a cero; cobro por tiempo de CPU activo. |
+| **Cloud Run** (`nexo-api`)                                        | Termina la conexión WebSocket del cliente y mantiene las rooms Socket.IO locales. | Soporta WebSockets con request-driven; escala a cero; cobro por tiempo de CPU activo. |
 | **Pub/Sub** (`realtime-events`, `ai-stream`, `socketio-adapter`) | Broker de fan-out entre instancias de Cloud Run.                                  | Mensajería administrada, sin ops; el adapter oficial de Socket.IO la usa nativamente. |
 | **Cloud Load Balancing** (el integrado en Cloud Run)             | Termina TLS y enruta al servicio.                                                 | Ya incluido en Cloud Run; no requiere un LB separado para el caso base.               |
 | **Cloud SQL**                                                    | Fuente de verdad de eventos durables (outbox pattern).                            | Persistencia transaccional con Prisma.                                                |
-| **Cloud Tasks** (`voz-worker`)                                   | Origen de muchos eventos durables (mensajes, handovers).                          | Desacopla latencia de webhook del envío al cliente.                                   |
+| **Cloud Tasks** (`nexo-worker`)                                   | Origen de muchos eventos durables (mensajes, handovers).                          | Desacopla latencia de webhook del envío al cliente.                                   |
 
 **Alternativas consideradas y por qué no se usan:**
 
@@ -203,7 +203,7 @@ Cloud Run escala la API a **N réplicas** según el tráfico. Un cliente conecta
                         │                   │                    │
                   ┌─────┴─────┐       ┌──────┴────┐       ┌──────┴────┐
   Cliente A ────► │ Réplica 1 │ ─emit()┤ Réplica 2 │       │ Réplica N │ ◄──── Cliente B
-  Cliente C ────► │ (voz-api) │       │ (voz-api) │       │ (voz-api) │ ◄──── Cliente D
+  Cliente C ────► │ (nexo-api) │       │ (nexo-api) │       │ (nexo-api) │ ◄──── Cliente D
                   └───────────┘       └───────────┘       └───────────┘
                         │                   │                    │
                         └──► emite a sus sockets locales (rooms locales)
@@ -220,8 +220,8 @@ Cloud Run escala la API a **N réplicas** según el tráfico. Un cliente conecta
 
 | Topic Pub Sub      | Quién publica            | Quién consume             | Propósito                                          |
 | ------------------ | ------------------------ | ------------------------- | -------------------------------------------------- |
-| `realtime-events`  | `voz-worker` (outbox)    | `voz-api` (push HTTP)     | Entrega durable de eventos de negocio al gateway.  |
-| `ai-stream`        | `voz-worker` (streaming) | `voz-api` (push HTTP)     | Chunks de streaming de IA (efímeros, best-effort). |
+| `realtime-events`  | `nexo-worker` (outbox)    | `nexo-api` (push HTTP)     | Entrega durable de eventos de negocio al gateway.  |
+| `ai-stream`        | `nexo-worker` (streaming) | `nexo-api` (push HTTP)     | Chunks de streaming de IA (efímeros, best-effort). |
 | `socketio-adapter` | Cualquier réplica de API | Todas las réplicas de API | Fan-out de `emit()` entre instancias Socket.IO.    |
 
 ### 3.3 Timeouts y persistencia de conexiones en Cloud Run
@@ -230,7 +230,7 @@ Cloud Run impone límites que **condicionan** el diseño del realtime:
 
 | Límite de Cloud Run            | Valor / comportamiento                        | Impacto en WebSockets                                                                                                                                                                                        |
 | ------------------------------ | --------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| **Timeout de request**         | Configurable hasta **60 min** (default 5 min) | La conexión WebSocket cuenta como un único request. En `voz-api` se configura en **60 s** para HTTP normal, pero las conexiones WS establecidas **renuevan** el timeout mientras haya actividad (ping/pong). |
+| **Timeout de request**         | Configurable hasta **60 min** (default 5 min) | La conexión WebSocket cuenta como un único request. En `nexo-api` se configura en **60 s** para HTTP normal, pero las conexiones WS establecidas **renuevan** el timeout mientras haya actividad (ping/pong). |
 | **Concurrencia por instancia** | Default 80, configurable hasta 1000           | Cada socket abierto consume 1 conexión. Ajustar `--concurrency` según pico de admins conectados.                                                                                                             |
 | **Scale-to-zero**              | Tras el último request, la instancia se apaga | Si no hay tráfico HTTP/WS, las conexiones se cortan. El cliente debe reconectar.                                                                                                                             |
 | **Cold-start**                 | 1-5 s típicamente                             | La primera conexión tras idle puede tardar más; el cliente debe tolerarlo con backoff.                                                                                                                       |
@@ -248,10 +248,10 @@ Cloud Run impone límites que **condicionan** el diseño del realtime:
 
 ```text
 Internet (navegador admin)
-   │ wss://voz-api-xxxx.run.app/socket.io/?EIO=4&transport=websocket
+   │ wss://nexo-api-xxxx.run.app/socket.io/?EIO=4&transport=websocket
    ▼
 ┌──────────────────────────────────────────────────────────┐
-│ Cloud Run: voz-api (N réplicas, scale 0..10)              │
+│ Cloud Run: nexo-api (N réplicas, scale 0..10)              │
 │  ┌────────────────────────────────────────────────────┐  │
 │  │ Express + Socket.IO (/admin)                        │  │
 │  │  - socketAuthMiddleware (verifica JWT access)        │  │
@@ -272,7 +272,7 @@ Internet (navegador admin)
             │ publish                         │ publish
             │                                  │
    ┌────────┴──────────────────────────────────┴─────────┐
-   │ Cloud Run: voz-worker (privado, 0..20)               │
+   │ Cloud Run: nexo-worker (privado, 0..20)               │
    │  - Cloud Tasks handler                                │
    │  - Outbox poller → publica durables en realtime-events│
    │  - AI streaming → publica chunks en ai-stream         │
@@ -289,7 +289,7 @@ Internet (navegador admin)
 ```text
 (1) Disparo en el backend
     ┌─────────────────────────────────────────────────────────────┐
-    │ voz-worker procesa un evento de negocio:                    │
+    │ nexo-worker procesa un evento de negocio:                    │
     │   - WhatsApp webhook recibido                              │
     │   - Handover de conversación                              │
     │   - Chunk de streaming IA                                 │
@@ -301,7 +301,7 @@ Internet (navegador admin)
                               ▼
 (2) Recepción en la API + fan-out
     ┌─────────────────────────────────────────────────────────────┐
-    │ voz-api recibe push HTTP de Pub/Sub:                       │
+    │ nexo-api recibe push HTTP de Pub/Sub:                       │
     │   - POST /pubsub/realtime (durable)                        │
     │   - POST /pubsub/ai-stream (efímero)                        │
     │                                                            │
@@ -353,7 +353,7 @@ El método `emitDurableEvent` del gateway decide la room destino según el tipo 
 
 ### 4.4 Reconexión automática y manejo de pérdida de red en el cliente
 
-El `RealtimeManager` (`frontend/lib/realtime/realtime-manager.ts`) implementa varias capas de resiliencia:
+El `RealtimeManager` (`frontend/lib/shared/realtime/realtime-manager.ts`) implementa varias capas de resiliencia:
 
 1. **Reconexión con backoff exponencial** (Socket.IO nativo):
    ```ts
@@ -400,7 +400,7 @@ El `RealtimeManager` (`frontend/lib/realtime/realtime-manager.ts`) implementa va
 | **Deduplicación**              | Opcional                                             | Obligatoria (LRU de `eventId` en cliente)                                    |
 | **Logs**                       | `console.*` en terminal                              | Cloud Logging; filtrar por `WebsocketGatewayService`                         |
 | **Variables clave (backend)**  | `WS_ENABLED`, `WS_PATH`, `CORS_ORIGIN`               | + `pubsubAdapter.enabled`, `GCP_PROJECT_ID`, `REALTIME_DURABLE_ENABLED=true` |
-| **Variables clave (frontend)** | `NEXT_PUBLIC_WS_URL=http://localhost:8000`           | `NEXT_PUBLIC_WS_URL=https://voz-api-xxxx.run.app`                            |
+| **Variables clave (frontend)** | `NEXT_PUBLIC_WS_URL=http://localhost:8000`           | `NEXT_PUBLIC_WS_URL=https://nexo-api-xxxx.run.app`                            |
 
 ### 5.2 Checklist al escribir código que involucre WebSockets
 
@@ -431,7 +431,7 @@ El `RealtimeManager` (`frontend/lib/realtime/realtime-manager.ts`) implementa va
 - [ ] ¿El topic `socketio-adapter` existe? El factory lo crea si no existe, pero en prod conviene pre-crealo con IaC.
 - [ ] ¿`CORS_ORIGIN` lista explícitamente los dominios del frontend (sin `*`)?
 - [ ] ¿`PRISMA_CONNECTION_LIMIT=5` y `--max-instances=5` en la API? (Cloud SQL no aguanta pool grande × N réplicas: ver `docs/CLOUD_SQL_CONNECTION.md` §3).
-- [ ] ¿El servicio `voz-api` es público y `voz-worker` privado?
+- [ ] ¿El servicio `nexo-api` es público y `nexo-worker` privado?
 - [ ] ¿Los timeouts de Cloud Run (3600 s API, 300 s worker) son suficientes para los flujos más largos?
 - [ ] ¿Se monitorea la métrica `gateway_emit_latency_ms`? Si crece, el Pub/Sub o el adapter están saturados.
 
@@ -456,16 +456,16 @@ make dev
 docker compose -f docker-compose.dev.yml logs -f api | grep -i realtime
 
 # Verificar tópicos Pub/Sub en GCP
-gcloud pubsub topics list --project=voz-ciudadana-505319 | grep -E 'realtime|socketio|ai-stream'
-gcloud pubsub subscriptions list --project=voz-ciudadana-505319
+gcloud pubsub topics list --project=<GCP_PROJECT_ID> | grep -E 'realtime|socketio|ai-stream'
+gcloud pubsub subscriptions list --project=<GCP_PROJECT_ID>
 
-# Verificar configuración de Cloud Run (voz-api)
-gcloud run services describe voz-api --region=us-central1 \
+# Verificar configuración de Cloud Run (nexo-api)
+gcloud run services describe nexo-api --region=us-central1 \
   --format='value(status.url, metadata.annotations["run.googleapis.com/timeout"])'
 
 # Logs de realtime en GCP (últimos 30 min)
 gcloud logging read 'resource.type="cloud_run_revision" AND \
-  resource.label.service="voz-api" AND jsonPayload.component="WebsocketGatewayService" \
+  resource.label.service="nexo-api" AND jsonPayload.component="WebsocketGatewayService" \
   AND timestamp>="2026-09-26T00:00:00Z"' --limit=50 --format=json
 ```
 
@@ -479,8 +479,8 @@ gcloud logging read 'resource.type="cloud_run_revision" AND \
 - `docs/realtime-durable-operations.md` — detalles del outbox durable.
 - `backend/src/services/realtime/websocket-gateway.service.ts` — gateway Socket.IO.
 - `backend/src/services/realtime/realtime-event.contracts.ts` — contratos durable/efímero.
-- `frontend/lib/realtime/realtime-manager.ts` — manager del cliente.
-- `frontend/lib/realtime/types.ts` — type guards de payloads.
+- `frontend/lib/shared/realtime/realtime-manager.ts` — manager del cliente.
+- `frontend/lib/shared/realtime/types.ts` — type guards de payloads.
 
 ---
 

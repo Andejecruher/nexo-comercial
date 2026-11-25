@@ -1,6 +1,6 @@
 # Campañas de WhatsApp — entregables por fases
 
-Implementación integrada en Voz Ciudadana con Next.js/React, Express/TypeScript,
+Implementación integrada en Nexo Comercial con Next.js/React, Express/TypeScript,
 Prisma/PostgreSQL y **Google Cloud Tasks**, ya disponible en este repositorio.
 En desarrollo también funciona el backend de ejecución `polling` existente.
 No requiere Redis ni BullMQ.
@@ -44,14 +44,14 @@ Rutas:
 
 Código:
 
-- `frontend/components/campaigns/CampaignWizard.tsx`: configuración, audiencia,
+- `frontend/components/campanas/CampaignWizard.tsx`: configuración, audiencia,
   variables, resumen y lanzamiento.
-- `frontend/components/campaigns/CsvAudienceMapping.tsx`: componentes reutilizables
+- `frontend/components/shared/CsvAudienceMapping.tsx`: componentes reutilizables
   `CsvAudience` y `VariableMapping` (estático/dinámico por variable).
-- `frontend/lib/campaign-csv.ts`: lectura RFC 4180 con cabeceras, delimitadores
+- `frontend/lib/shared/campaign-csv.ts`: lectura RFC 4180 con cabeceras, delimitadores
   coma/punto y coma, BOM UTF-8, comillas escapadas y campos multilínea.
-- `frontend/components/campaigns/CampaignPages.tsx`: listado y analítica.
-- `frontend/lib/campaigns-api.ts`: contratos y cliente HTTP autenticado.
+- `frontend/components/campanas/CampaignPages.tsx`: listado y analítica.
+- `frontend/lib/shared/campaigns-api.ts`: contratos y cliente HTTP autenticado.
 
 El equivalente de `getTemplates` en el repositorio es `templatesApi.list`; el
 wizard reutiliza ese servicio con búsqueda por nombre en Meta y páginas de 25 opciones;

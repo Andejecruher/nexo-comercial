@@ -1,5 +1,5 @@
-import { DashboardViewAtencion } from '@/components/admin/dashboard-view-atencion';
-import { PermissionGate } from '@/components/auth/PermissionGate';
+import { DashboardViewAtencion } from '@/components/indicadores/dashboard-view-atencion';
+import { PermissionGate } from '@/components/shared/PermissionGate';
 
 export default function DashboardPage() {
   return (

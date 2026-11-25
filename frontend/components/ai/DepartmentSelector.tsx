@@ -3,8 +3,8 @@
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { useDepartments } from '@/hooks/useDepartments';
-import type { Department } from '@/lib/catalog-api';
+import { useDepartments } from '@/hooks/shared/useDepartments';
+import type { Department } from '@/lib/shared/catalog-api';
 import { Building2, Loader2, Pencil, Plus, Search } from 'lucide-react';
 
 interface DepartmentSelectorProps {

@@ -62,31 +62,7 @@ export type AuditAction =
   | 'event.create'
   | 'event.update'
   | 'citizen.register_event'
-  | 'citizen.checkin_event'
-  | 'ine.upload.create'
-  | 'ine.upload.retry'
-  | 'ine.upload.review'
-  | 'ine.promovido.confirm'
-  | 'promovido.create'
-  | 'promovido.update'
-  | 'promovido.vigencia.change'
-  | 'promovido.leader.change'
-  | 'ine.catalog.state.update'
-  | 'ine.catalog.state.deactivate'
-  | 'ine.catalog.district.update'
-  | 'ine.catalog.district.deactivate'
-  | 'ine.catalog.section.update'
-  | 'ine.catalog.section.deactivate'
-  | 'ine.catalog.leader.update'
-  | 'ine.catalog.leader.deactivate'
-  | 'ine.catalog.leader.reinvite'
-  | 'coordinator.create'
-  | 'coordinator.update'
-  | 'coordinator.delete'
-  | 'coordinator.reinvite'
-  | 'structure.create'
-  | 'structure.update'
-  | 'structure.delete';
+  | 'citizen.checkin_event';
 
 export interface AuditEntry {
   actorId?: string | null;

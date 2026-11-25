@@ -1,5 +1,5 @@
 /**
- * Especificación OpenAPI 3.0 del backend Voz Ciudadana.
+ * Especificación OpenAPI 3.0 del backend Nexo Comercial.
  *
  * DECISIÓN DE DISEÑO: spec programática pura (sin swagger-jsdoc).
  *
@@ -223,7 +223,7 @@ const schemas: Record<string, SchemaObject> = {
     required: ['id', 'email', 'roles'],
     properties: {
       id: { type: 'string', format: 'uuid', example: '550e8400-e29b-41d4-a716-446655440000' },
-      email: { type: 'string', format: 'email', example: 'admin@vozcuidadana.mx' },
+      email: { type: 'string', format: 'email', example: 'admin@nexocomercial.mx' },
       fullName: { type: 'string', nullable: true, example: 'Ana García' },
       roles: { type: 'array', items: { $ref: '#/components/schemas/PanelRole' } },
       isActive: { type: 'boolean', description: 'Presente en respuestas de admin', example: true },
@@ -239,7 +239,7 @@ const schemas: Record<string, SchemaObject> = {
     type: 'object',
     required: ['email', 'password'],
     properties: {
-      email: { type: 'string', format: 'email', example: 'admin@vozcuidadana.mx' },
+      email: { type: 'string', format: 'email', example: 'admin@nexocomercial.mx' },
       password: { type: 'string', minLength: 1, example: 'changeme_in_production_123!' },
       deviceId: {
         type: 'string',
@@ -271,7 +271,7 @@ const schemas: Record<string, SchemaObject> = {
     type: 'object',
     required: ['email', 'password', 'fullName', 'roles'],
     properties: {
-      email: { type: 'string', format: 'email', example: 'nuevo.admin@vozcuidadana.mx' },
+      email: { type: 'string', format: 'email', example: 'nuevo.admin@nexocomercial.mx' },
       password: { type: 'string', minLength: 8, example: 'PasswordSeguro123!' },
       fullName: { type: 'string', minLength: 2, example: 'Carlos Rodríguez' },
       roles: {
@@ -2048,14 +2048,14 @@ const paths: PathsObject = {
               withDevice: {
                 summary: 'Login con device-id en body',
                 value: {
-                  email: 'admin@vozcuidadana.mx',
+                  email: 'admin@nexocomercial.mx',
                   password: 'changeme_in_production_123!',
                   deviceId: 'browser-chrome-desktop-uuid',
                 },
               },
               minimal: {
                 summary: 'Login mínimo (sesión anónima)',
-                value: { email: 'admin@vozcuidadana.mx', password: 'changeme_in_production_123!' },
+                value: { email: 'admin@nexocomercial.mx', password: 'changeme_in_production_123!' },
               },
             },
           },
@@ -5719,10 +5719,10 @@ const paths: PathsObject = {
 export const createSwaggerSpec = ({ port, base_url }: SwaggerSpecParams): OpenAPIDocument => ({
   openapi: '3.0.0',
   info: {
-    title: 'Voz Ciudadana API',
+    title: 'Nexo Comercial API',
     version: '0.1.0',
     description: [
-      'API del backend de **Voz Ciudadana**.',
+      'API del backend de **Nexo Comercial**.',
       '',
       '## Módulos',
       '- **Auth**: Autenticación JWT con refresh token rotado, multi-sesión por dispositivo, rate limiting y lockout progresivo.',
@@ -5740,7 +5740,7 @@ export const createSwaggerSpec = ({ port, base_url }: SwaggerSpecParams): OpenAP
       'Usar el botón **Authorize** con el access token obtenido en `POST /api/v1/auth/login`.',
       'Formato: `Bearer <accessToken>`',
     ].join('\n'),
-    contact: { name: 'Equipo Voz Ciudadana' },
+    contact: { name: 'Equipo Nexo Comercial' },
     license: { name: 'Privado' },
   },
   servers: [

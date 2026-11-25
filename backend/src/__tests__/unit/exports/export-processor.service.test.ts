@@ -10,9 +10,9 @@ const requestedAt = new Date('2026-09-07T10:00:00Z');
 function job(overrides: Partial<Record<string, unknown>> = {}) {
   return {
     id: 'job-1',
-    module: 'promoted',
-    filtersJson: { q: 'ana' },
-    scopeSnapshot: { kind: 'leader', leaderId: 'leader-42' },
+    module: 'citizens',
+    filtersJson: { search: 'ana' },
+    scopeSnapshot: { kind: 'admin' },
     status: 'queued',
     requestedByUserId: 'user-1',
     requestedAt,
@@ -38,7 +38,7 @@ describe('ExportProcessorService', () => {
         provider: 'google_cloud_storage',
         objectId: input.path,
         path: input.path,
-        folderId: 'exports/promoted',
+        folderId: 'exports/citizens',
       }));
     jest.spyOn(GCSFileStorageProvider.prototype, 'delete').mockResolvedValue(undefined);
   });
@@ -58,8 +58,8 @@ describe('ExportProcessorService', () => {
       .spyOn(GCSFileStorageProvider.prototype, 'uploadStream')
       .mockResolvedValue({
         objectId: 'drive-file-1',
-        folderId: 'folder-promoted',
-        path: 'exports/promoted/promoted-2026-09-07-1000-job-1.xlsx',
+        folderId: 'folder-citizens',
+        path: 'exports/citizens/citizens-2026-09-07-1000-job-1.xlsx',
       } as never);
     jest.spyOn(XlsxExportWriter.prototype, 'write').mockResolvedValue(3_500);
 
@@ -70,13 +70,13 @@ describe('ExportProcessorService', () => {
     expect(claim.mock.invocationCallOrder[0]).toBeLessThan(markReady.mock.invocationCallOrder[0]);
     expect(uploadStream).toHaveBeenCalledWith(
       expect.objectContaining({
-        path: 'exports/promoted/promoted-2026-09-07-1000-job-1.xlsx',
+        path: 'exports/citizens/citizens-2026-09-07-1000-job-1.xlsx',
       }),
     );
     expect(markReady).toHaveBeenCalledWith({
       id: 'job-1',
-      filePath: 'exports/promoted/promoted-2026-09-07-1000-job-1.xlsx',
-      driveFilename: 'promoted-2026-09-07-1000-job-1.xlsx',
+      filePath: 'exports/citizens/citizens-2026-09-07-1000-job-1.xlsx',
+      driveFilename: 'citizens-2026-09-07-1000-job-1.xlsx',
       rowCount: 3_500,
     });
     expect(markFailed).not.toHaveBeenCalled();
@@ -147,7 +147,7 @@ describe('ExportProcessorService', () => {
     await expect(new ExportProcessorService({} as never).processJobById('job-1')).rejects.toThrow(
       'database unavailable',
     );
-    expect(remove).toHaveBeenCalledWith('exports/promoted/promoted-2026-09-07-1000-job-1.xlsx');
+    expect(remove).toHaveBeenCalledWith('exports/citizens/citizens-2026-09-07-1000-job-1.xlsx');
   });
 
   it('observes an early upload failure and marks the job failed without saving a path', async () => {
@@ -177,31 +177,6 @@ describe('ExportProcessorService', () => {
     expect(markReady).not.toHaveBeenCalled();
   });
 
-  it('lands leader exports in the leaders module folder', async () => {
-    jest
-      .spyOn(ExportJobService.prototype, 'getById')
-      .mockResolvedValue(job({ module: 'leaders', filtersJson: { q: 'pipe' } }) as never);
-    jest.spyOn(ExportJobService.prototype, 'claim').mockResolvedValue(true);
-    jest.spyOn(ExportJobService.prototype, 'markReady').mockResolvedValue(undefined as never);
-    const uploadStream = jest
-      .spyOn(GCSFileStorageProvider.prototype, 'uploadStream')
-      .mockResolvedValue({
-        objectId: 'drive-leaders-1',
-        folderId: 'folder-leaders',
-        path: 'exports/leaders/leaders-2026-09-07-1000-job-1.xlsx',
-      } as never);
-    jest.spyOn(XlsxExportWriter.prototype, 'write').mockResolvedValue(125);
-
-    const processor = new ExportProcessorService({} as never);
-    await expect(processor.processJobById('job-1')).resolves.toBe('processed');
-
-    expect(uploadStream).toHaveBeenCalledWith(
-      expect.objectContaining({
-        path: 'exports/leaders/leaders-2026-09-07-1000-job-1.xlsx',
-      }),
-    );
-  });
-
   it('processes two distinct jobs in parallel with independent filenames', async () => {
     jest
       .spyOn(ExportJobService.prototype, 'getById')
@@ -218,7 +193,7 @@ describe('ExportProcessorService', () => {
         ({
           objectId: input.path,
           path: input.path,
-          folderId: 'folder-promoted',
+          folderId: 'folder-citizens',
         }) as never,
     );
     jest.spyOn(XlsxExportWriter.prototype, 'write').mockResolvedValue(2);

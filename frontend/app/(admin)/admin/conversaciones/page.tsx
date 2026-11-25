@@ -1,4 +1,4 @@
-import { InboxView } from '@/components/admin/inbox-view';
+import { InboxView } from '@/components/conversaciones/inbox-view';
 import { Suspense } from 'react';
 
 export default function AdminInboxPage() {

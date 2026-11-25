@@ -1,6 +1,6 @@
 import { describe, expect, it, jest } from '@jest/globals';
 import type { NextFunction, Request, Response } from 'express';
-import { scopeMiddleware, requireScope, scopeWhere } from '../../../middlewares/scope.middleware';
+import { scopeMiddleware, requireScope } from '../../../middlewares/scope.middleware';
 import { ScopeService } from '../../../services/scope.service';
 import type { ScopeContext } from '../../../types/auth.types';
 
@@ -29,7 +29,7 @@ function createNext(): NextFunction {
 
 describe('scopeMiddleware', () => {
   it('injects resolved scope into req.scope', async () => {
-    const scope: ScopeContext = { kind: 'leader', sectionId: 'section-1', leaderId: 'leader-1' };
+    const scope: ScopeContext = { kind: 'admin' };
     const middleware = scopeMiddleware(createScopeService(scope));
     const req = createRequest({ id: 'user-1' }) as Request;
     const res = createResponse() as Response;
@@ -72,8 +72,8 @@ describe('scopeMiddleware', () => {
 
 describe('requireScope', () => {
   it('allows matching scope kinds', () => {
-    const middleware = requireScope('admin', 'coordinator');
-    const req = createRequest({ id: 'user-1' }, { kind: 'coordinator', coordinatorId: 'coord-1' }) as Request;
+    const middleware = requireScope('admin');
+    const req = createRequest({ id: 'user-1' }, { kind: 'admin' }) as Request;
     const res = createResponse() as Response;
     const next = createNext();
 
@@ -84,7 +84,7 @@ describe('requireScope', () => {
 
   it('returns 404 when scope kind is not allowed', () => {
     const middleware = requireScope('admin');
-    const req = createRequest({ id: 'user-1' }, { kind: 'leader', leaderId: 'leader-1' }) as Request;
+    const req = createRequest({ id: 'user-1' }, { kind: 'none' }) as Request;
     const res = createResponse() as Response;
     const next = createNext();
 
@@ -102,33 +102,5 @@ describe('requireScope', () => {
     middleware(req, res, next);
 
     expect(next).toHaveBeenCalledWith(expect.objectContaining({ statusCode: 404 }));
-  });
-});
-
-describe('scopeWhere', () => {
-  it('returns undefined for admin scope', () => {
-    expect(scopeWhere({ kind: 'admin' })).toBeUndefined();
-  });
-
-  it('returns undefined for missing scope', () => {
-    expect(scopeWhere(undefined)).toBeUndefined();
-  });
-
-  it('returns leader relation filter for leader scope', () => {
-    expect(scopeWhere({ kind: 'leader', leaderId: 'leader-1' })).toEqual({
-      leader: { id: 'leader-1' },
-    });
-  });
-
-  it('returns coordinator relation filter for coordinator scope', () => {
-    expect(scopeWhere({ kind: 'coordinator', coordinatorId: 'coord-1' })).toEqual({
-      leader: { coordinatorId: 'coord-1' },
-    });
-  });
-
-  it('uses custom leader path when provided', () => {
-    expect(scopeWhere({ kind: 'leader', leaderId: 'leader-1' }, { leaderPath: 'assignedLeader' })).toEqual({
-      assignedLeader: { id: 'leader-1' },
-    });
   });
 });

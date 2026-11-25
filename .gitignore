@@ -68,3 +68,4 @@ backend/storage/whatsapp/
 .atl/
 .atl/.skill-registry.cache.json
 .atl/.skill-registry.md
+.pnpm-store/

@@ -8,7 +8,7 @@
 // emulator and never reach any socket.
 import { PubSub } from '@google-cloud/pubsub';
 
-const projectId = process.env.GOOGLE_CLOUD_PROJECT || 'voz-ciudadana-dev';
+const projectId = process.env.GOOGLE_CLOUD_PROJECT || 'nexo-comercial-dev';
 const realtimeTopic = process.env.REALTIME_TOPIC || 'realtime-events';
 const aiStreamTopic = process.env.AI_STREAM_TOPIC || 'ai-stream';
 const subscriptionName = process.env.REALTIME_SUBSCRIPTION || 'realtime-events-push';

@@ -16,7 +16,7 @@ Estos endpoints técnicos validan la integración de correo transaccional con Ma
 ```env
 MAIL_PROVIDER=mailtrap
 MAIL_FROM_ADDRESS=
-MAIL_FROM_NAME=Voz Ciudadana
+MAIL_FROM_NAME=Nexo Comercial
 MAILTRAP_API_TOKEN=
 MAILTRAP_API_URL=
 MAIL_SEND_TIMEOUT_MS=10000

@@ -3,7 +3,7 @@
 import { RelationshipGraph } from '@/components/ai/RelationshipGraph';
 import { Button } from '@/components/ui/button';
 import { useAgents } from '@/hooks/ai/useAgents';
-import { useLines } from '@/hooks/ai/useLines';
+import { useLines } from '@/hooks/shared/useLines';
 import { usePrompts } from '@/hooks/ai/usePrompts';
 import { useTools } from '@/hooks/ai/useTools';
 import { useTopics } from '@/hooks/ai/useTopics';

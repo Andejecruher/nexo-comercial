@@ -16,7 +16,6 @@ describe('background task reconciliation', () => {
     const emptyFindMany = jest.fn(async () => []);
     const prisma = {
       $queryRaw: jest.fn(async () => []),
-      ineOcrJob: { findMany: emptyFindMany },
       inboxEvent: { findMany: inboxFindMany },
       outboxEvent: { findMany: emptyFindMany },
       realtimeOutboxEvent: { findMany: emptyFindMany },
@@ -24,7 +23,6 @@ describe('background task reconciliation', () => {
     const dispatchInboxEvent = jest.fn(async (_id: string) => undefined);
     const dispatcher = {
       dispatchExportJob: jest.fn(async (_id: string) => undefined),
-      dispatchOcrJob: jest.fn(async (_id: string) => undefined),
       dispatchInboxEvent,
       dispatchBatchEvent: jest.fn(async () => undefined),
       dispatchOutboxEvent: jest.fn(async (_id: string) => undefined),
@@ -62,7 +60,6 @@ describe('background task reconciliation', () => {
     const emptyFindMany = jest.fn(async () => []);
     const prisma = {
       $queryRaw: queryRaw,
-      ineOcrJob: { findMany: emptyFindMany },
       inboxEvent: { findMany: emptyFindMany },
       outboxEvent: { findMany: emptyFindMany },
       realtimeOutboxEvent: { findMany: emptyFindMany },
@@ -70,7 +67,6 @@ describe('background task reconciliation', () => {
     const dispatchBatchEvent = jest.fn(async () => undefined);
     const dispatcher = {
       dispatchExportJob: jest.fn(async () => undefined),
-      dispatchOcrJob: jest.fn(async () => undefined),
       dispatchInboxEvent: jest.fn(async () => undefined),
       dispatchOutboxEvent: jest.fn(async () => undefined),
       dispatchRealtimeEvent: jest.fn(async () => undefined),
@@ -98,21 +94,18 @@ describe('background task reconciliation', () => {
     );
   });
 
-  it('fetches only due retries and excludes terminal work from every queue', async () => {
-    const ocrFindMany = jest.fn(async (_args: unknown) => []);
+  it('fetches only due retries and excludes terminal work from retained queues', async () => {
     const inboxFindMany = jest.fn(async (_args: unknown) => []);
     const outboxFindMany = jest.fn(async (_args: unknown) => []);
     const realtimeFindMany = jest.fn(async (_args: unknown) => []);
     const prisma = {
       $queryRaw: jest.fn(async () => []),
-      ineOcrJob: { findMany: ocrFindMany },
       inboxEvent: { findMany: inboxFindMany },
       outboxEvent: { findMany: outboxFindMany },
       realtimeOutboxEvent: { findMany: realtimeFindMany },
     };
     const dispatcher = {
       dispatchExportJob: jest.fn(async (_id: string) => undefined),
-      dispatchOcrJob: jest.fn(async (_id: string) => undefined),
       dispatchInboxEvent: jest.fn(async (_id: string) => undefined),
       dispatchBatchEvent: jest.fn(async () => undefined),
       dispatchOutboxEvent: jest.fn(async (_id: string) => undefined),
@@ -124,16 +117,6 @@ describe('background task reconciliation', () => {
       pageSize: 2,
     });
 
-    expect(ocrFindMany).toHaveBeenCalledWith(
-      expect.objectContaining({
-        where: {
-          OR: expect.arrayContaining([
-            { status: 'queued' },
-            { status: 'retryable', nextAttemptAt: { lte: expect.any(Date) } },
-          ]),
-        },
-      }),
-    );
     expect(inboxFindMany).toHaveBeenCalledWith(
       expect.objectContaining({
         where: {

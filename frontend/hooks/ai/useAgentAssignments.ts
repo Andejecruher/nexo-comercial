@@ -10,8 +10,8 @@
  * Fallback: arrays vacíos si la clave no existe.
  */
 
-import { agentsApi } from '@/lib/ai-api';
-import type { AiAgent } from '@/lib/ai-api';
+import { agentsApi } from '@/lib/shared/ai-api';
+import type { AiAgent } from '@/lib/shared/ai-api';
 import { useCallback, useState } from 'react';
 import { toast } from 'sonner';
 

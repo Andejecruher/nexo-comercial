@@ -1,7 +1,7 @@
 {
-  "name": "Voz Ciudadana — Cintalapa de Figueroa",
-  "short_name": "Voz Ciudadana",
-  "description": "Transformación y esperanza en nuestro municipio",
+  "name": "Nexo Comercial",
+  "short_name": "Nexo Comercial",
+  "description": "Plataforma de atención, canales y operación comercial.",
   "start_url": "/admin",
   "display": "standalone",
   "background_color": "#FFFFFF",

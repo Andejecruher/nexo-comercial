@@ -125,17 +125,6 @@ type CitizenProfileResult = {
     sourceChannel: string;
     checkedInAt: Date | undefined;
   }>;
-  promovido: {
-    id: string;
-    isActive: boolean;
-    leaderName: string;
-    sectionCode: string;
-    districtCode: string;
-    stateName: string;
-    origin: 'ocr' | 'manual';
-    createdAt: Date;
-    updatedAt: Date;
-  } | null;
 };
 
 export type CitizenBulkTagResult = {
@@ -442,8 +431,6 @@ export class CitizensService {
 
     const participation = await this.citizens.findParticipationHistory(id, 20);
 
-    const promovido = citizen.promovido;
-
     return {
       citizen: this.toResponse(citizen as CitizenRecord),
       tags: citizen.citizenTags.map((ct) => ({
@@ -464,19 +451,6 @@ export class CitizensService {
         sourceChannel: item.sourceChannel,
         checkedInAt: item.checkedInAt ?? undefined,
       })),
-      promovido: promovido
-        ? {
-            id: promovido.id,
-            isActive: promovido.isActive,
-            leaderName: promovido.leaderNameSnapshot,
-            sectionCode: promovido.sectionCodeSnapshot,
-            districtCode: promovido.districtCodeSnapshot,
-            stateName: promovido.stateNameSnapshot,
-            origin: promovido.uploadRecordId ? 'ocr' : 'manual',
-            createdAt: promovido.createdAt,
-            updatedAt: promovido.updatedAt,
-          }
-        : null,
     };
   }
 

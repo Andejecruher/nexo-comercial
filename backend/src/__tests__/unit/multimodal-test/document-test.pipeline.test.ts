@@ -1,7 +1,7 @@
 import { describe, expect, it, jest } from '@jest/globals';
 import { env } from '../../../config/env.config';
 import { GoogleConfigurationError } from '../../../services/ine/google-auth';
-import type { OcrProvider as IneOcrProvider } from '../../../services/ine/ocr.provider';
+import type { OcrProvider as DocumentAiProvider } from '../../../services/ine/ocr.provider';
 import type {
   DocumentTextExtractor,
   MultimodalTestFile,
@@ -313,13 +313,13 @@ describe('document provider adapters', () => {
     await expect(stub.extractNativeText(file)).resolves.toBeNull();
   });
 
-  it('lazily reuses the existing INE provider and maps its result', async () => {
-    const process = jest.fn<IneOcrProvider['process']>().mockResolvedValue({
+  it('lazily reuses the shared Document AI provider and maps its result', async () => {
+    const process = jest.fn<DocumentAiProvider['process']>().mockResolvedValue({
       document: { text: 'Recognized text', pages: [] },
       evidence: { pageCount: 2, confidenceCount: 4, confidence: 0.8 },
       rawResult: { document: {} },
     });
-    const factory = jest.fn((): IneOcrProvider => ({ process }));
+    const factory = jest.fn((): DocumentAiProvider => ({ process }));
     const adapter = new DocumentAiOcrProvider(factory);
     expect(factory).not.toHaveBeenCalled();
     expect([...adapter.supportedMimeTypes].sort()).toEqual([

@@ -44,15 +44,15 @@ describe('ExportJobService', () => {
     } as any;
     const service = new ExportJobService(prisma);
     await service.createJob({
-      module: 'promoted',
-      filters: { q: 'ana', sex: 'M' },
-      scopeSnapshot: { kind: 'leader', leaderId: 'leader-42' },
+      module: 'citizens',
+      filters: { search: 'ana' },
+      scopeSnapshot: { kind: 'admin' },
       requestedByUserId: 'user-1',
     });
     expect(captured).toMatchObject({
-      module: 'promoted',
-      filtersJson: { q: 'ana', sex: 'M' },
-      scopeSnapshot: { kind: 'leader', leaderId: 'leader-42' },
+      module: 'citizens',
+      filtersJson: { search: 'ana' },
+      scopeSnapshot: { kind: 'admin' },
       requestedByUserId: 'user-1',
     });
     const expiresAt = captured!.expiresAt as Date;
@@ -86,9 +86,9 @@ describe('ExportJobService', () => {
     } as any;
     const service = new ExportJobService(prisma);
     await service.createJob({
-      module: 'promoted',
-      filters: { q: 'ana' },
-      scopeSnapshot: { kind: 'leader', leaderId: 'leader-42' },
+      module: 'citizens',
+      filters: { search: 'ana' },
+      scopeSnapshot: { kind: 'admin' },
       requestedByUserId: 'user-1',
     });
     await service.claim('job-1');
@@ -96,7 +96,7 @@ describe('ExportJobService', () => {
       id: 'job-1',
       driveFileId: 'drive-file-1',
       driveFolderId: 'folder-1',
-      driveFilename: 'promoted-2026-09-07-1000-job-1.xlsx',
+      driveFilename: 'citizens-2026-09-07-1000-job-1.xlsx',
       rowCount: 3_500,
     });
     expect(created).toMatchObject({
@@ -107,7 +107,7 @@ describe('ExportJobService', () => {
     expect(updates[1]).toMatchObject({
       status: 'ready',
       driveFileId: 'drive-file-1',
-      driveFilename: 'promoted-2026-09-07-1000-job-1.xlsx',
+      driveFilename: 'citizens-2026-09-07-1000-job-1.xlsx',
       rowCount: 3_500,
       completedAt: expect.any(Date),
     });
@@ -128,14 +128,14 @@ describe('ExportJobService', () => {
       id: 'job-1',
       driveFileId: 'drive-file-1',
       driveFolderId: 'folder-1',
-      driveFilename: 'promoted-2026-09-07-1000-job-1.xlsx',
+      driveFilename: 'citizens-2026-09-07-1000-job-1.xlsx',
       rowCount: 3_500,
     });
     expect(captured).toMatchObject({
       status: 'ready',
       driveFileId: 'drive-file-1',
       driveFolderId: 'folder-1',
-      driveFilename: 'promoted-2026-09-07-1000-job-1.xlsx',
+      driveFilename: 'citizens-2026-09-07-1000-job-1.xlsx',
       rowCount: 3_500,
       completedAt: expect.any(Date),
     });
@@ -284,7 +284,7 @@ describe('ExportJobService reconciliation', () => {
     status: 'ready',
     driveFileId: 'drive-file-1',
     driveFolderId: 'folder-1',
-    driveFilename: 'promoted-2026-09-07-1000-job-1.xlsx',
+    driveFilename: 'citizens-2026-09-07-1000-job-1.xlsx',
     errorCode: null,
     lastError: null,
     requestedByUserId: 'user-1',

@@ -1,4 +1,4 @@
-# Plantillas de WhatsApp — Voz Ciudadana
+# Plantillas de WhatsApp — Nexo Comercial
 
 Implementación integrada en `/admin/plantillas`, sobre Next.js 16, React 19, react-hook-form, Express y Prisma existentes. Las capturas se usan como referencia visual. No se agregaron dependencias.
 
@@ -100,7 +100,7 @@ Ejemplo de entrada al backend:
   "header": "Seguimiento de tu solicitud",
   "mediaHandle": "",
   "body": "Hola {{1}}, tu solicitud {{2}} está en revisión.",
-  "footer": "Voz Ciudadana",
+  "footer": "Nexo Comercial",
   "examples": { "1": "Ana", "2": "VC-123" },
   "buttons": [{ "type": "QUICK_REPLY", "text": "Consultar solicitud" }],
   "addSecurityRecommendation": true,

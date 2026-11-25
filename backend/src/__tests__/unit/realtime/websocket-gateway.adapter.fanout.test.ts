@@ -39,7 +39,7 @@ jest.setTimeout(30_000);
 
 const describeIfEmulator = process.env.PUBSUB_EMULATOR_HOST ? describe : describe.skip;
 
-const PROJECT_ID = process.env.GOOGLE_CLOUD_PROJECT ?? 'voz-ciudadana-emulator-test';
+const PROJECT_ID = process.env.GOOGLE_CLOUD_PROJECT ?? 'nexo-comercial-emulator-test';
 const runId = Date.now();
 const TOPIC_NAME = `socketio-adapter-fanout-${runId}`;
 const SUBSCRIPTION_PREFIX = `socket.io.fanout.${runId}`;

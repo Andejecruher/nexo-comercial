@@ -1,4 +1,4 @@
-# Arquitectura de Notificaciones en Tiempo Real — Voz Ciudadana
+# Arquitectura de Notificaciones en Tiempo Real — Nexo Comercial
 
 > Documento de referencia generado a partir del análisis del código fuente real (oct 2026).
 > Objetivo: que cualquier desarrollador pueda explicar, depurar y extender el flujo de
@@ -51,7 +51,7 @@ Las brechas principales encontradas (detalle en §6):
    `WORKER_HEALTH_PORT` (8010, que es config muerta en dev y confunde el diagnóstico).
 4. ~~**Contaminación dev→prod verificada en GCP**~~ **Mitigado**: el default de dev ahora
    apunta a `PUBSUB_EMULATOR_HOST` (contenedor `pubsub-emulator`), por lo que dev ya no
-   publica contra los topics reales de `voz-ciudadana-505319`. El riesgo reaparece solo si
+   publica contra los topics reales de `<GCP_PROJECT_ID>`. El riesgo reaparece solo si
    alguien fuerza `PUBSUB_EMULATOR_HOST=""` en dev; no lo hagas (ver §6 #11).
 
 ---
@@ -71,7 +71,7 @@ worker: WS_ENABLED=false  REALTIME_DURABLE_ENABLED=false  INBOX_POLLING=false  O
 
 **Por qué está repartido así** (comentarios del propio compose): el "orquestador" (la
 lógica de negocio que reacciona a mensajes) vive dentro de `InboxProcessorService`. En
-dev, ese polling corre **en la API** para que el puente legacy `eventBus → WebSocket gateway` funcione sin Pub/Sub. El worker se queda con el outbox de WhatsApp, INE OCR y
+dev, ese polling corre **en la API** para que el puente legacy `eventBus → WebSocket gateway` funcione sin Pub/Sub. El worker se queda con el outbox de WhatsApp y
 exports, para no competir por el claim del inbox.
 
 ```text
@@ -111,7 +111,7 @@ exports, para no competir por el claim del inbox.
                                  └──────────────────────────────────────────────────────┘
 
   WORKER (contenedor): NO toca sockets. Solo hace polling de outbox_events
-  (envía a WhatsApp), INE OCR y exports. En dev NO publica nada de realtime.
+  (envía a WhatsApp) y exports. En dev NO publica nada de realtime.
 ```
 
 ### Respuestas explícitas al cuestionario (modo local)
@@ -139,7 +139,7 @@ servidor valida con `canSubscribeToConversation(prisma, userId, conversationId)`
 
 ## 2. Diagrama del flujo PRODUCCIÓN (GCP, modo durable)
 
-Configuración que fija `.github/workflows/deploy-gcp.yml` (línea 369 para la API):
+Configuración que fija `docs/deploy/deploy-gcp.yml` (línea 369 para la API):
 
 ```text
 NODE_ENV=production, BACKGROUND_EXECUTION_BACKEND=cloud_tasks, WORKERS_ENABLED=false (API)
@@ -248,12 +248,12 @@ duplicar entrega.
 
 | Archivo                                                                                                                         | Responsabilidad                                                                                                                                                                                                                                              |
 | ------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `frontend/lib/realtime/realtime-manager.ts`                                                                                     | **El cliente WS**. `io(WS_URL + '/admin')`, autoConnect off, reconnection Infinity, auth callback dinámico (token fresco en cada reconexión), dedupe LRU de eventIds, resubscribe de rooms, toasts, eventos de ventana (online/visibility/token refrescado). |
-| `frontend/lib/realtime/types.ts`                                                                                                | Guards de payload (`isDurableEventPayload`, etc.).                                                                                                                                                                                                           |
-| `frontend/lib/realtime/event-router.ts` + `realtime-user-events.ts`                                                             | Dispatch a consumidores + eventos semánticos derivados (`NUEVO_TICKET`, …).                                                                                                                                                                                  |
-| `frontend/stores/use-connection-store.ts` / `use-subscription-store.ts` / `use-notification-store.ts` / `use-presence-store.ts` | Estado zustand: conexión, rooms activos, notificaciones (EN MEMORIA), presencia.                                                                                                                                                                             |
-| `frontend/hooks/useConversationThread.ts` (+ hermanos)                                                                          | Patrón **"replay-vía-REST"**: al transicionar de desconectado→conectado, re-ejecuta los fetch de conversación/mensajes (líneas 92-101).                                                                                                                      |
-| `frontend/lib/realtime/sound-player.ts`, `hooks/useRealtimeSounds.ts`                                                           | Sonidos + notificaciones de escritorio.                                                                                                                                                                                                                      |
+| `frontend/lib/shared/realtime/realtime-manager.ts`                                                                                     | **El cliente WS**. `io(WS_URL + '/admin')`, autoConnect off, reconnection Infinity, auth callback dinámico (token fresco en cada reconexión), dedupe LRU de eventIds, resubscribe de rooms, toasts, eventos de ventana (online/visibility/token refrescado). |
+| `frontend/lib/shared/realtime/types.ts`                                                                                                | Guards de payload (`isDurableEventPayload`, etc.).                                                                                                                                                                                                           |
+| `frontend/lib/shared/realtime/event-router.ts` + `realtime-user-events.ts`                                                             | Dispatch a consumidores + eventos semánticos derivados (`NUEVO_TICKET`, …).                                                                                                                                                                                  |
+| `frontend/store/shared/use-connection-store.ts` / `use-subscription-store.ts` / `use-notification-store.ts` / `use-presence-store.ts` | Estado zustand: conexión, rooms activos, notificaciones (EN MEMORIA), presencia.                                                                                                                                                                             |
+| `frontend/hooks/conversaciones/useConversationThread.ts` (+ hermanos)                                                                          | Patrón **"replay-vía-REST"**: al transicionar de desconectado→conectado, re-ejecuta los fetch de conversación/mensajes (líneas 92-101).                                                                                                                      |
+| `frontend/lib/shared/realtime/sound-player.ts`, `hooks/useRealtimeSounds.ts`                                                           | Sonidos + notificaciones de escritorio.                                                                                                                                                                                                                      |
 
 ### Infraestructura / configuración
 
@@ -261,7 +261,7 @@ duplicar entrega.
 | ---------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `docker-compose.dev.yml`                       | Dev: API con WS + recepción de push, worker con inbox+outbox, `realtime-relay`, Postgres, frontend y **emulador de Pub/Sub** (`pubsub-emulator` + `pubsub-init`). Durable ON por defecto. Worker escucha en `PORT` (8000; ver §6 #3). |
 | `.qa.yml` / `.prod.yml`                        | Mismos servicios con `REALTIME_DURABLE_ENABLED=true` contra Pub/Sub real. |
-| `.github/workflows/deploy-gcp.yml`             | Deploy real a Cloud Run (API pública con WS + adapter ON; worker privado con `/tasks/*`), Cloud SQL, migrator como Cloud Run Job.                 |
+| `docs/deploy/deploy-gcp.yml`             | Deploy real a Cloud Run (API pública con WS + adapter ON; worker privado con `/tasks/*`), Cloud SQL, migrator como Cloud Run Job.                 |
 | `.env` / `backend/.env` / `frontend/.env`      | Ver tabla de §4. Frontend usa `NEXT_PUBLIC_WS_URL` (el deploy lo setea al mismo origin de la API).                                                |
 
 ---
@@ -349,7 +349,7 @@ habilitado en el topic/subscription (verificar en GCP, §11).
 | 8   | **Race conditions**: claims con `FOR UPDATE SKIP LOCKED` + `updateMany` condicional + lease FSM de 5 min + stale-publishing de 300s.                                                                                                                          | — (bien resuelto) | —                                                                                        | Nada urgente. Es el patrón correcto.                                                                                                                                                      |
 | 9   | `FRONTEND_URL` **default** `http://localhost:5173` pero el frontend corre en 3000.                                                                                                                                                                            | Baja              | Links de email rotos en dev si no se setea.                                              | Ajustar default o documentar.                                                                                                                                                             |
 | 10  | **Broadcast de presencia + notificaciones a namespace completo** (`namespace.emit`) crece O(usuarios × réplicas).                                                                                                                                             | Baja              | Ruido de red con mucha concurrencia.                                                     | Rooms por departamento/rol cuando escale.                                                                                                                                                 |
-| 11  | **Contaminación dev→prod por Pub/Sub (verificado con gcloud)**: `realtime-events-push` y `ai-stream-push` apuntan a `https://api.voz-ciudadana.com.mx/pubsub/*`. Un dev con `REALTIME_DURABLE_ENABLED=true` y ADC del proyecto prod publica eventos que terminan emitidos en sockets de producción. | **Alta** (operacional) | Notificaciones con datos de dev visibles para admins reales.                         | **Mitigado por default**: `docker-compose.dev.yml` ahora usa el emulador de Pub/Sub (`PUBSUB_EMULATOR_HOST`, servicio `pubsub-emulator`) sin profile. Abrir el camino a GCP real solo si se fuerza `PUBSUB_EMULATOR_HOST=""` — no lo hagas. Ver §8. |
+| 11  | **Contaminación dev→prod por Pub/Sub (verificado con gcloud)**: `realtime-events-push` y `ai-stream-push` apuntan a `https://api.nexo-comercial.example/pubsub/*`. Un dev con `REALTIME_DURABLE_ENABLED=true` y ADC del proyecto prod publica eventos que terminan emitidos en sockets de producción. | **Alta** (operacional) | Notificaciones con datos de dev visibles para admins reales.                         | **Mitigado por default**: `docker-compose.dev.yml` ahora usa el emulador de Pub/Sub (`PUBSUB_EMULATOR_HOST`, servicio `pubsub-emulator`) sin profile. Abrir el camino a GCP real solo si se fuerza `PUBSUB_EMULATOR_HOST=""` — no lo hagas. Ver §8. |
 
 ### Respuestas rápidas a las preguntas de fallas
 
@@ -465,8 +465,8 @@ Reglas:
 7. `backend/src/routes/pubsub.routes.ts` + `middlewares/pubsub-push-auth.middleware.ts` — la frontera HTTP con Pub/Sub.
 8. `backend/src/worker.ts` + `worker-app.ts` — el otro proceso.
 9. `backend/src/services/events/inbox-processor.service.ts` y `outbox-processor.service.ts` — las colas Postgres.
-10. Frontend: `frontend/lib/realtime/realtime-manager.ts` → stores → `frontend/hooks/useConversationThread.ts` (patrón replay-vía-REST).
-11. `.github/workflows/deploy-gcp.yml` — qué config corre realmente en prod.
+10. Frontend: `frontend/lib/shared/realtime/realtime-manager.ts` → stores → `frontend/hooks/conversaciones/useConversationThread.ts` (patrón replay-vía-REST).
+11. `docs/deploy/deploy-gcp.yml` — qué config corre realmente en prod.
 
 ### Comandos de inspección en vivo
 
@@ -481,7 +481,7 @@ docker compose -f docker-compose.dev.yml logs -f worker | grep -E "relay.publish
 
 # Estado de las "colas" en Postgres
 docker compose -f docker-compose.dev.yml exec postgres \
-  psql -U voz -d vozcuidadana -c \
+  psql -U nexo -d nexocomercial -c \
   "SELECT status, count(*) FROM realtime_outbox_events GROUP BY status;"
 
 # Explorar dentro de un contenedor
@@ -497,7 +497,7 @@ docker compose -f docker-compose.dev.yml logs api --since 5m | tail -50
 4. **Inyectar directo un evento durable** (solo con `REALTIME_DURABLE_ENABLED=true`): inserta una fila en `realtime_outbox_events` con un payload que cumpla `RealtimeDurableEventSchema` y mira `relay.claim → publish` en logs del worker y `subscriber.receive → gateway.emit` en la API.
 
    > ⚠️ **ANTES de activar durable en dev**: sin aislamiento, el relay publica al
-   > topic REAL del proyecto ADC (`voz-ciudadana-505319`), cuyas push subscriptions
+   > topic REAL del proyecto ADC (`<GCP_PROJECT_ID>`), cuyas push subscriptions
    > apuntan a la API de producción (hallazgo §6 #11). Usá el ejercicio de paridad
    > aislado de abajo (emulator + curl), ya soportado por el compose.
 5. **Probar el push a mano**:
@@ -529,7 +529,7 @@ docker compose -f docker-compose.dev.yml up -d
 > 300s la libere y otro ciclo la recupere (demostración involuntaria de at-least-once).
 >
 > ⚠️ **Gotcha del push en dev**: `backend/.env` puede traer los `PUBSUB_PUSH_*` de
-> producción (audience de `api.voz-ciudadana.com.mx`), lo que activa la verificación
+> producción (audience de `api.nexo-comercial.example`), lo que activa la verificación
 > OIDC también en dev y rechaza el curl con 401. El compose dev los pisa a vacío
 > (verificación omitida fuera de production, middleware línea 57). Ese mismo 401 que
 > estorba en dev es lo que en prod impide que cualquiera inyecte eventos falsos.
@@ -614,7 +614,7 @@ queda por ver para cerrar los pendientes):
   `RealtimeOutboxEvent`) — ya vista a nivel campos; falta revisar índices del claim.
 4. Configuración real de los topics/subscriptions de Pub/Sub en GCP (gcloud describe)
   para verificar `enable_message_ordering`.
-5. `frontend/lib/realtime/types.ts` y `realtime-user-events.ts` — mapa completo de
+5. `frontend/lib/shared/realtime/types.ts` y `realtime-user-events.ts` — mapa completo de
   eventos que consume la UI.
 6. `backend/src/services/message.service.ts` — productor de eventos cuando el admin
   envía mensajes (el otro origen de eventos, además del webhook).
@@ -623,5 +623,5 @@ queda por ver para cerrar los pendientes):
 
 *Generado a partir de: docker-compose.{dev,qa,prod}.yml, backend/src/{server,worker,worker-app}.ts,
 backend/src/config/env.config.ts, backend/src/services/realtime/*, backend/src/services/events/*,
-backend/src/routes/pubsub.routes.ts, frontend/lib/realtime/*, frontend/hooks/useConversationThread.ts,
-.github/workflows/deploy-gcp.yml, backend/prisma/schema.prisma.*
+backend/src/routes/pubsub.routes.ts, frontend/lib/realtime/*, frontend/hooks/conversaciones/useConversationThread.ts,
+docs/deploy/deploy-gcp.yml, backend/prisma/schema.prisma.*

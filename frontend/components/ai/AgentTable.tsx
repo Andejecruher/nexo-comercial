@@ -12,7 +12,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Switch } from '@/components/ui/switch';
-import type { AiAgent } from '@/lib/ai-api';
+import type { AiAgent } from '@/lib/shared/ai-api';
 import { Bot, Pencil, Trash2 } from 'lucide-react';
 
 interface AgentTableProps {

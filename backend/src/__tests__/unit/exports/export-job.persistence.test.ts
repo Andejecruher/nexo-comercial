@@ -11,7 +11,7 @@ describe('ExportJob persistence contract', () => {
     expect(schema).toContain('enum ExportModule');
     expect(schema).toContain('enum ExportJobStatus');
     expect(schema).toContain('model ExportJob');
-    expect(schema).toContain('requestedByUserId String');
+    expect(schema).toMatch(/requestedByUserId\s+String/);
     expect(schema).toContain('@@index([requestedByUserId, createdAt])');
     expect(schema).toContain('@@index([status, expiresAt])');
     expect(schema).toContain('@@index([status, completedAt])');

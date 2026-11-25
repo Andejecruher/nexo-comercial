@@ -1,5 +1,5 @@
-import { EventsView } from '@/components/admin/events-view';
-import { PermissionGate } from '@/components/auth/PermissionGate';
+import { EventsView } from '@/components/eventos/events-view';
+import { PermissionGate } from '@/components/shared/PermissionGate';
 
 export default function AdminEventosPage() {
   return (

@@ -96,29 +96,29 @@ Se implementó paginación basada en cursores para los tres catálogos maestros:
 
 ### Hooks
 
-- `frontend/hooks/useNeighborhoods.ts` - Paginación backend + navegación con historial
-- `frontend/hooks/useTags.ts` - Mismo patrón que neighborhoods
-- `frontend/hooks/useDepartments.ts` - Mismo patrón + mapeo de activeFilter a isActive
+- `frontend/hooks/shared/useNeighborhoods.ts` - Paginación backend + navegación con historial
+- `frontend/hooks/shared/useTags.ts` - Mismo patrón que neighborhoods
+- `frontend/hooks/shared/useDepartments.ts` - Mismo patrón + mapeo de activeFilter a isActive
 
 ### Componentes Compartidos
 
-- `frontend/components/domain/catalogs/PaginationControls.tsx` - **NUEVO** - Controles reutilizables
+- `frontend/components/shared/catalogs/PaginationControls.tsx` - **NUEVO** - Controles reutilizables
 
 ### Tablas
 
-- `frontend/components/domain/catalogs/NeighborhoodTable.tsx` - Removido sorting
-- `frontend/components/domain/catalogs/TagTable.tsx` - Removido sorting
-- `frontend/components/domain/catalogs/DepartmentTable.tsx` - Removido sorting
+- `frontend/components/barrios/NeighborhoodTable.tsx` - Removido sorting
+- `frontend/components/etiquetas/TagTable.tsx` - Removido sorting
+- `frontend/components/departamentos/DepartmentTable.tsx` - Removido sorting
 
 ### Vistas
 
-- `frontend/components/admin/neighborhoods-view.tsx` - Layout + PaginationControls
-- `frontend/components/admin/tags-view.tsx` - Layout + PaginationControls
-- `frontend/components/admin/departments-view.tsx` - Layout + PaginationControls
+- `frontend/components/barrios/neighborhoods-view.tsx` - Layout + PaginationControls
+- `frontend/components/etiquetas/tags-view.tsx` - Layout + PaginationControls
+- `frontend/components/departamentos/departments-view.tsx` - Layout + PaginationControls
 
 ### API Client
 
-- `frontend/lib/catalog-api.ts` - Fix: Corregido endpoint `/admin/neighborhoods` → `/neighborhoods`
+- `frontend/lib/shared/catalog-api.ts` - Fix: Corregido endpoint `/admin/neighborhoods` → `/neighborhoods`
 
 ## Plan de Pruebas Manuales
 

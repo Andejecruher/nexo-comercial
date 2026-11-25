@@ -6,7 +6,7 @@ import { comparePassword } from '../../utils/password.util';
 jest.mock('../../config/env.config', () => ({
   env: {
     FRONTEND_URL: 'http://localhost:5173',
-    MAIL_PLATFORM_NAME: 'Voz Ciudadana',
+    MAIL_PLATFORM_NAME: 'Nexo Comercial',
     MAIL_SUPPORT_EMAIL: 'soporte@example.test',
     MAIL_TIME_ZONE: 'America/Mexico_City',
     PASSWORD_RESET_EXPIRATION_MINUTES: 60,

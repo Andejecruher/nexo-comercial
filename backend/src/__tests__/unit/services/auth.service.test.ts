@@ -79,24 +79,14 @@ describe('AuthService.me scope', () => {
       fullName: 'Líder',
       isActive: true,
       roles: [{ id: 'role-1', name: 'LIDER', slug: 'lider' }],
-      permissions: ['promovidos.view'],
-      permissionsByModule: { promovidos: ['view'] },
+      permissions: [],
+      permissionsByModule: {},
     });
-    scopeService.resolveScope.mockResolvedValue({
-      kind: 'leader',
-      sectionId: 'section-1',
-      leaderId: 'leader-1',
-      coordinatorId: 'coord-1',
-    });
+    scopeService.resolveScope.mockResolvedValue({ kind: 'none' });
 
     const result = await service.me('user-1');
 
-    expect(result.scope).toEqual({
-      kind: 'leader',
-      sectionId: 'section-1',
-      leaderId: 'leader-1',
-      coordinatorId: 'coord-1',
-    });
+    expect(result.scope).toEqual({ kind: 'none' });
   });
 
   it('throws unauthorized when authorization profile is missing', async () => {

@@ -17,7 +17,10 @@ export class NeighborhoodsController {
 
   list = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
-      const filters = NeighborhoodListFiltersSchema.parse(req.query);
+      const filterQuery = { ...req.query };
+      delete filterQuery.cursor;
+      delete filterQuery.limit;
+      const filters = NeighborhoodListFiltersSchema.parse(filterQuery);
       const result = await this.neighborhoodsService.list({
         cursor: req.pagination.cursor,
         limit: req.pagination.limit,
@@ -46,7 +49,6 @@ export class NeighborhoodsController {
         targetId: neighborhood.id,
         metadata: {
           name: neighborhood.name,
-          sectionId: neighborhood.sectionId,
           postalCode: neighborhood.postalCode,
           municipality: neighborhood.municipality,
         },
@@ -75,7 +77,6 @@ export class NeighborhoodsController {
         targetId: id,
         metadata: {
           name: data.name,
-          sectionId: data.sectionId,
           postalCode: data.postalCode,
           municipality: data.municipality,
         },

@@ -1,4 +1,4 @@
-import { NeighborhoodsView } from '@/components/admin/neighborhoods-view';
+import { NeighborhoodsView } from '@/components/barrios/neighborhoods-view';
 
 export default function AdminBarriosPage() {
   return (

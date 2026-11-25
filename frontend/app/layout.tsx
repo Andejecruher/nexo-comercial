@@ -1,13 +1,14 @@
-import { AppProviders } from '@/components/providers/app-providers';
-import { brandChrome, buildOpenGraph, buildTwitter, siteConfig } from '@/lib/seo';
+import { AppProviders } from '@/components/shared/providers/app-providers';
+import { brandChrome, buildOpenGraph, buildTwitter, siteConfig } from '@/lib/shared/seo';
 import type { Metadata, Viewport } from 'next';
-import { Montserrat } from 'next/font/google';
+import localFont from 'next/font/local';
 import './globals.css';
 
-const montserrat = Montserrat({
-  subsets: ['latin'],
+const montserrat = localFont({
+  src: './fonts/montserrat-latin-variable.woff2',
   variable: '--font-montserrat',
-  weight: ['400', '500', '600', '700', '800', '900'],
+  weight: '100 900',
+  display: 'swap',
   preload: false,
 });
 
@@ -15,21 +16,11 @@ export const metadata: Metadata = {
   metadataBase: new URL(siteConfig.baseUrl),
 
   title: {
-    template: '%s | Voz Ciudadana',
+    template: '%s | Nexo Comercial',
     default: siteConfig.defaultTitle,
   },
   description: siteConfig.defaultDescription,
-  keywords: [
-    'Voz Ciudadana',
-    'Cintalapa de Figueroa',
-    'Chiapas',
-    'reporte ciudadano',
-    'gestión social',
-    'atención ciudadana',
-    'participación comunitaria',
-    'servicios públicos',
-    'plataforma ciudadana',
-  ],
+  keywords: ['Nexo Comercial'],
   authors: [{ name: siteConfig.siteName, url: siteConfig.baseUrl }],
   creator: siteConfig.siteName,
   publisher: siteConfig.siteName,
@@ -81,16 +72,9 @@ export const viewport: Viewport = {
 const jsonLd = {
   '@context': 'https://schema.org',
   '@type': 'Organization',
-  name: 'Voz Ciudadana',
-  alternateName: 'Plataforma de Atención y Enlace Social — Cintalapa',
+  name: 'Nexo Comercial',
   url: siteConfig.baseUrl,
-  description:
-    'Plataforma de Atención y Enlace Social para Cintalapa de Figueroa, Chiapas: reporte ciudadano, gestión de necesidades vecinales, jornadas de servicio social y participación informada.',
-  areaServed: {
-    '@type': 'AdministrativeArea',
-    name: 'Cintalapa de Figueroa, Chiapas, México',
-  },
-  sameAs: [],
+  description: siteConfig.defaultDescription,
 };
 
 export default function RootLayout({

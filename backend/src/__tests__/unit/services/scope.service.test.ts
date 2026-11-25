@@ -14,24 +14,24 @@ function createPrismaMock(user: unknown = null) {
 describe('ScopeService.resolveScope', () => {
   it('returns admin scope for SUPER_ADMIN', async () => {
     const prisma = createPrismaMock({
-      id: 'user-1',
       userRoles: [{ role: { name: 'SUPER_ADMIN' } }],
-      coordinator: null,
-      leader: null,
     });
     const service = new ScopeService(prisma as never);
 
     const scope = await service.resolveScope('user-1');
 
     expect(scope).toEqual({ kind: 'admin' });
+    expect(prisma.user.findUnique).toHaveBeenCalledWith({
+      where: { id: 'user-1' },
+      select: {
+        userRoles: { select: { role: { select: { name: true } } } },
+      },
+    });
   });
 
   it('returns admin scope for CAPTURISTA', async () => {
     const prisma = createPrismaMock({
-      id: 'user-1',
       userRoles: [{ role: { name: 'CAPTURISTA' } }],
-      coordinator: null,
-      leader: null,
     });
     const service = new ScopeService(prisma as never);
 
@@ -40,49 +40,31 @@ describe('ScopeService.resolveScope', () => {
     expect(scope).toEqual({ kind: 'admin' });
   });
 
-  it('returns coordinator scope when user owns a coordinator', async () => {
+  it('returns none scope for COORDINADOR', async () => {
     const prisma = createPrismaMock({
-      id: 'user-1',
       userRoles: [{ role: { name: 'COORDINADOR' } }],
-      coordinator: { id: 'coord-1', sectionId: 'section-1' },
-      leader: null,
     });
     const service = new ScopeService(prisma as never);
 
     const scope = await service.resolveScope('user-1');
 
-    expect(scope).toEqual({
-      kind: 'coordinator',
-      sectionId: 'section-1',
-      coordinatorId: 'coord-1',
-    });
+    expect(scope).toEqual({ kind: 'none' });
   });
 
-  it('returns leader scope when user owns a leader', async () => {
+  it('returns none scope for LIDER', async () => {
     const prisma = createPrismaMock({
-      id: 'user-1',
       userRoles: [{ role: { name: 'LIDER' } }],
-      coordinator: null,
-      leader: { id: 'leader-1', sectionId: 'section-1', coordinatorId: 'coord-1' },
     });
     const service = new ScopeService(prisma as never);
 
     const scope = await service.resolveScope('user-1');
 
-    expect(scope).toEqual({
-      kind: 'leader',
-      sectionId: 'section-1',
-      leaderId: 'leader-1',
-      coordinatorId: 'coord-1',
-    });
+    expect(scope).toEqual({ kind: 'none' });
   });
 
   it('returns none scope for OPERADOR_CHAT without entity links', async () => {
     const prisma = createPrismaMock({
-      id: 'user-1',
       userRoles: [{ role: { name: 'OPERADOR_CHAT' } }],
-      coordinator: null,
-      leader: null,
     });
     const service = new ScopeService(prisma as never);
 
@@ -100,12 +82,9 @@ describe('ScopeService.resolveScope', () => {
     expect(scope).toEqual({ kind: 'none' });
   });
 
-  it('prefers admin scope even when entity links exist', async () => {
+  it('prefers admin scope when a user also has LIDER', async () => {
     const prisma = createPrismaMock({
-      id: 'user-1',
       userRoles: [{ role: { name: 'SUPER_ADMIN' } }, { role: { name: 'LIDER' } }],
-      coordinator: { id: 'coord-1', sectionId: 'section-1' },
-      leader: { id: 'leader-1', sectionId: 'section-1', coordinatorId: 'coord-1' },
     });
     const service = new ScopeService(prisma as never);
 

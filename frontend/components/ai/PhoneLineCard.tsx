@@ -2,7 +2,7 @@
 
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import type { CommunicationLine, AiAgent } from '@/lib/ai-api';
+import type { CommunicationLine, AiAgent } from '@/lib/shared/ai-api';
 import { Phone, Settings, Wifi, WifiOff } from 'lucide-react';
 
 interface PhoneLineCardProps {

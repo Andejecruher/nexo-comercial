@@ -1,11 +1,11 @@
 import type { Metadata } from 'next';
 import { Suspense } from 'react';
-import { ActivateAccountForm } from '@/components/auth/ActivateAccountForm';
-import { AuthPageLoader, AuthPageShell } from '@/components/auth/auth-page-shell';
+import { ActivateAccountForm } from '@/components/activate-account/ActivateAccountForm';
+import { AuthPageLoader, AuthPageShell } from '@/components/shared/auth-page-shell';
 
 export const metadata: Metadata = {
-  title: 'Activar cuenta | Voz Ciudadana',
-  description: 'Configurá de forma segura tu acceso a Voz Ciudadana.',
+  title: 'Activar cuenta | Nexo Comercial',
+  description: 'Configurá de forma segura tu acceso a Nexo Comercial.',
   robots: { index: false, follow: false },
   referrer: 'no-referrer',
 };

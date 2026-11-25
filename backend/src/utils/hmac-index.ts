@@ -11,7 +11,7 @@ import { env } from '../config/env.config';
 function getHmacKey(): string {
   if (env.HMAC_INDEX_KEY) return env.HMAC_INDEX_KEY;
   return crypto
-    .createHmac('sha256', 'voz-ciudadana-index-key')
+    .createHmac('sha256', 'nexo-comercial-index-key')
     .update(env.ENCRYPTION_KEY)
     .digest('hex');
 }

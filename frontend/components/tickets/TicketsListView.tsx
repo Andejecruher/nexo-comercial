@@ -15,11 +15,11 @@
 import { TicketFilters } from '@/components/tickets/TicketFilters';
 import { TicketLoadMoreBar } from '@/components/tickets/TicketLoadMoreBar';
 import { TicketPaginationBar } from '@/components/tickets/TicketPaginationBar';
-import { TicketTable } from '@/components/tickets/TicketTable';
+import { TicketTable } from '@/components/shared/tickets/TicketTable';
 import { Button } from '@/components/ui/button';
 import { MAX_MOBILE_PAGES, useResponsivePagination } from '@/hooks/tickets/useResponsivePagination';
-import { usePermissions } from '@/hooks/usePermissions';
-import { adminUsersApi, type PanelUserDto } from '@/lib/admin-users-api';
+import { usePermissions } from '@/hooks/shared/usePermissions';
+import { adminUsersApi, type PanelUserDto } from '@/lib/shared/admin-users-api';
 import { RefreshCw } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 

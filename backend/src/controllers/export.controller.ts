@@ -48,11 +48,7 @@ export class ExportController {
         orderBy: [{ requestedAt: 'desc' }, { id: 'desc' }],
         take: limit,
       });
-      const allowed = await Promise.all(
-        jobs.map(async (job) =>
-          (await scopeAllows(req.scope!, toScope(job), this.prisma)) ? job : null,
-        ),
-      );
+      const allowed = jobs.map((job) => (scopeAllows(req.scope!, toScope(job)) ? job : null));
       res.json({
         items: await this.signedViews(allowed.filter((job): job is ExportJob => job !== null)),
       });
@@ -134,7 +130,7 @@ export class ExportController {
     res.setHeader('Cache-Control', 'private, no-store');
     try {
       const job = await this.jobs.getById(req.params.id);
-      if (!job || !req.scope || !(await scopeAllows(req.scope, toScope(job), this.prisma))) {
+      if (!job || !req.scope || !scopeAllows(req.scope, toScope(job))) {
         res.status(404).json({ message: 'Export not found' });
         return;
       }
@@ -148,7 +144,7 @@ export class ExportController {
   issueDownloadToken = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const job = await this.jobs.getById(req.params.id);
-      if (!job || !req.scope || !(await scopeAllows(req.scope, toScope(job), this.prisma))) {
+      if (!job || !req.scope || !scopeAllows(req.scope, toScope(job))) {
         res.status(404).json({ message: 'Export not found' });
         return;
       }
@@ -224,32 +220,11 @@ export class ExportController {
   };
 }
 
-export async function scopeAllows(
+export function scopeAllows(
   session: ScopeContext,
-  snapshot: ScopeContext,
-  prisma: Pick<PrismaService, 'leader'>,
-): Promise<boolean> {
-  if (session.kind === 'admin') return true;
-  if (snapshot.kind === 'admin' || session.kind === 'none') return false;
-  if (snapshot.kind === 'coordinator') {
-    if (session.kind === 'coordinator') return session.coordinatorId === snapshot.coordinatorId;
-    if (session.kind !== 'leader' || !session.leaderId) return false;
-    const leader = await prisma.leader.findUnique({
-      where: { id: session.leaderId },
-      select: { coordinatorId: true },
-    });
-    return leader?.coordinatorId === snapshot.coordinatorId;
-  }
-  if (snapshot.kind === 'leader') {
-    if (session.kind === 'leader') return session.leaderId === snapshot.leaderId;
-    if (session.kind !== 'coordinator' || !snapshot.leaderId) return false;
-    const leader = await prisma.leader.findUnique({
-      where: { id: snapshot.leaderId },
-      select: { coordinatorId: true },
-    });
-    return leader?.coordinatorId === session.coordinatorId;
-  }
-  return false;
+  _snapshot: ScopeContext,
+): boolean {
+  return session.kind === 'admin';
 }
 
 function toScope(job: ExportJob): ScopeContext {

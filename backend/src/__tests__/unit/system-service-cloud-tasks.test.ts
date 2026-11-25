@@ -9,7 +9,6 @@ const now = new Date('2026-08-19T12:00:00.000Z');
 function createDispatcher() {
   return {
     dispatchExportJob: jest.fn(async () => undefined),
-    dispatchOcrJob: jest.fn(async () => undefined),
     dispatchInboxEvent: jest.fn(async () => undefined),
     dispatchBatchEvent: jest.fn(async () => undefined),
     dispatchOutboxEvent: jest.fn(async () => undefined),

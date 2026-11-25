@@ -4,42 +4,43 @@ import type { NeighborhoodRecord, NeighborhoodRepository } from '../repositories
 import { AppError } from '../utils/app-error';
 import { neighborhoodMatchKey, normalizeNeighborhoodName } from '../utils/neighborhood-match-key';
 
-export const CreateNeighborhoodSchema = z.object({
-  name: z.string().trim().min(2).max(255),
-  sectionId: z.string().uuid().optional(),
-  postalCode: z.string().trim().max(10).optional(),
-  municipality: z.string().trim().max(100).optional(),
-});
+export const CreateNeighborhoodSchema = z
+  .object({
+    name: z.string().trim().min(2).max(255),
+    postalCode: z.string().trim().max(10).optional(),
+    municipality: z.string().trim().max(100).optional(),
+  })
+  .strict();
 
 export const UpdateNeighborhoodSchema = z
   .object({
     name: z.string().trim().min(2).max(255).optional(),
-    sectionId: z.string().uuid().nullable().optional(),
     postalCode: z.string().trim().max(10).optional(),
     municipality: z.string().trim().max(100).optional(),
   })
+  .strict()
   .refine(
     (data) =>
-      data.name !== undefined ||
-      data.sectionId !== undefined ||
-      data.postalCode !== undefined ||
-      data.municipality !== undefined,
+      data.name !== undefined || data.postalCode !== undefined || data.municipality !== undefined,
     {
       message: 'Al menos un campo debe ser enviado',
     },
   );
 
-export const NeighborhoodIdParamSchema = z.object({
-  id: z.string().uuid(),
-});
+export const NeighborhoodIdParamSchema = z
+  .object({
+    id: z.string().uuid(),
+  })
+  .strict();
 
-export const NeighborhoodListFiltersSchema = z.object({
-  search: z.string().trim().min(1).max(255).optional(),
-  zone: z.string().trim().min(1).max(100).optional(),
-  sectionId: z.string().uuid().optional(),
-  municipality: z.string().trim().min(1).max(100).optional(),
-  postalCode: z.string().trim().min(1).max(10).optional(),
-});
+export const NeighborhoodListFiltersSchema = z
+  .object({
+    search: z.string().trim().min(1).max(255).optional(),
+    zone: z.string().trim().min(1).max(100).optional(),
+    municipality: z.string().trim().min(1).max(100).optional(),
+    postalCode: z.string().trim().min(1).max(10).optional(),
+  })
+  .strict();
 
 type CreateNeighborhoodInput = z.infer<typeof CreateNeighborhoodSchema>;
 type UpdateNeighborhoodInput = z.infer<typeof UpdateNeighborhoodSchema>;
@@ -48,7 +49,6 @@ type NeighborhoodListFilters = z.infer<typeof NeighborhoodListFiltersSchema>;
 export type NeighborhoodResponse = {
   id: string;
   name: string;
-  sectionId: string | undefined;
   zone: string | undefined;
   postalCode: string | undefined;
   municipality: string | undefined;
@@ -90,9 +90,6 @@ export class NeighborhoodsService {
         { matchKey: { contains: matchKey } },
       ];
     }
-    if (params.filters.sectionId !== undefined) {
-      where.AND = [{ OR: [{ sectionId: params.filters.sectionId }, { sectionId: null }] }];
-    }
     if (params.filters.municipality !== undefined) {
       where.municipality = params.filters.municipality;
     }
@@ -123,7 +120,7 @@ export class NeighborhoodsService {
     const name = normalizeNeighborhoodName(input.name);
     const matchKey = neighborhoodMatchKey(input.name);
 
-    const existing = await this.neighborhoods.findBySectionAndMatchKey(input.sectionId, matchKey);
+    const existing = await this.neighborhoods.findByMatchKey(matchKey);
 
     if (existing) {
       throw AppError.conflict('Ya existe un barrio con ese nombre');
@@ -132,7 +129,6 @@ export class NeighborhoodsService {
     const created = await this.neighborhoods.create({
       name,
       matchKey,
-      sectionId: input.sectionId,
       ...(input.postalCode !== undefined ? { postalCode: input.postalCode } : {}),
       ...(input.municipality !== undefined ? { municipality: input.municipality } : {}),
     });
@@ -148,17 +144,9 @@ export class NeighborhoodsService {
     }
 
     const nextMatchKey = input.name !== undefined ? neighborhoodMatchKey(input.name) : undefined;
-    const nextSectionId = input.sectionId === undefined ? existing.sectionId : input.sectionId;
 
-    if (
-      nextMatchKey !== undefined &&
-      (nextMatchKey !== existing.matchKey || nextSectionId !== existing.sectionId)
-    ) {
-      const duplicate = await this.neighborhoods.findBySectionAndMatchKey(
-        nextSectionId ?? undefined,
-        nextMatchKey,
-        id,
-      );
+    if (nextMatchKey !== undefined && nextMatchKey !== existing.matchKey) {
+      const duplicate = await this.neighborhoods.findByMatchKey(nextMatchKey, id);
 
       if (duplicate) {
         throw AppError.conflict('Ya existe un barrio con ese nombre');
@@ -168,7 +156,6 @@ export class NeighborhoodsService {
     const updated = await this.neighborhoods.update(id, {
       name: input.name !== undefined ? normalizeNeighborhoodName(input.name) : undefined,
       matchKey: nextMatchKey,
-      sectionId: input.sectionId,
       ...(input.postalCode !== undefined ? { postalCode: input.postalCode } : {}),
       ...(input.municipality !== undefined ? { municipality: input.municipality } : {}),
     });
@@ -197,7 +184,6 @@ export class NeighborhoodsService {
     return {
       id: item.id,
       name: item.name,
-      sectionId: item.sectionId ?? undefined,
       zone: item.zone ?? undefined,
       postalCode: item.postalCode ?? undefined,
       municipality: item.municipality ?? undefined,

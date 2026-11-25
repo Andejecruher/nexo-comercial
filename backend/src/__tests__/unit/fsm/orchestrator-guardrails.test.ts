@@ -495,7 +495,7 @@ describe('AIOrchestrator — prompt and output guardrails', () => {
 
     await orchestrator.run(BASE_INPUT);
 
-    expect(systemPrompt).toContain('Control Estricto de Contexto para Agente IA Voz Ciudadana');
+    expect(systemPrompt).toContain('Control Estricto de Contexto para Agente IA Nexo Comercial');
     expect(systemPrompt).toContain('PROMPT DE NEGOCIO');
   });
 

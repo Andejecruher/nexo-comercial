@@ -24,7 +24,7 @@ hash="$(sha256sum "$LOCK" | awk '{print $1}')"
 if [ ! -f "$STATE_FILE" ] || [ "$(cat "$STATE_FILE")" != "$hash" ]; then
   echo "[docker-dev-entrypoint] Lockfile distinto o volumen fresco; ejecutando pnpm install..."
   cd "$WORKSPACE"
-  pnpm install --frozen-lockfile --filter voz-ciudadana-api...
+  pnpm install --frozen-lockfile --filter nexo-comercial-api...
   echo "$hash" > "$STATE_FILE"
   echo "[docker-dev-entrypoint] Dependencias sincronizadas."
 fi

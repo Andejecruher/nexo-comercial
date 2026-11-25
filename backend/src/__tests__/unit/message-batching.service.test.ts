@@ -41,14 +41,12 @@ function makePrisma(queries: Record<string, unknown[]> = {}) {
 
 function makeDispatcher() {
   const dispatchExportJob = jest.fn(async () => undefined);
-  const dispatchOcrJob = jest.fn(async () => undefined);
   const dispatchInboxEvent = jest.fn(async () => undefined);
   const dispatchBatchEvent = jest.fn(async () => undefined);
   const dispatchOutboxEvent = jest.fn(async () => undefined);
   const dispatchRealtimeEvent = jest.fn(async () => undefined);
   return {
     dispatchExportJob,
-    dispatchOcrJob,
     dispatchInboxEvent,
     dispatchBatchEvent,
     dispatchOutboxEvent,

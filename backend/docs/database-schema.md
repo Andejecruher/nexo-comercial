@@ -1,4 +1,4 @@
-# Database Schema — Voz Ciudadana
+# Database Schema — Nexo Comercial
 
 Base de datos: **PostgreSQL**  
 ORM: **Prisma**  

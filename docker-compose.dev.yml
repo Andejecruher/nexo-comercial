@@ -1,4 +1,4 @@
-name: voz-ciudadana-dev
+name: nexo-comercial-dev
 
 x-root-env-file: &root-env-file
   - path: .env
@@ -22,15 +22,15 @@ services:
     restart: unless-stopped
     env_file: *root-env-file
     environment:
-      POSTGRES_USER: ${POSTGRES_USER:-voz}
+      POSTGRES_USER: ${POSTGRES_USER:-nexo}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-secret}
-      POSTGRES_DB: ${POSTGRES_DB:-vozcuidadana}
+      POSTGRES_DB: ${POSTGRES_DB:-nexocomercial}
     ports:
       - '${POSTGRES_PORT:-5432}:5432'
     volumes:
       - postgres_data_dev:/var/lib/postgresql/data
     healthcheck:
-      test: ['CMD-SHELL', 'pg_isready -U ${POSTGRES_USER:-voz} -d ${POSTGRES_DB:-vozcuidadana}']
+      test: ['CMD-SHELL', 'pg_isready -U ${POSTGRES_USER:-nexo} -d ${POSTGRES_DB:-nexocomercial}']
       interval: 5s
       timeout: 5s
       retries: 20
@@ -41,7 +41,7 @@ services:
       target: dev-runtime
     env_file: *backend-env-file
     environment:
-      DATABASE_URL: ${DATABASE_URL:-postgresql://voz:secret@postgres:5432/vozcuidadana}
+      DATABASE_URL: ${DATABASE_URL:-postgresql://nexo:secret@postgres:5432/nexocomercial}
     command: ['pnpm', 'prisma', 'migrate', 'deploy']
     working_dir: /workspace/backend
     volumes:
@@ -76,12 +76,12 @@ services:
       OUTBOX_POLLING_ENABLED: 'false'
       CHOKIDAR_USEPOLLING: 'true'
       CHOKIDAR_INTERVAL: '500'
-      DATABASE_URL: ${DATABASE_URL:-postgresql://voz:secret@postgres:5432/vozcuidadana}
+      DATABASE_URL: ${DATABASE_URL:-postgresql://nexo:secret@postgres:5432/nexocomercial}
       GOOGLE_APPLICATION_CREDENTIALS: /tmp/gcp/application_default_credentials.json
       # Emulador local por defecto: nada toca GCP real. GOOGLE_CLOUD_PROJECT es
       # obligatorio con el emulador, el client no resuelve el proyecto por ADC.
       PUBSUB_EMULATOR_HOST: '${PUBSUB_EMULATOR_HOST:-pubsub-emulator:8680}'
-      GOOGLE_CLOUD_PROJECT: '${GOOGLE_CLOUD_PROJECT:-voz-ciudadana-dev}'
+      GOOGLE_CLOUD_PROJECT: '${GOOGLE_CLOUD_PROJECT:-nexo-comercial-dev}'
       # backend/.env trae los PUBSUB_PUSH_* de PRODUCCIÓN, que activarían la
       # verificación OIDC en dev. Vacío = verificación omitida fuera de production
       # (pubsub-push-auth.middleware.ts:57).
@@ -140,11 +140,11 @@ services:
       OUTBOX_POLLING_ENABLED: 'true'
       CHOKIDAR_USEPOLLING: 'true'
       CHOKIDAR_INTERVAL: '500'
-      DATABASE_URL: ${DATABASE_URL:-postgresql://voz:secret@postgres:5432/vozcuidadana}
+      DATABASE_URL: ${DATABASE_URL:-postgresql://nexo:secret@postgres:5432/nexocomercial}
       GOOGLE_APPLICATION_CREDENTIALS: /tmp/gcp/application_default_credentials.json
       # Emulador local por defecto: nada toca GCP real.
       PUBSUB_EMULATOR_HOST: '${PUBSUB_EMULATOR_HOST:-pubsub-emulator:8680}'
-      GOOGLE_CLOUD_PROJECT: '${GOOGLE_CLOUD_PROJECT:-voz-ciudadana-dev}'
+      GOOGLE_CLOUD_PROJECT: '${GOOGLE_CLOUD_PROJECT:-nexo-comercial-dev}'
       PRISMA_CONNECTION_LIMIT: ${PRISMA_CONNECTION_LIMIT_WORKER:-2}
     command: ['pnpm', 'run', 'dev:worker']
     working_dir: /workspace/backend
@@ -192,6 +192,9 @@ services:
       - '${FRONTEND_PUBLIC_PORT:-3000}:3000'
     volumes:
       - ./frontend:/workspace/frontend
+      # Aísla la caché de Next del host: el bind mount de ./frontend expondría
+      # un .next host (root/propietario distinto) y artefactos de otra sesión.
+      - frontend_next_dev:/workspace/frontend/.next
       - ./pnpm-lock.yaml:/workspace/pnpm-lock.yaml:ro
       - ./pnpm-workspace.yaml:/workspace/pnpm-workspace.yaml:ro
       - ./package.json:/workspace/package.json:ro
@@ -237,7 +240,7 @@ services:
     working_dir: /workspace/backend
     environment:
       PUBSUB_EMULATOR_HOST: 'pubsub-emulator:8680'
-      GOOGLE_CLOUD_PROJECT: '${GOOGLE_CLOUD_PROJECT:-voz-ciudadana-dev}'
+      GOOGLE_CLOUD_PROJECT: '${GOOGLE_CLOUD_PROJECT:-nexo-comercial-dev}'
       REALTIME_TOPIC: 'realtime-events'
       AI_STREAM_TOPIC: 'ai-stream'
       REALTIME_SUBSCRIPTION: 'realtime-events-push'
@@ -272,9 +275,9 @@ services:
       REALTIME_RELAY_INTERVAL_MS: '250'
       CHOKIDAR_USEPOLLING: 'true'
       CHOKIDAR_INTERVAL: '500'
-      DATABASE_URL: ${DATABASE_URL:-postgresql://voz:secret@postgres:5432/vozcuidadana}
+      DATABASE_URL: ${DATABASE_URL:-postgresql://nexo:secret@postgres:5432/nexocomercial}
       PUBSUB_EMULATOR_HOST: '${PUBSUB_EMULATOR_HOST:-pubsub-emulator:8680}'
-      GOOGLE_CLOUD_PROJECT: '${GOOGLE_CLOUD_PROJECT:-voz-ciudadana-dev}'
+      GOOGLE_CLOUD_PROJECT: '${GOOGLE_CLOUD_PROJECT:-nexo-comercial-dev}'
       PRISMA_CONNECTION_LIMIT: ${PRISMA_CONNECTION_LIMIT_RELAY:-2}
     volumes:
       - ./backend:/workspace/backend
@@ -297,3 +300,4 @@ volumes:
   backend_pkg_node_modules_dev:
   frontend_workspace_node_modules_dev:
   frontend_pkg_node_modules_dev:
+  frontend_next_dev:

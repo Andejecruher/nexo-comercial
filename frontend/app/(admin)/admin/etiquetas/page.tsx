@@ -1,4 +1,4 @@
-import { TagsView } from '@/components/admin/tags-view';
+import { TagsView } from '@/components/etiquetas/tags-view';
 
 export default function AdminEtiquetasPage() {
   return (

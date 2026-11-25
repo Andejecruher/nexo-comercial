@@ -88,8 +88,8 @@ smoke-docker: ## Smoke docker: API/Worker/Frontend saludables
 
 smoke: ## Smoke sin build: valida compose (dev/prod/qa) y Caddyfile
 	$(COMPOSE_DEV) config -q
-	POSTGRES_PASSWORD=smoke DATABASE_URL=postgresql://voz:smoke@postgres:5432/vozcuidadana $(COMPOSE_PROD) config -q
-	POSTGRES_PASSWORD=smoke DATABASE_URL=postgresql://voz:smoke@postgres:5432/vozcuidadana_qa $(COMPOSE_QA) config -q
+	POSTGRES_PASSWORD=smoke DATABASE_URL=postgresql://nexo:smoke@postgres:5432/nexocomercial $(COMPOSE_PROD) config -q
+	POSTGRES_PASSWORD=smoke DATABASE_URL=postgresql://nexo:smoke@postgres:5432/nexocomercial_qa $(COMPOSE_QA) config -q
 	test -f deploy/Caddyfile
 
 validate: lint typecheck test smoke ## Validaciones completas sin build
@@ -186,56 +186,56 @@ dev-db-reset-seed: ## Reset destructivo de DB dev + migraciones + seeds (base + 
 # Requisito: gcloud auth + config set project. Ajusta GCP_REGION/AR_REPO/DB_INSTANCE abajo.
 GCP_PROJECT  := $(shell gcloud config get-value project 2>/dev/null)
 GCP_REGION   := us-central1
-AR_REPO      := voz-ciudadana
+AR_REPO      := nexo-comercial
 AR_HOST      := $(GCP_REGION)-docker.pkg.dev
-DB_INSTANCE  := voz-ciudadana
+DB_INSTANCE  := nexo-comercial
 INSTANCE_CN  := $(GCP_PROJECT):$(GCP_REGION):$(DB_INSTANCE)
-SVC_API      := voz-api
-SVC_WORKER   := voz-worker
-SVC_FRONTEND := voz-frontend
-JOB_MIGRATOR := voz-migrator
-JOB_SEEDER_CORE := voz-seeder-core
-JOB_SEEDER_DEV  := voz-seeder-dev
-JOB_WIPE     := voz-db-wipe
-SA_RUN       := voz-ciudadana-run-sa
+SVC_API      := nexo-api
+SVC_WORKER   := nexo-worker
+SVC_FRONTEND := nexo-frontend
+JOB_MIGRATOR := nexo-migrator
+JOB_SEEDER_CORE := nexo-seeder-core
+JOB_SEEDER_DEV  := nexo-seeder-dev
+JOB_WIPE     := nexo-db-wipe
+SA_RUN       := nexo-comercial-run-sa
 
 GIT_SHA := $(shell git rev-parse --short HEAD 2>/dev/null || echo local)
-IMG_API      := $(AR_HOST)/$(GCP_PROJECT)/$(AR_REPO)/voz-api:sha-$(GIT_SHA)
-IMG_WORKER   := $(AR_HOST)/$(GCP_PROJECT)/$(AR_REPO)/voz-worker:sha-$(GIT_SHA)
-IMG_TOOLS    := $(AR_HOST)/$(GCP_PROJECT)/$(AR_REPO)/voz-tools:sha-$(GIT_SHA)
-IMG_FRONTEND := $(AR_HOST)/$(GCP_PROJECT)/$(AR_REPO)/voz-frontend:sha-$(GIT_SHA)
+IMG_API      := $(AR_HOST)/$(GCP_PROJECT)/$(AR_REPO)/nexo-api:sha-$(GIT_SHA)
+IMG_WORKER   := $(AR_HOST)/$(GCP_PROJECT)/$(AR_REPO)/nexo-worker:sha-$(GIT_SHA)
+IMG_TOOLS    := $(AR_HOST)/$(GCP_PROJECT)/$(AR_REPO)/nexo-tools:sha-$(GIT_SHA)
+IMG_FRONTEND := $(AR_HOST)/$(GCP_PROJECT)/$(AR_REPO)/nexo-frontend:sha-$(GIT_SHA)
 
 # ── Config NO-secreta (env vars en Cloud Run). Sobreescribible desde shell: ──
 #   export GCP_API_BASE_URL=https://api.tu-dominio.com \
-#          GCP_WORKER_SERVICE_URL=https://voz-worker-xxxx.a.run.app
+#          GCP_WORKER_SERVICE_URL=https://nexo-worker-xxxx.a.run.app
 #   make gcp-deploy-backend
 # Los defaults deben coincidir con las GitHub Variables que usa
-# .github/workflows/deploy-gcp.yml. BASE_URL y FRONTEND_URL son requiredString
+# docs/deploy/deploy-gcp.yml. BASE_URL y FRONTEND_URL son requiredString
 # en env.config.ts: sin ellos el API crashea al boot. CORS_ORIGIN = FRONTEND_URL.
-GCP_API_BASE_URL ?= https://api.voz-ciudadana.example
+GCP_API_BASE_URL ?= https://api.nexo-comercial.example
 GCP_WS_URL       ?= $(GCP_API_BASE_URL)
-GCP_FRONTEND_URL ?= https://voz-ciudadana.example
+GCP_FRONTEND_URL ?= https://nexo-comercial.example
 GCP_CORS_ORIGIN  ?= $(GCP_FRONTEND_URL)
 # OCR (Document AI): DOCUMENT_AI_LOCATION no es secreto; el processor id viaja
 # desde Secret Manager (DOCUMENT_AI_PROCESSOR_ID). GOOGLE_CLOUD_PROJECT_ID suele
 # ser = GCP_PROJECT.
 GCP_DOC_AI_LOC    ?= us
-# Cloud Tasks: audiencia OIDC = origen de voz-worker; la SA la crea
+# Cloud Tasks: audiencia OIDC = origen de nexo-worker; la SA la crea
 # deploy-infrastructure.sh. Deben coincidir con las GitHub Variables.
 GCP_TASKS_QUEUE_NAME            ?= background-tasks
 GCP_TASKS_SERVICE_ACCOUNT_EMAIL ?= cloud-tasks-invoker@$(GCP_PROJECT).iam.gserviceaccount.com
-GCP_WORKER_SERVICE_URL          ?= https://voz-worker.example.a.run.app
+GCP_WORKER_SERVICE_URL          ?= https://nexo-worker.example.a.run.app
 # SA que firma el OIDC de las push subscriptions de Pub/Sub. Debe coincidir con
 # el push-auth-service-account de cada subscription (ver deploy-infrastructure.sh).
 GCP_PUBSUB_PUSH_SERVICE_ACCOUNT_EMAIL ?= pubsub-push-invoker@$(GCP_PROJECT).iam.gserviceaccount.com
 
-# Env vars comunes a voz-api y voz-worker (solo pares key=value; el flag
+# Env vars comunes a nexo-api y nexo-worker (solo pares key=value; el flag
 # --set-env-vars= lo agrega cada target al concatenar sus overrides).
 # Espejo de las secciones `deploy-api` / `deploy-worker` del workflow.
-GCP_API_ENV := NODE_ENV=production,BASE_URL=$(GCP_API_BASE_URL),FRONTEND_URL=$(GCP_FRONTEND_URL),CORS_ORIGIN=$(GCP_CORS_ORIGIN),GOOGLE_CLOUD_PROJECT_ID=$(GCP_PROJECT),DOCUMENT_AI_LOCATION=$(GCP_DOC_AI_LOC),INE_OCR_ENABLED=true,ENABLE_XLSX_EXPORT=true,BACKGROUND_EXECUTION_BACKEND=cloud_tasks,GCP_PROJECT_ID=$(GCP_PROJECT),GCP_LOCATION=$(GCP_REGION),TASKS_QUEUE_NAME=$(GCP_TASKS_QUEUE_NAME),WORKER_SERVICE_URL=$(GCP_WORKER_SERVICE_URL),TASKS_SERVICE_ACCOUNT_EMAIL=$(GCP_TASKS_SERVICE_ACCOUNT_EMAIL),MAIL_PROVIDER=mailtrap,MAIL_FROM_NAME=Voz Ciudadana,MAIL_PLATFORM_NAME=Voz Ciudadana,MAIL_TIME_ZONE=America/Mexico_City,MAIL_SEND_TIMEOUT_MS=10000
+GCP_API_ENV := NODE_ENV=production,BASE_URL=$(GCP_API_BASE_URL),FRONTEND_URL=$(GCP_FRONTEND_URL),CORS_ORIGIN=$(GCP_CORS_ORIGIN),GOOGLE_CLOUD_PROJECT_ID=$(GCP_PROJECT),DOCUMENT_AI_LOCATION=$(GCP_DOC_AI_LOC),ENABLE_XLSX_EXPORT=true,BACKGROUND_EXECUTION_BACKEND=cloud_tasks,GCP_PROJECT_ID=$(GCP_PROJECT),GCP_LOCATION=$(GCP_REGION),TASKS_QUEUE_NAME=$(GCP_TASKS_QUEUE_NAME),WORKER_SERVICE_URL=$(GCP_WORKER_SERVICE_URL),TASKS_SERVICE_ACCOUNT_EMAIL=$(GCP_TASKS_SERVICE_ACCOUNT_EMAIL),MAIL_PROVIDER=mailtrap,MAIL_FROM_NAME=Nexo Comercial,MAIL_PLATFORM_NAME=Nexo Comercial,MAIL_TIME_ZONE=America/Mexico_City,MAIL_SEND_TIMEOUT_MS=10000
 
 # Secretos montados como env en Cloud Run (--set-secrets "VAR=secret:version").
-# Lista espejo de .github/workflows/deploy-gcp.yml (deploy-api / deploy-worker).
+# Lista espejo de docs/deploy/deploy-gcp.yml (deploy-api / deploy-worker).
 GCP_SECRETS := \
   --set-secrets="DATABASE_URL=DATABASE_URL:latest" \
   --set-secrets="CLOUDSQL_DB_USER=DB_USER:latest" \
@@ -268,9 +268,19 @@ GCP_SECRETS := \
 # Secrets for audited GCP seed jobs (NODE_ENV=staging). Never prisma:seed:all.
 GCP_SEED_SECRETS := DATABASE_URL=DATABASE_URL:latest,ENCRYPTION_KEY=ENCRYPTION_KEY:latest,JWT_SECRET=JWT_SECRET:latest,JWT_REFRESH_SECRET=JWT_REFRESH_SECRET:latest,WHATSAPP_VERIFY_TOKEN=WHATSAPP_VERIFY_TOKEN:latest,WHATSAPP_APP_ID=WHATSAPP_APP_ID:latest,WHATSAPP_APP_SECRET=WHATSAPP_APP_SECRET:latest,WHATSAPP_ACCESS_TOKEN=WHATSAPP_ACCESS_TOKEN:latest,WHATSAPP_PHONE_NUMBER_ID=WHATSAPP_PHONE_NUMBER_ID:latest,WHATSAPP_BUSINESS_ACCOUNT_ID=WHATSAPP_BUSINESS_ACCOUNT_ID:latest,SUPERADMIN_EMAIL=SUPERADMIN_EMAIL:latest,SUPERADMIN_PASSWORD=SUPERADMIN_PASSWORD:latest,SUPERADMIN_FULL_NAME=SUPERADMIN_FULL_NAME:latest
 
-.PHONY: gcp-build gcp-deploy-backend gcp-deploy-frontend \
+.PHONY: gcp-disabled gcp-build gcp-deploy-backend gcp-deploy-frontend \
 	gcp-migrate gcp-seed gcp-seed-core gcp-seed-dev \
 	gcp-db-reset-seed gcp-deploy-all gcp-logs gcp-status
+
+# Parked until a GCP project exists. The recipes stay as the revive path.
+GCP_DEPLOY_ENABLED ?= 0
+gcp-disabled:
+	@if [ "$(GCP_DEPLOY_ENABLED)" != "1" ]; then \
+	  echo "GCP deploy is disabled for nexo-comercial. See docs/DEPLOYMENT_GCP.md"; \
+	  exit 1; \
+	fi
+
+gcp-build gcp-migrate gcp-seed-core gcp-seed-dev gcp-seed gcp-db-reset-seed gcp-deploy-backend gcp-deploy-frontend gcp-deploy-all gcp-logs gcp-status: gcp-disabled
 
 gcp-build: ## GCP: build + push de imagenes (api, worker, tools, frontend) a Artifact Registry
 	docker buildx build -f backend/Dockerfile --target runner -t $(IMG_API) --push .
@@ -289,7 +299,7 @@ gcp-migrate: ## GCP: ejecuta el Cloud Run Job de migraciones (prisma migrate dep
 	  --tasks=1 \
 	  --max-retries=0 \
 	  --task-timeout=10m \
-	  --command="/usr/local/bin/voz-prod-migrate.sh" \
+	  --command="/usr/local/bin/nexo-prod-migrate.sh" \
 	  --args="" \
 	  --set-env-vars="NODE_ENV=production" \
 	  --set-cloudsql-instances=$(INSTANCE_CN) \
@@ -298,7 +308,7 @@ gcp-migrate: ## GCP: ejecuta el Cloud Run Job de migraciones (prisma migrate dep
 	gcloud run jobs execute $(JOB_MIGRATOR) --region $(GCP_REGION) --wait
 	@echo "[gcp-migrate] migraciones aplicadas (o job ejecutado)"
 
-# --command=pnpm replaces voz-tools ENTRYPOINT (voz-prod-migrate.sh). Without it
+# --command=pnpm replaces nexo-tools ENTRYPOINT (nexo-prod-migrate.sh). Without it
 # the job would migrate or refuse seed args. See docs/DEPLOYMENT_GCP.md sec 11.
 gcp-seed-core: ## GCP: seed core (roles, permissions, neighborhoods, departments)
 	gcloud run jobs deploy $(JOB_SEEDER_CORE) \
@@ -330,10 +340,10 @@ gcp-seed: gcp-seed-core gcp-seed-dev ## GCP: core then dev (never seed:all, neve
 
 # Requiere roles/cloudsql.editor (o admin) sobre la instancia y actAs sobre la
 # SA de runtime. El wipe usa un job de Cloud Run
-# (voz-db-wipe, imagen voz-tools del HEAD local) que ejecuta
+# (nexo-db-wipe, imagen nexo-tools del HEAD local) que ejecuta
 # `DROP SCHEMA public CASCADE; CREATE SCHEMA public;` via `prisma db execute`.
 # A diferencia de `gcloud sql databases delete`, DROP SCHEMA no exige exclusividad
-# y no falla por conexiones activas de voz-api/voz-worker: solo espera a que
+# y no falla por conexiones activas de nexo-api/nexo-worker: solo espera a que
 # terminen las transacciones en curso. Luego redeployea y ejecuta gcp-migrate +
 # gcp-seed con la imagen del HEAD local, de modo que los jobs no queden anclados
 # a una imagen vieja (p.ej. una que aun exigia REDIS_URL).
@@ -361,13 +371,13 @@ gcp-db-reset-seed: ## GCP: reset destructivo de DB (wipe schema + migrator + see
 	  --service-account="$(SA_RUN)@$(GCP_PROJECT).iam.gserviceaccount.com"; \
 	echo "[gcp-db-reset-seed] Ejecutando wipe de schema..."; \
 	gcloud run jobs execute $(JOB_WIPE) --region="$(GCP_REGION)" --wait || exit 1; \
-	echo "[gcp-db-reset-seed] Migraciones (redeploy + execute voz-migrator)..."; \
+	echo "[gcp-db-reset-seed] Migraciones (redeploy + execute nexo-migrator)..."; \
 	$(MAKE) gcp-migrate || exit 1; \
 	echo "[gcp-db-reset-seed] Seeds core -> dev (redeploy + execute)..."; \
 	$(MAKE) gcp-seed || exit 1
 	@echo "[gcp-db-reset-seed] OK: DB reiniciada y seeds aplicados."
 
-gcp-deploy-backend: ## GCP: despliega voz-api + voz-worker a Cloud Run
+gcp-deploy-backend: ## GCP: despliega nexo-api + nexo-worker a Cloud Run
 	gcloud run deploy $(SVC_API) \
 	  --image=$(IMG_API) --region=$(GCP_REGION) --allow-unauthenticated \
 	  --service-account=$(SA_RUN)@$(GCP_PROJECT).iam.gserviceaccount.com \
@@ -392,7 +402,7 @@ gcp-deploy-backend: ## GCP: despliega voz-api + voz-worker a Cloud Run
 	  $(GCP_SECRETS)
 	@echo "[gcp-deploy-backend] api + worker desplegados"
 
-gcp-deploy-frontend: ## GCP: despliega voz-frontend a Cloud Run
+gcp-deploy-frontend: ## GCP: despliega nexo-frontend a Cloud Run
 	gcloud run deploy $(SVC_FRONTEND) \
 	  --image=$(IMG_FRONTEND) --region=$(GCP_REGION) --allow-unauthenticated \
 	  --service-account=$(SA_RUN)@$(GCP_PROJECT).iam.gserviceaccount.com \
@@ -405,7 +415,7 @@ gcp-deploy-frontend: ## GCP: despliega voz-frontend a Cloud Run
 
 gcp-deploy-all: gcp-build gcp-migrate gcp-deploy-backend gcp-deploy-frontend ## GCP: build -> migrar -> desplegar todo
 
-gcp-logs: ## GCP: logs de Cloud Run por servicio: make gcp-logs SVC=voz-api
+gcp-logs: ## GCP: logs de Cloud Run por servicio: make gcp-logs SVC=nexo-api
 	@if [ -z "$(SVC)" ]; then echo "Uso: make gcp-logs SVC=<servicio>"; exit 1; fi
 	gcloud run services logs read $(SVC) --region $(GCP_REGION) --limit=200
 

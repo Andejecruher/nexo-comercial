@@ -7,7 +7,7 @@ import {
 } from './permissions.seed';
 
 /**
- * RBAC Role-Permission Matrix — Voz Ciudadana
+ * RBAC Role-Permission Matrix — Nexo Comercial
  *
  * Asocia permisos a roles buscando los registros por `slug` e insertando
  * en la tabla pivote `RolePermission` con `skipDuplicates: true`.
@@ -20,30 +20,12 @@ import {
 /** Slugs de los permisos asignables a cada rol (clave = role.slug). */
 function buildMatrix(): Readonly<Record<string, readonly string[]>> {
   const whatsapp = slugsForGroup('whatsapp');
-  const campana = slugsForGroup('campana');
-
-  // CAPTURISTA y LIDER solo ven/exportan indicadores de precampaña; los
-  // permisos create/update de goals quedan reservados a COORDINADOR y SUPER_ADMIN.
-  const precampanaReadOnly = slugsForModuleActions('indicadores_precampana', [
-    'view',
-    'export',
-  ]);
-
-  // Lectura scoped para roles operativos de territorio (RN5/RN6).
-  const catalogoElectoralView = slugsForModuleActions('catalogo_electoral', ['view']);
-  const promovidosView = slugsForModuleActions('promovidos', ['view']);
   const eventosView = slugsForModuleActions('eventos', ['view']);
-  const lideresView = slugsForModuleActions('lideres', ['view']);
-
-  // Módulo de administración de coordinadores: solo admins y capturistas globales.
-  const coordinadoresModule = slugsForModule('coordinadores');
-  const lideresModule = slugsForModule('lideres');
 
   const coordinadorConfig = [
     ...slugsForModule('departamentos'),
     ...slugsForModule('barrios'),
     ...slugsForModule('etiquetas'),
-    ...catalogoElectoralView,
     ...slugsForModule('analytics'),
   ];
 
@@ -51,28 +33,12 @@ function buildMatrix(): Readonly<Record<string, readonly string[]>> {
     'super-admin': PERMISSIONS.map((permission) => permission.slug),
     coordinador: [
       ...whatsapp,
-      ...precampanaReadOnly,
-      ...promovidosView,
       ...eventosView,
-      ...lideresView,
       ...coordinadorConfig,
     ],
-    capturista: [
-      ...precampanaReadOnly,
-      ...slugsForModule('promovidos'),
-      ...slugsForModule('eventos'),
-      ...coordinadoresModule,
-      ...lideresModule,
-      ...catalogoElectoralView,
-    ],
+    capturista: [...slugsForModule('eventos')],
     'operador-chat': [...whatsapp],
-    lider: [
-      ...precampanaReadOnly,
-      ...promovidosView,
-      ...eventosView,
-      ...lideresView,
-      ...catalogoElectoralView,
-    ],
+    lider: [...eventosView],
   };
 }
 

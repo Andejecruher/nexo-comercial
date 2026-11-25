@@ -60,7 +60,7 @@ const DEPARTMENT_IDS = [
 ];
 
 const CREATE_BODY = {
-  displayName: 'Voz Ciudadana Test',
+  displayName: 'Nexo Comercial Test',
   phoneNumber: '+529601000000',
   channel: 'whatsapp',
   provider: 'meta',
@@ -108,7 +108,7 @@ describe('AdminAiController.createLine', () => {
       expect.objectContaining({
         channel: 'whatsapp',
         provider: 'meta',
-        displayName: 'Voz Ciudadana Test',
+        displayName: 'Nexo Comercial Test',
         phoneNumber: '+529601000000',
         externalIdentifier: '1204681739405005',
         whatsappPhoneNumberId: '1204681739405005',

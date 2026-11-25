@@ -5,7 +5,6 @@ import { neighborhoodMatchKey } from '../utils/neighborhood-match-key';
 const neighborhoodSelect = {
   id: true,
   name: true,
-  sectionId: true,
   zone: true,
   postalCode: true,
   municipality: true,
@@ -52,21 +51,19 @@ export class NeighborhoodRepository {
 
   async findByIdMinimal(
     id: string,
-  ): Promise<{ id: string; matchKey: string; sectionId: string | null } | null> {
+  ): Promise<{ id: string; matchKey: string } | null> {
     return this.prisma.neighborhood.findUnique({
       where: { id },
-      select: { id: true, matchKey: true, sectionId: true },
+      select: { id: true, matchKey: true },
     });
   }
 
-  async findBySectionAndMatchKey(
-    sectionId: string | undefined,
+  async findByMatchKey(
     matchKey: string,
     excludedId?: string,
   ): Promise<{ id: string } | null> {
     return this.prisma.neighborhood.findFirst({
       where: {
-        sectionId: sectionId ?? null,
         matchKey,
         ...(excludedId ? { NOT: { id: excludedId } } : {}),
       },
@@ -110,7 +107,6 @@ export class NeighborhoodRepository {
   async create(data: {
     name: string;
     matchKey: string;
-    sectionId?: string;
     postalCode?: string;
     municipality?: string;
   }): Promise<NeighborhoodRecord> {
@@ -125,7 +121,6 @@ export class NeighborhoodRepository {
     data: {
       name?: string;
       matchKey?: string;
-      sectionId?: string | null;
       postalCode?: string;
       municipality?: string;
     },
@@ -135,7 +130,6 @@ export class NeighborhoodRepository {
       data: {
         ...(data.name !== undefined ? { name: data.name } : {}),
         ...(data.matchKey !== undefined ? { matchKey: data.matchKey } : {}),
-        ...(data.sectionId !== undefined ? { sectionId: data.sectionId } : {}),
         ...(data.postalCode !== undefined ? { postalCode: data.postalCode } : {}),
         ...(data.municipality !== undefined ? { municipality: data.municipality } : {}),
       },

@@ -428,7 +428,7 @@ describe('realtime ingress, durable publish and AI batching — PostgreSQL', () 
   (process.env.PUBSUB_EMULATOR_HOST ? it : it.skip)(
     'delivers eager ingress through real Pub/Sub, the push handler and two Socket.IO replicas',
     async () => {
-      const projectId = 'voz-realtime-test';
+      const projectId = 'nexo-realtime-test';
       const domainTopic = 'ingress-' + randomUUID();
       const adapterTopic = 'adapter-' + randomUUID();
       const pubsub = new PubSub({ projectId });

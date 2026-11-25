@@ -33,7 +33,7 @@ Source: `backend/src/services/multimodal-test/` (contracts, pipeline-runner, pro
 
 ## Endpoints
 
-All mounted under the existing `/api/v1` router (JWT + role `SUPER_ADMIN|COORDINADOR`, same criterion as the INE OCR workflow). All accept ONE file via `multipart/form-data` (any field name; first file wins). Options come from the query string. Responses always include the full trace, even on failure.
+All mounted under the existing `/api/v1` router with JWT and role `SUPER_ADMIN|COORDINADOR`. All accept ONE file via `multipart/form-data` (any field name; first file wins). Options come from the query string. Responses always include the full trace, even on failure.
 
 | Endpoint | Purpose |
 | --- | --- |
@@ -145,9 +145,9 @@ Implement the port from `contracts.ts` (`SttProvider`, `OcrProvider`, `DocumentT
 
 - **ffmpeg / ffprobe binaries** must be available (`FFMPEG_PATH` / `FFPROBE_PATH` overrides). ffprobe does NOT support ffmpeg's `-nostdin` flag — args differ per tool. Used by: audio conversion, video metadata/audio/frames.
 - **NVIDIA_API_KEY** (Riva STT + Llama Vision) — without it those providers throw 503 `AI_PROVIDER_UNAVAILABLE`.
-- **Google Document AI credentials** (`GOOGLE_CLOUD_PROJECT_ID`, `DOCUMENT_AI_LOCATION`, `DOCUMENT_AI_PROCESSOR_ID`, `INE_OCR_ENABLED`) — the OCR adapter wraps the existing INE provider; JPEG/PNG/PDF only.
+- **Google Document AI credentials** (`GOOGLE_CLOUD_PROJECT_ID`, `DOCUMENT_AI_LOCATION`, `DOCUMENT_AI_PROCESSOR_ID`) — the OCR adapter uses the shared Document AI provider; JPEG/PNG/PDF only.
 - **Native document text extraction** is a stub (`native-document-text.stub.ts` returns null → OCR fallback). Real native extraction needs a lib (pdf-parse/mammoth) — intentionally not added (no invented dependencies).
 - **Text summarizer** is not registered yet (`summary=true` skips with a reason until one is).
 - **Structured labels** for images are parsed heuristically from the vision description; a labels-native provider would improve them.
-- The INE OCR provider does not accept `AbortSignal`; strict OCR deadlines rely on the step timeout, not cancellation propagation.
+- The shared Document AI provider does not accept `AbortSignal`; strict OCR deadlines rely on the step timeout, not cancellation propagation.
 - Riva/transcoder internal limit is 16 MB per audio buffer even though uploads up to 25 MB are accepted.

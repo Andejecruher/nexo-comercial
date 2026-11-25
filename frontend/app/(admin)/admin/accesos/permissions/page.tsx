@@ -1,4 +1,4 @@
-import { PermissionsView } from '@/components/admin/access-control/PermissionsView';
+import { PermissionsView } from '@/components/accesos/PermissionsView';
 
 export default function AdminAccessPermissionsPage() {
   return <PermissionsView />;

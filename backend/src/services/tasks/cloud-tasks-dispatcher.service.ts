@@ -8,7 +8,6 @@ export type ITimestamp = protos.google.protobuf.ITimestamp;
 export interface BackgroundTaskDispatcher {
   dispatchCampaign?(id: string, scheduleTime?: ITimestamp): Promise<void>;
   dispatchExportJob(id: string): Promise<void>;
-  dispatchOcrJob(id: string): Promise<void>;
   dispatchInboxEvent(id: string, scheduleTime?: ITimestamp): Promise<void>;
   dispatchBatchEvent(phone: string, generation: number, scheduleTime?: ITimestamp): Promise<void>;
   dispatchOutboxEvent(id: string): Promise<void>;
@@ -48,10 +47,6 @@ export class CloudTasksDispatcher implements BackgroundTaskDispatcher {
 
   async dispatchCampaign(id: string, scheduleTime?: ITimestamp): Promise<void> {
     await this.dispatch('/tasks/process-campaign', { id }, scheduleTime);
-  }
-
-  async dispatchOcrJob(id: string): Promise<void> {
-    await this.dispatch('/tasks/process-ocr', { id });
   }
 
   async dispatchExportJob(id: string): Promise<void> {
@@ -105,7 +100,7 @@ export class CloudTasksDispatcher implements BackgroundTaskDispatcher {
         ? this.config.aiQueueName
         : path === '/tasks/process-outbox' || path === '/tasks/process-campaign'
           ? this.config.deliveryQueueName
-          : path === '/tasks/process-ocr' || path === '/tasks/export'
+          : path === '/tasks/export'
             ? this.config.documentQueueName
             : undefined;
     const parent = queueName

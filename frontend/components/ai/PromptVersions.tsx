@@ -2,7 +2,7 @@
 
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import type { AiPrompt } from '@/lib/ai-api';
+import type { AiPrompt } from '@/lib/shared/ai-api';
 import { CheckCircle2, Clock, FileText, Loader2 } from 'lucide-react';
 
 interface PromptVersionsProps {

@@ -1,6 +1,6 @@
 # Política de dependencias (monorepo)
 
-Este documento define cómo agregar, actualizar y reproducir dependencias en **Voz Ciudadana** para evitar drift entre máquina local, contenedores de desarrollo y producción.
+Este documento define cómo agregar, actualizar y reproducir dependencias en **Nexo Comercial** para evitar drift entre máquina local, contenedores de desarrollo y producción.
 
 ## Gestor único: pnpm
 
@@ -12,8 +12,8 @@ Este documento define cómo agregar, actualizar y reproducir dependencias en **V
 
 ```bash
 # Backend
-pnpm --filter voz-ciudadana-api add <paquete>
-pnpm --filter voz-ciudadana-api remove <paquete>
+pnpm --filter nexo-comercial-api add <paquete>
+pnpm --filter nexo-comercial-api remove <paquete>
 
 # Frontend (ajustar nombre del paquete según frontend/package.json)
 pnpm --filter <nombre-paquete-frontend> add <paquete>
@@ -34,10 +34,10 @@ pnpm install --frozen-lockfile
 Las imágenes del backend se construyen con **contexto en la raíz del repo** y Dockerfile en `backend/Dockerfile`:
 
 ```bash
-docker build -f backend/Dockerfile -t voz-api:local .
+docker build -f backend/Dockerfile -t nexo-api:local .
 ```
 
-Esto permite que el Dockerfile ejecute `pnpm install --frozen-lockfile --filter voz-ciudadana-api...` contra el lockfile del monorepo.
+Esto permite que el Dockerfile ejecute `pnpm install --frozen-lockfile --filter nexo-comercial-api...` contra el lockfile del monorepo.
 
 ## Desarrollo con Compose
 

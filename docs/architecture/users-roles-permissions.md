@@ -72,7 +72,7 @@ No hay permisos granulares. Cada router contiene listas hardcodeadas:
 
 ### Frontend
 
-`frontend/lib/auth-guards.ts:16-45` define siete permisos locales. No son seguridad:
+`frontend/lib/shared/auth-guards.ts:16-45` define siete permisos locales. No son seguridad:
 
 | Permiso UI        | Roles UI                               | Correspondencia backend                         |
 | ----------------- | -------------------------------------- | ----------------------------------------------- |

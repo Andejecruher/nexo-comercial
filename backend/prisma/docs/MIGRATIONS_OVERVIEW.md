@@ -1,6 +1,6 @@
 # Prisma Migrations Overview
 
-This document describes the migration strategy and operational rules for the `voz-ciudadana` backend database.
+This document describes the migration strategy and operational rules for the `nexo-comercial` backend database.
 
 - **Database**: PostgreSQL
 - **Prisma ORM version**: `5.22.0`

@@ -19,7 +19,7 @@ import type {
   TicketFilters as TicketFiltersState,
   TicketPriorityFilter,
   TicketStatusFilter,
-} from '@/lib/tickets-api';
+} from '@/lib/shared/tickets-api';
 import { Search, X } from 'lucide-react';
 import { memo, useCallback, useEffect, useRef, useState } from 'react';
 

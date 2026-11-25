@@ -1,8 +1,8 @@
-# Arquitectura del Proyecto Voz Ciudadana
+# Arquitectura del Proyecto Nexo Comercial
 
 ## 1. Propósito del documento
 
-Este documento describe la arquitectura **real observada en el código** de Voz Ciudadana para que una persona desarrolladora nueva pueda seguir peticiones, datos, dependencias, persistencia e integraciones sin asumir patrones por nombres de carpetas.
+Este documento describe la arquitectura **real observada en el código** de Nexo Comercial para que una persona desarrolladora nueva pueda seguir peticiones, datos, dependencias, persistencia e integraciones sin asumir patrones por nombres de carpetas.
 
 - **Alcance:** repositorio completo: backend Express/TypeScript, worker, frontend Next.js, Prisma/PostgreSQL, Google Pub/Sub, Docker/CI y documentación existente.
 - **Metodología:** inventario de estructura, lectura de `package.json`, entrypoints, rutas, controladores, servicios, repositorios, middlewares, Prisma schema, clientes frontend, Docker y workflows. Las conclusiones se clasifican como **Confirmado**, **Inferido** o **No determinado**.
@@ -13,11 +13,11 @@ Este documento describe la arquitectura **real observada en el código** de Voz 
 
 ## 2. Resumen ejecutivo
 
-**Confirmado.** Voz Ciudadana es un sistema web con:
+**Confirmado.** Nexo Comercial es un sistema web con:
 
 1. **Backend API HTTP REST** en Express/TypeScript, iniciado desde `backend/src/server.ts`, que monta middlewares globales, Swagger, rutas bajo `/api/v1`, healthchecks y WebSocket opcional. Evidencia: `server.ts` crea `express()`, instancia `PrismaService`, registra `registerRoutes(app, { prisma, realtimeTransport })`, agrega `errorHandler` y escucha en `env.PORT` (`backend/src/server.ts`).
 2. **Worker background** en `backend/src/worker.ts` que procesa inbox/outbox sobre PostgreSQL (polling de `inbox_events`/`outbox_events` o invocado por Cloud Tasks en producción), healthcheck `/healthz` y relay realtime durable. Evidencia: instancia `InboxProcessorService`, `OutboxProcessorService`, arranca `.start()` si `WORKERS_ENABLED` y expone `healthServer` (`backend/src/worker.ts`).
-3. **Frontend Next.js/React** en `frontend/app`, `frontend/hooks` y `frontend/lib`, con App Router, llamadas HTTP mediante `frontend/lib/api-client.ts`, estado de auth en `frontend/hooks/useAuth.ts` y WebSocket admin mediante Socket.IO client (`frontend/package.json`, `frontend/app/layout.tsx`, `frontend/lib/api-client.ts:12`, `frontend/lib/api-client.ts:73`, `frontend/hooks/useAuth.ts:212`, `frontend/lib/realtime/realtime-manager.ts:83`).
+3. **Frontend Next.js/React** en `frontend/app`, `frontend/hooks` y `frontend/lib`, con App Router, llamadas HTTP mediante `frontend/lib/shared/api-client.ts`, estado de auth en `frontend/hooks/shared/useAuth.ts` y WebSocket admin mediante Socket.IO client (`frontend/package.json`, `frontend/app/layout.tsx`, `frontend/lib/shared/api-client.ts:12`, `frontend/lib/shared/api-client.ts:73`, `frontend/hooks/shared/useAuth.ts:212`, `frontend/lib/shared/realtime/realtime-manager.ts:83`).
 4. **Persistencia principal PostgreSQL vía Prisma**. Evidencia: `backend/prisma/schema.prisma` declara `datasource db` PostgreSQL con `DATABASE_URL`; `PrismaService` extiende `PrismaClient`; repositorios reciben `PrismaService` y llaman modelos Prisma (`backend/prisma/schema.prisma:5`, `backend/prisma/schema.prisma:7`, `backend/src/services/prisma.service.ts:7`, `backend/src/routes/index.ts:86-97`).
 5. **PostgreSQL + Google Pub/Sub** para sesiones, lockout, rate limit, idempotencia, background y realtime. Evidencia: `AuthService` persiste refresh sessions en `refresh_sessions`; `PostgresRateLimiter`/`LockoutService` usan `rate_limit_counters`/`identity_lockouts`; el bus realtime publica en los topics `realtime-events`/`ai-stream` (`backend/src/services/auth.service.ts`, `backend/src/services/postgres-rate-limiter.service.ts`, `backend/src/services/realtime/pubsub-realtime-transport.service.ts`, `backend/src/services/realtime/ai-stream-pubsub.service.ts`).
 6. **Integraciones externas confirmadas:** Meta WhatsApp Cloud API/Graph API, OpenAI SDK/proveedor LLM opcional, Anthropic provider opcional por import/implementación, WebSocket Socket.IO, Swagger UI. Evidencia: `WhatsAppProvider` usa `fetch` contra URLs de Meta (`backend/src/config/meta.config.ts:5`, `backend/src/services/whatsapp/whatsapp.provider.ts:104`); dependencias incluyen `openai` y proveedores AI (`backend/package.json`, `backend/src/ai/providers/openai.provider.ts`, `backend/src/ai/providers/anthropic.provider.ts`).
@@ -37,19 +37,19 @@ Este documento describe la arquitectura **real observada en el código** de Voz 
 | Auth | JWT + bcryptjs | Access/refresh tokens, hash passwords | `backend/package.json`, `backend/src/services/auth.service.ts:20-28`, `backend/src/utils/password.util.ts` |
 | Validación backend | Zod | Schemas de entrada | `backend/package.json`, `backend/src/controllers/public-registro.controller.ts:3`, `backend/src/services/auth.schemas.ts` |
 | Seguridad HTTP | helmet, cors | Headers y CORS global | `backend/package.json`, `backend/src/server.ts:57-75` |
-| Realtime | Socket.IO + Google Pub/Sub | WebSocket admin; eventos durables relayados por Pub/Sub vía push subscriptions | `backend/src/services/realtime/pubsub-realtime-transport.service.ts`, `backend/src/services/realtime/websocket-gateway.service.ts`, `frontend/lib/realtime/realtime-manager.ts` |
+| Realtime | Socket.IO + Google Pub/Sub | WebSocket admin; eventos durables relayados por Pub/Sub vía push subscriptions | `backend/src/services/realtime/pubsub-realtime-transport.service.ts`, `backend/src/services/realtime/websocket-gateway.service.ts`, `frontend/lib/shared/realtime/realtime-manager.ts` |
 | AI/LLM | OpenAI SDK, proveedor Anthropic | Orquestación AI y herramientas | `backend/package.json`, `backend/src/ai/providers/openai.provider.ts`, `backend/src/ai/providers/anthropic.provider.ts` |
 | Frontend | Next.js 16 + React 19 | App Router y UI | `frontend/package.json`, `frontend/app/layout.tsx` |
-| Frontend estado | React hooks + Zustand | Auth/hooks y stores de conexión/notificaciones | `frontend/hooks/useAuth.ts`, `frontend/stores/use-connection-store.ts` |
+| Frontend estado | React hooks + Zustand | Auth/hooks y stores de conexión/notificaciones | `frontend/hooks/shared/useAuth.ts`, `frontend/store/shared/use-connection-store.ts` |
 | Testing backend | Jest + Supertest | Pruebas unit/integration | `backend/package.json`, `backend/src/__tests__` |
-| Testing frontend | Vitest + Testing Library | Pruebas frontend | `frontend/package.json`, `frontend/test/setup.ts` |
+| Testing frontend | Vitest + Testing Library | Pruebas frontend | `frontend/package.json`, `frontend/tests/shared/setup.ts` |
 | Contenedores | Docker Compose | postgres, api, worker, realtime-relay, frontend (+ Pub/Sub emulator en dev) | `docker-compose.dev.yml`, `docker-compose.prod.yml` |
 | CI | GitHub Actions | quality/backend-ci | `.github/workflows/backend-ci.yml`, `.github/workflows/quality.yml` |
 
 ## 4. Vista general del repositorio
 
 ```text
-voz-ciudadana/
+nexo-comercial/
 ├── backend/
 │   ├── prisma/                 # schema, migraciones y seeds
 │   ├── src/
@@ -93,7 +93,7 @@ Evidencia: `server.ts` instancia `PrismaService` y llama `registerRoutes` (`back
 - **Repository pattern parcial (Confirmado por estructura e imports):** repositorios como `CitizenRepository`, `MessageRepository`, `ConversationRepository` encapsulan muchas llamadas Prisma, y servicios los consumen (`backend/src/routes/index.ts:86-97`, `backend/src/routes/index.ts:167-193`). No es universal porque algunos controladores/servicios también reciben `PrismaService` y hacen consultas directas, por ejemplo `WebhookController.persistInboundMessages` usa `this.prisma.inboxEvent.upsert` (`backend/src/controllers/webhook.controller.ts:103-120`).
 - **Composition root manual (Confirmado):** `backend/src/routes/index.ts` selecciona implementaciones y resuelve dependencias con constructores (`backend/src/routes/index.ts:79-229`). No hay contenedor DI declarado.
 - **Worker + procesamiento de inbox/outbox sobre PostgreSQL (Confirmado):** `InboxProcessorService` y `OutboxProcessorService` reclaman lotes directo de `inbox_events`/`outbox_events`; en producción Cloud Tasks los invoca por HTTP (`BACKGROUND_EXECUTION_BACKEND=cloud_tasks`) y en local el polling los arranca desde API o worker según `WORKERS_ENABLED` (`backend/src/services/events/inbox-processor.service.ts`, `backend/src/services/events/outbox-processor.service.ts`, `backend/src/routes/index.ts`, `backend/src/worker.ts`).
-- **Frontend separado que consume API REST (Confirmado):** `apiClient` arma URLs con `NEXT_PUBLIC_API_URL` + `/api/v1` y hace `fetch` (`frontend/lib/api-client.ts:12`, `frontend/lib/api-client.ts:73`).
+- **Frontend separado que consume API REST (Confirmado):** `apiClient` arma URLs con `NEXT_PUBLIC_API_URL` + `/api/v1` y hace `fetch` (`frontend/lib/shared/api-client.ts:12`, `frontend/lib/shared/api-client.ts:73`).
 
 ### Desviaciones
 
@@ -106,14 +106,14 @@ Evidencia: `server.ts` instancia `PrismaService` y llama `registerRoutes` (`back
 | ------ | --------------- | ------------ | ------------ | --------- |
 | Bootstrap API | Crear Express, middlewares, Swagger, realtime, rutas | env, PrismaService, Pub/Sub transport, routes, WebSocket | proceso Node `start` | `backend/src/server.ts` |
 | Composition/routing | Instanciar dependencias y montar `/api/v1` | repositorios, servicios, controllers, routers | `server.ts` | `backend/src/routes/index.ts:79-229`, `backend/src/routes/index.ts:271` |
-| Auth/admin | Login, refresh, logout, roles, refresh sessions en PostgreSQL | UserRepository, PrismaService, LockoutService, JWT | rutas `/auth`, frontend `useAuth` | `backend/src/routes/auth.routes.ts`, `backend/src/services/auth.service.ts`, `frontend/hooks/useAuth.ts` |
+| Auth/admin | Login, refresh, logout, roles, refresh sessions en PostgreSQL | UserRepository, PrismaService, LockoutService, JWT | rutas `/auth`, frontend `useAuth` | `backend/src/routes/auth.routes.ts`, `backend/src/services/auth.service.ts`, `frontend/hooks/shared/useAuth.ts` |
 | Ciudadanos/catálogos | CRUD ciudadanos, barrios, tags | repositorios Prisma | admin routes, public registro, AI tools | `backend/src/routes/index.ts:91-105`, `backend/src/routes/citizens.routes.ts:22-33` |
 | Conversaciones/mensajes | Conversaciones, handover, mensajes outbound/inbound | ConversationRepository, MessageRepository, state machine, WhatsApp/outbox | admin UI, webhook/worker | `backend/src/routes/conversations.routes.ts:13-40`, `backend/src/services/message.service.ts`, `backend/src/services/orchestrator/message-orchestrator.service.ts:75-220` |
 | Webhook WhatsApp | Verificar y recibir payloads Meta | WebhookParser, Prisma, InboxProcessor, MessageRepository | Meta Graph webhook | `backend/src/routes/webhook.routes.ts:24-43`, `backend/src/controllers/webhook.controller.ts:61-120` |
 | Colas/worker | Procesar inbox/outbox desde `inbox_events`/`outbox_events` y reintentos | InboxProcessorService/OutboxProcessorService, PostgreSQL, WhatsAppProvider, orchestrator | API process o worker process | `backend/src/worker.ts`, `backend/src/services/events/inbox-processor.service.ts`, `backend/src/services/events/outbox-processor.service.ts` |
 | AI orchestration | FSM v2, agentes, tools, proveedores LLM | Prisma, OpenAI/Anthropic providers, tools | MessageOrchestrator/FsmRouter/Admin AI | `backend/src/ai/fsm/fsm-router-v2.ts`, `backend/src/ai/providers/openai.provider.ts`, `backend/src/routes/admin-ai.routes.ts` |
-| Realtime | Gateway Socket.IO, Pub/Sub durable, outbox relay | Google Pub/Sub (topics `realtime-events`/`ai-stream`), Socket.IO, RealtimeOutboxEvent | API, worker, frontend admin | `backend/src/services/realtime`, `frontend/lib/realtime/realtime-manager.ts` |
-| Frontend admin/public | UI, auth, dashboards, formularios públicos | Next App Router, apiClient, hooks, stores | usuarios web | `frontend/app`, `frontend/hooks`, `frontend/lib/api-client.ts:73` |
+| Realtime | Gateway Socket.IO, Pub/Sub durable, outbox relay | Google Pub/Sub (topics `realtime-events`/`ai-stream`), Socket.IO, RealtimeOutboxEvent | API, worker, frontend admin | `backend/src/services/realtime`, `frontend/lib/shared/realtime/realtime-manager.ts` |
+| Frontend admin/public | UI, auth, dashboards, formularios públicos | Next App Router, apiClient, hooks, stores | usuarios web | `frontend/app`, `frontend/hooks`, `frontend/lib/shared/api-client.ts:73` |
 
 ## 7. Capas y responsabilidades
 
@@ -125,7 +125,7 @@ Evidencia: `server.ts` instancia `PrismaService` y llama `registerRoutes` (`back
 | Services | Lógica de aplicación/orquestación | repositories, PrismaService, providers | controllers, workers, AI tools | `backend/src/services/auth.service.ts`, `backend/src/services/orchestrator/message-orchestrator.service.ts` |
 | Repositories | Consultas Prisma por modelo/feature | PrismaService | services/controllers | `backend/src/routes/index.ts:86-97`, `backend/src/repositories/citizen.repository.ts` |
 | Infra/providers | Prisma, WhatsApp, realtime (Pub/Sub), LLM | env, SDKs remotos | services/workers | `backend/src/services/prisma.service.ts`, `backend/src/services/whatsapp/whatsapp.provider.ts`, `backend/src/services/realtime/pubsub-realtime-transport.service.ts` |
-| Frontend UI/hooks/lib | Renderizar UI, gestionar auth/estado, llamar API | apiClient, localStorage, env NEXT_PUBLIC | usuarios web | `frontend/app`, `frontend/hooks/useAuth.ts`, `frontend/lib/api-client.ts` |
+| Frontend UI/hooks/lib | Renderizar UI, gestionar auth/estado, llamar API | apiClient, localStorage, env NEXT_PUBLIC | usuarios web | `frontend/app`, `frontend/hooks/shared/useAuth.ts`, `frontend/lib/shared/api-client.ts` |
 
 ## 8. Dirección de dependencias
 
@@ -150,7 +150,7 @@ flowchart LR
   Prisma --> Postgres[(PostgreSQL)]
   PubSub --> GcpPubSub[(Google Pub/Sub)]
   Providers --> External[Meta/OpenAI/Anthropic]
-  Frontend[Next.js frontend] --> ApiClient[frontend/lib/api-client.ts]
+  Frontend[Next.js frontend] --> ApiClient[frontend/lib/shared/api-client.ts]
   ApiClient --> Server
 ```
 
@@ -211,8 +211,8 @@ flowchart TB
 | Public HTTP | `backend/src/routes/public.routes.ts` | `createPublicRouter()` | Registro ciudadano, barrios, eventos públicos, newsletter |
 | Frontend app | `frontend/app/layout.tsx` | `RootLayout` | Layout raíz Next.js |
 | Frontend proxy | `frontend/proxy.ts` | `proxy()` | Normaliza rutas `/admin` en Edge Runtime |
-| Frontend API client | `frontend/lib/api-client.ts` | `apiClient` | Cliente fetch central con auth/refresh |
-| WebSocket frontend | `frontend/lib/realtime/realtime-manager.ts` | `io(.../admin)` | Conexión Socket.IO admin |
+| Frontend API client | `frontend/lib/shared/api-client.ts` | `apiClient` | Cliente fetch central con auth/refresh |
+| WebSocket frontend | `frontend/lib/shared/realtime/realtime-manager.ts` | `io(.../admin)` | Conexión Socket.IO admin |
 
 ## 11. Flujo general de una petición
 
@@ -291,14 +291,14 @@ HTTP JSON raw body
 
 **Propósito:** autenticar un usuario del panel, emitir JWT access/refresh y guardar sesión refresh en PostgreSQL.
 
-**Punto de entrada frontend:** `useAuth.login()` llama `apiClient.post('/auth/login', { email, password }, { skipAuth: true })` (`frontend/hooks/useAuth.ts:208-216`).
+**Punto de entrada frontend:** `useAuth.login()` llama `apiClient.post('/auth/login', { email, password }, { skipAuth: true })` (`frontend/hooks/shared/useAuth.ts:208-216`).
 
 **Punto de entrada backend:** `POST /api/v1/auth/login`, registrado por `auth.routes.ts` con rate limit de login (`backend/src/routes/auth.routes.ts:33`).
 
 ```mermaid
 sequenceDiagram
   participant UI as Login page/useAuth
-  participant ApiClient as frontend/lib/api-client.ts
+  participant ApiClient as frontend/lib/shared/api-client.ts
   participant Route as auth.routes.ts
   participant Ctrl as AuthController.login
   participant Svc as AuthService.login
@@ -336,7 +336,7 @@ Formulario email/password
 **Validaciones y errores:**
 - `AuthController.login` usa `LoginSchema.parse`, resuelve `deviceId` y delega en `AuthService.login`; errores pasan a `next(err)` (`backend/src/controllers/auth.controller.ts:33-57`).
 - `AuthService.login` normaliza email, consulta lockout, busca usuario, valida activo y compara password; errores de credenciales usan `AppError.unauthorized` (`backend/src/services/auth.service.ts:88-125`).
-- Frontend traduce 401 a mensaje de credenciales inválidas y guarda tokens/usuario si `ok` (`frontend/hooks/useAuth.ts:218-239`).
+- Frontend traduce 401 a mensaje de credenciales inválidas y guarda tokens/usuario si `ok` (`frontend/hooks/shared/useAuth.ts:218-239`).
 
 ### 12.3 Flujo funcional 3: registro ciudadano público desde frontend hasta Citizen
 
@@ -412,7 +412,7 @@ Formulario web
 | Meta WhatsApp Cloud/Graph API | Webhook inbound, envío mensajes/media/status | `fetch` en `WhatsAppProvider` | `WHATSAPP_*`, `META_GRAPH_BASE_URL` | Webhook, OutboxProcessor, MessageService | `backend/src/config/meta.config.ts:5-19`, `backend/src/services/whatsapp/whatsapp.provider.ts:104`, `backend/src/config/env.config.ts:165-171` |
 | OpenAI | LLM provider para orquestación AI | `openai` SDK/provider | `OPENAI_API_KEY`, `OPENAI_BASE_URL` | AI service/FSM/tools | `backend/package.json`, `backend/src/config/env.config.ts:78-79`, `backend/src/ai/providers/openai.provider.ts` |
 | Anthropic | LLM provider alternativo | provider propio/import opcional | variable inferida por provider; revisar archivo antes de operar | AI provider factory | `backend/src/ai/providers/anthropic.provider.ts`, `backend/src/ai/providers/provider.factory.ts` |
-| Socket.IO | Realtime admin | `socket.io` backend, `socket.io-client` frontend | `WS_ENABLED`, `WS_PATH`, `REALTIME_DURABLE_ENABLED`, `NEXT_PUBLIC_WS_*` | Frontend admin, API, worker | `backend/src/services/realtime`, `frontend/lib/realtime/realtime-manager.ts` |
+| Socket.IO | Realtime admin | `socket.io` backend, `socket.io-client` frontend | `WS_ENABLED`, `WS_PATH`, `REALTIME_DURABLE_ENABLED`, `NEXT_PUBLIC_WS_*` | Frontend admin, API, worker | `backend/src/services/realtime`, `frontend/lib/shared/realtime/realtime-manager.ts` |
 | Swagger UI | Documentación OpenAPI | `swagger-ui-express` | `BASE_URL`, `PORT` | API server | `backend/src/server.ts:92-117` |
 | Vercel Analytics | Analítica frontend | `@vercel/analytics` | Next/Vercel | frontend | `frontend/package.json` |
 
@@ -461,7 +461,7 @@ Login form
 → localStorage frontend
 ```
 
-Evidencia: controller/service/frontend (`backend/src/controllers/auth.controller.ts:33-54`, `backend/src/services/auth.service.ts:88-125`, `frontend/hooks/useAuth.ts:212-239`).
+Evidencia: controller/service/frontend (`backend/src/controllers/auth.controller.ts:33-54`, `backend/src/services/auth.service.ts:88-125`, `frontend/hooks/shared/useAuth.ts:212-239`).
 
 ### Registro ciudadano público
 
@@ -483,7 +483,7 @@ Evidencia: schema/imports (`backend/src/controllers/public-registro.controller.t
 - **Tokens:** access/refresh JWT; refresh token se guarda hasheado (SHA-256) en la tabla `refresh_sessions` (modelo `RefreshSession`: tokenHash, jti, deviceId, expiresAt, revokedAt; `@@unique([userId, deviceId, jti])`) con rotación single-use y evicción FIFO (`backend/src/services/auth.service.ts`).
 - **Refresh:** verifica firma, hash en `refresh_sessions`, replay y usuario activo; rota token (`backend/src/services/auth.service.ts`).
 - **Middleware:** `auth.middleware.ts` valida `Authorization: Bearer`; `rbac.ts`/`role.middleware.ts` aplican roles. Rutas admin usan `authMiddleware` y `requireRole` en routers como users/departments/events/tags (`backend/src/routes/users.routes.ts:22-31`, `backend/src/routes/departments.routes.ts:22-26`).
-- **Frontend:** sesión vive en `localStorage` mediante `authStorage`; `useAuth` restaura sesión, refresca proactivamente y sincroniza pestañas (`frontend/hooks/useAuth.ts:112-204`).
+- **Frontend:** sesión vive en `localStorage` mediante `authStorage`; `useAuth` restaura sesión, refresca proactivamente y sincroniza pestañas (`frontend/hooks/shared/useAuth.ts:112-204`).
 - **Proxy Next:** no decide auth real por usar localStorage; solo redirige `/admin` a una ruta de panel (`frontend/proxy.ts:1-35`).
 
 ## 18. Manejo de errores
@@ -492,12 +492,12 @@ Evidencia: schema/imports (`backend/src/controllers/public-registro.controller.t
 - **Formato:** comentarios indican normalización de `AppError`, `ValidationError` y genéricos al formato `{ success:false, error, code? }` (`backend/src/server.ts:125-127`, `backend/src/middlewares/errorHandler.ts`).
 - **Controllers:** capturan y llaman `next(err)` en auth; webhook responde manualmente según tipo de error para controlar retries de Meta (`backend/src/controllers/auth.controller.ts:55-57`, `backend/src/controllers/webhook.controller.ts:65-96`).
 - **Proceso:** `server.ts` y `worker.ts` manejan `unhandledRejection`/`uncaughtException` con logs JSON y `process.exit(1)` (`backend/src/server.ts:209-220`, `backend/src/worker.ts:149-170`).
-- **Frontend:** `apiClient` encapsula respuesta `ok/status/message` y refresh automático en 401; `useAuth` muestra mensajes específicos de login (`frontend/lib/api-client.ts:73`, `frontend/lib/api-client.ts:138`, `frontend/hooks/useAuth.ts:218-223`).
+- **Frontend:** `apiClient` encapsula respuesta `ok/status/message` y refresh automático en 401; `useAuth` muestra mensajes específicos de login (`frontend/lib/shared/api-client.ts:73`, `frontend/lib/shared/api-client.ts:138`, `frontend/hooks/shared/useAuth.ts:218-223`).
 
 ## 19. Configuración y variables de entorno
 
 - **Backend:** `env.config.ts` carga/valida variables con Zod y `dotenv`; variables críticas incluyen `DATABASE_URL`, `JWT_SECRET`, `JWT_REFRESH_SECRET`, `WHATSAPP_*`, `OPENAI_*`, `BACKGROUND_EXECUTION_BACKEND` (`polling`|`cloud_tasks`), `GCP_PROJECT_ID`/`GCP_LOCATION`/`TASKS_QUEUE_NAME`/`WORKER_SERVICE_URL`/`TASKS_SERVICE_ACCOUNT_EMAIL` (requeridas en modo `cloud_tasks`), `WORKERS_ENABLED`, `WS_ENABLED`, `REALTIME_DURABLE_ENABLED` (`backend/src/config/env.config.ts`).
-- **Frontend:** `NEXT_PUBLIC_API_URL`, `NEXT_PUBLIC_WS_URL`, `NEXT_PUBLIC_WS_PATH`, `NEXT_PUBLIC_WS_ENABLED`, `NEXT_PUBLIC_BASE_URL` se consumen en `api-client`, realtime y SEO (`frontend/lib/api-client.ts:12`, `frontend/lib/realtime/realtime-manager.ts:11-14`, `frontend/lib/seo.ts:12`).
+- **Frontend:** `NEXT_PUBLIC_API_URL`, `NEXT_PUBLIC_WS_URL`, `NEXT_PUBLIC_WS_PATH`, `NEXT_PUBLIC_WS_ENABLED`, `NEXT_PUBLIC_BASE_URL` se consumen en `api-client`, realtime y SEO (`frontend/lib/shared/api-client.ts:12`, `frontend/lib/shared/realtime/realtime-manager.ts:11-14`, `frontend/lib/shared/seo.ts:12`).
 - **Docker:** compose pasa `DATABASE_URL` a API/worker (`docker-compose.dev.yml`).
 - **No exponer secretos:** este documento solo nombra variables, no valores reales.
 
@@ -554,7 +554,7 @@ Evidencia: schema/imports (`backend/src/controllers/public-registro.controller.t
 | `routes/index.ts` | Composition root: cambiarlo impacta toda la API | server, todas las rutas | `backend/src/server.ts`, `backend/src/routes/index.ts` |
 | `env.config.ts` | Valida configuración requerida | server, worker, providers | `backend/src/config/env.config.ts` |
 | `WhatsAppProvider` | Canal externo principal de mensajería | outbox, message service, worker | `backend/src/routes/index.ts`, `backend/src/worker.ts` |
-| `api-client.ts` | Todas o la mayoría de llamadas frontend REST | hooks/libs frontend | `frontend/lib/api-client.ts`, `frontend/hooks/useAuth.ts` |
+| `api-client.ts` | Todas o la mayoría de llamadas frontend REST | hooks/libs frontend | `frontend/lib/shared/api-client.ts`, `frontend/hooks/shared/useAuth.ts` |
 
 ## 24. Inconsistencias o deuda arquitectónica observada
 
@@ -601,7 +601,7 @@ Evidencia: schema/imports (`backend/src/controllers/public-registro.controller.t
 4. **Para persistencia:** revisar primero `backend/prisma/schema.prisma`, después repositorios y migraciones.
 5. **Para webhook WhatsApp:** ruta `backend/src/routes/webhook.routes.ts`, controller `backend/src/controllers/webhook.controller.ts`, parser `backend/src/services/whatsapp/webhook-parser.service.ts`, processors `backend/src/services/events/*`, orchestrator `backend/src/services/orchestrator/message-orchestrator.service.ts`.
 6. **Para mensajes outbound:** revisar `MessageService`, `OutboxProcessorService` y `WhatsAppProvider`.
-7. **Para auth:** revisar `backend/src/routes/auth.routes.ts`, `AuthController`, `AuthService`, `auth.middleware.ts`, `rbac.ts`, `token.util.ts`; en frontend revisar `frontend/hooks/useAuth.ts`, `frontend/lib/auth-storage.ts` y `frontend/lib/api-client.ts`.
+7. **Para auth:** revisar `backend/src/routes/auth.routes.ts`, `AuthController`, `AuthService`, `auth.middleware.ts`, `rbac.ts`, `token.util.ts`; en frontend revisar `frontend/hooks/shared/useAuth.ts`, `frontend/lib/shared/auth-storage.ts` y `frontend/lib/shared/api-client.ts`.
 8. **Para frontend:** seguir `frontend/app/*/page.tsx` → hook en `frontend/hooks` → cliente en `frontend/lib/*-api.ts` o `api-client.ts` → endpoint backend.
 9. **Para agregar dependencias:** el patrón existente registra clases en `backend/src/routes/index.ts` para API y en `backend/src/worker.ts` para workers.
 10. **Para variables:** revisar `backend/src/config/env.config.ts`, `.env.example`, `docker-compose*.yml` y `frontend/.env.example`.
@@ -628,9 +628,9 @@ Evidencia: schema/imports (`backend/src/controllers/public-registro.controller.t
 | `backend/src/services/prisma.service.ts` | `PrismaService` | Cliente PostgreSQL | Crítico |
 | `backend/src/services/realtime/pubsub-realtime-transport.service.ts` | `PubSubRealtimeTransport` | Bus realtime durable sobre Google Pub/Sub | Alto |
 | `backend/prisma/schema.prisma` | modelos Prisma | Modelo de datos | Crítico |
-| `frontend/lib/api-client.ts` | `apiClient` | Cliente HTTP central | Crítico frontend |
-| `frontend/hooks/useAuth.ts` | `useAuth`, `AuthProvider` | Estado auth frontend | Alto frontend |
-| `frontend/lib/realtime/realtime-manager.ts` | `io(.../admin)` | Cliente WebSocket admin | Alto frontend |
+| `frontend/lib/shared/api-client.ts` | `apiClient` | Cliente HTTP central | Crítico frontend |
+| `frontend/hooks/shared/useAuth.ts` | `useAuth`, `AuthProvider` | Estado auth frontend | Alto frontend |
+| `frontend/lib/shared/realtime/realtime-manager.ts` | `io(.../admin)` | Cliente WebSocket admin | Alto frontend |
 | `frontend/proxy.ts` | `proxy` | Normalización `/admin` | Medio |
 | `docker-compose.dev.yml` / `.prod.yml` | services | Infra local / prod | Alto ops |
 | `.github/workflows/backend-ci.yml` | workflow | CI backend | Medio ops |

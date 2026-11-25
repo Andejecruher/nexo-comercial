@@ -1,6 +1,6 @@
-# Voz Ciudadana — Design System & Guidelines (`design.md`)
+# Nexo Comercial — Design System & Guidelines (`design.md`)
 
-> **Fuente de verdad del Design System visual y comportamental de Voz Ciudadana.**
+> **Fuente de verdad del Design System visual y comportamental de Nexo Comercial.**
 > Todo componente nuevo (tablas, botones, modales, formularios, badges de estado, toasts) debe construirse con los tokens y patrones de este documento.
 >
 > Derivado de la implementación real: `frontend/app/globals.css`, `frontend/components/ui/*`, `frontend/components/admin/*`, `frontend/components/tickets/*`, `frontend/components/public/*`.
@@ -16,10 +16,10 @@
 | Librería de base | **shadcn/ui** — estilo `new-york`, baseColor `neutral`, RSC `true`, CSS variables `true` | `frontend/components.json` |
 | Primitivos | Radix UI (`@radix-ui/react-*`) | `frontend/components/ui/*` |
 | Variantes | `class-variance-authority` (CVA) + `VariantProps` | `frontend/components/ui/button.tsx`, etc. |
-| Utilidad de clases | `cn(...)` = `twMerge(clsx(inputs))` | `frontend/lib/utils.ts` |
+| Utilidad de clases | `cn(...)` = `twMerge(clsx(inputs))` | `frontend/lib/shared/utils.ts` |
 | Iconografía | **lucide-react** (única librería de iconos) | global |
 | Notificaciones | **Sonner** vía `CustomToaster` (el `toast.tsx` Radix legado está sin usar) | `frontend/components/ui/toaster-custom.tsx` |
-| Breakpoint móvil (JS) | `768px` (`MOBILE_BREAKPOINT`) | `frontend/components/ui/use-mobile.tsx` |
+| Breakpoint móvil (JS) | `768px` (`MOBILE_BREAKPOINT`) | `frontend/hooks/shared/ui-use-mobile.tsx` |
 
 **Regla de oro:** un componente nuevo se arma con primitivos de `frontend/components/ui/*` + tokens semánticos (`bg-card`, `text-muted-foreground`, `border-input`). **Nunca** se hardcodean colores hex ni escalas de gris ad-hoc (`bg-gray-500`, `text-zinc-400`).
 
@@ -491,7 +491,7 @@ if (loading && rows.length === 0) {
 </div>
 ```
 
-Alturas observadas: `h-16` (`UsersTable`, `LeadersTable`, `StructuresTable`, `CoordinatorsTable`, `promovido-table`, `RolesTable`), `h-14` (`PermissionsTable`), `h-20` (`RolePermissionsManager`), `h-40` (`promovido-card`).
+Alturas observadas: `h-16` (`UsersTable`, `RolesTable`), `h-14` (`PermissionsTable`) y `h-20` (`RolePermissionsManager`).
 
 > **Elige un patrón por tabla, no ambos.** El patrón A es superior (preserva columnas y evita salto de layout).
 
@@ -916,7 +916,7 @@ Todo string visible (labels, botones, placeholders, errores, vacíos, `aria-labe
 ```tsx
 // components/<dominio>/<X>StatusBadge.tsx
 import { Badge } from '@/components/ui/badge';
-import { cn } from '@/lib/utils';
+import { cn } from '@/lib/shared/utils';
 
 export const X_STATUS_CONFIG: Record<XStatus, { label: string; className: string }> = {
   PENDING: { label: 'Pendiente', className: 'border-amber-200 bg-amber-50 text-amber-700' },
@@ -999,7 +999,7 @@ Y un diccionario único de etiquetas (p. ej. `IN_PROGRESS = "En proceso"` para t
 
 ### 5.9 🟠 Radio y familia tipográfica inconsistentes por superficie
 
-- **Actual:** `Card` = `rounded-xl`, `Dialog` = `rounded-lg`, dashboards usan `rounded-2xl` ad-hoc (`dashboard-view-precampana.tsx`), y el sitio público usa `rounded-xl`/`rounded-full` con `font-bold`/`font-black`.
+- **Actual:** `Card` = `rounded-xl`, `Dialog` = `rounded-lg`, algunos dashboards usan `rounded-2xl` ad-hoc, y el sitio público usa `rounded-xl`/`rounded-full` con `font-bold`/`font-black`.
 - **Propuesta:** documentar la regla: **admin/CRM** → `rounded-lg` (modales) / `rounded-xl` (tarjetas y contenedores de tabla); **público/editorial** → `rounded-xl` y `rounded-full` con `font-bold`+. Eliminar `rounded-2xl` ad-hoc salvo en dashboards de KPI, donde debe ser una constante.
 
 ### 5.10 🟡 Tokens y archivos muertos o divergentes
@@ -1065,9 +1065,9 @@ Ver la evidencia en §2.2.4: Tailwind v4 no aplica `cursor: pointer` a botones. 
 | `frontend/components/ui/field.tsx` · `label.tsx` · `alert.tsx` | Composición y validación |
 | `frontend/components/ui/skeleton.tsx` · `spinner.tsx` · `empty.tsx` · `progress.tsx` | Estados |
 | `frontend/components/ui/toaster-custom.tsx` · `sonner.tsx` | Notificaciones |
-| `frontend/components/tickets/TicketStatusBadge.tsx` · `TicketPriorityBadge.tsx` · `TicketTable.tsx` | Referencia de dominio (estados + tabla) |
-| `frontend/components/admin/team/StatusBadges.tsx` · `UsersTable.tsx` | Referencia de badges y vacío con `Empty` |
-| `frontend/components/public/public-nav.tsx` · `public-footer.tsx` · `eventos-section.tsx` | Familia de CTAs públicas |
-| `frontend/lib/utils.ts` | `cn()` |
+| `frontend/components/shared/tickets/TicketStatusBadge.tsx` · `TicketPriorityBadge.tsx` · `TicketTable.tsx` | Referencia de dominio (estados + tabla) |
+| `frontend/components/equipo/StatusBadges.tsx` · `UsersTable.tsx` | Referencia de badges y vacío con `Empty` |
+| `frontend/components/shared/public/public-nav.tsx` · `public-footer.tsx` · `eventos-section.tsx` | Familia de CTAs públicas |
+| `frontend/lib/shared/utils.ts` | `cn()` |
 | `frontend/components.json` | Config shadcn/ui |
 | `docs/ux-writing-es-mx.md` | Reglas de texto de la interfaz |

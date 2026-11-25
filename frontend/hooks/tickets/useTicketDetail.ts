@@ -1,6 +1,6 @@
 'use client';
 
-import { useMessageHistory } from '@/hooks/useMessageHistory';
+import { useMessageHistory } from '@/hooks/shared/useMessageHistory';
 
 /**
  * useTicketDetail — Hook para el detalle de un ticket real (caso).
@@ -12,17 +12,17 @@ import { useMessageHistory } from '@/hooks/useMessageHistory';
  * - Polling + reconexión de socket.
  */
 
-import { useRealtimeManager } from '@/components/providers/realtime-provider';
-import type { MessageWithStatusesDto } from '@/lib/conversations-api';
-import { tryApplyRealtimePatch } from '@/lib/realtime/patch-helpers';
-import { reportTicketLifecycle } from '@/lib/realtime/telemetry';
+import { useRealtimeManager } from '@/components/shared/providers/realtime-provider';
+import type { MessageWithStatusesDto } from '@/lib/shared/conversations-api';
+import { tryApplyRealtimePatch } from '@/lib/shared/realtime/patch-helpers';
+import { reportTicketLifecycle } from '@/lib/shared/realtime/telemetry';
 import {
   rebaseTicketDetail,
   ticketDetailFromApi,
   ticketsApi,
   type TicketDetailDto,
-} from '@/lib/tickets-api';
-import { useConnectionStore } from '@/stores/use-connection-store';
+} from '@/lib/shared/tickets-api';
+import { useConnectionStore } from '@/store/shared/use-connection-store';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 const fetchHistory = (id: string, cursor?: string) =>

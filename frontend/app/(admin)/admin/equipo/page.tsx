@@ -1,5 +1,5 @@
-import { TeamView } from '@/components/admin/team/TeamView';
-import { PermissionGate } from '@/components/auth/PermissionGate';
+import { TeamView } from '@/components/equipo/TeamView';
+import { PermissionGate } from '@/components/shared/PermissionGate';
 
 export default function AdminTeamPage() {
   return (

@@ -1,5 +1,5 @@
 # Build desde la raíz del monorepo:
-#   docker build -f backend/Dockerfile -t voz-ciudadana-api:local .
+#   docker build -f backend/Dockerfile -t nexo-comercial-api:local .
 #
 # Requiere: package.json, pnpm-lock.yaml, pnpm-workspace.yaml, backend/package.json, frontend/package.json
 
@@ -27,7 +27,7 @@ COPY frontend/package.json ./frontend/
 # "Could not find Prisma Schema".
 COPY backend/prisma ./backend/prisma
 
-RUN pnpm install --frozen-lockfile --filter voz-ciudadana-api...
+RUN pnpm install --frozen-lockfile --filter nexo-comercial-api...
 
 # ── Desarrollo: fuentes + Prisma client (sin entrypoint; migrator / tests) ─
 FROM deps AS dev-shell
@@ -47,15 +47,15 @@ FROM dev-shell AS dev-runtime
 
 # Fuera de /workspace/backend: el bind-mount ./backend:/workspace/backend oculta el tree del host
 # y el script en el repo suele venir sin +x → "permission denied" al ejecutar el ENTRYPOINT.
-COPY backend/scripts/docker-dev-entrypoint.sh /usr/local/bin/voz-docker-dev-entrypoint.sh
-RUN chmod +x /usr/local/bin/voz-docker-dev-entrypoint.sh
+COPY backend/scripts/docker-dev-entrypoint.sh /usr/local/bin/nexo-docker-dev-entrypoint.sh
+RUN chmod +x /usr/local/bin/nexo-docker-dev-entrypoint.sh
 
 WORKDIR /workspace/backend
 
 EXPOSE 8000
 EXPOSE 8010
 
-ENTRYPOINT ["/usr/local/bin/voz-docker-dev-entrypoint.sh"]
+ENTRYPOINT ["/usr/local/bin/nexo-docker-dev-entrypoint.sh"]
 CMD ["pnpm", "run", "dev:api"]
 
 # ── Tests en imagen ─────────────────────────────────────────────────────────
@@ -81,7 +81,7 @@ FROM builder AS deploy-stage
 
 WORKDIR /workspace
 
-RUN pnpm deploy --filter=voz-ciudadana-api --prod --legacy /out
+RUN pnpm deploy --filter=nexo-comercial-api --prod --legacy /out
 
 # Generar el cliente Prisma usando la CLI del backend (garantiza la versión
 # correcta independientemente de lo que esté instalado en la raíz del workspace)
@@ -98,12 +98,12 @@ WORKDIR /workspace/backend
 # from backend/src (encryption + typed environment config).
 COPY backend/tsconfig.json ./tsconfig.json
 COPY backend/src ./src
-COPY backend/scripts/prod-migrate.sh /usr/local/bin/voz-prod-migrate.sh
-RUN chmod +x /usr/local/bin/voz-prod-migrate.sh
+COPY backend/scripts/prod-migrate.sh /usr/local/bin/nexo-prod-migrate.sh
+RUN chmod +x /usr/local/bin/nexo-prod-migrate.sh
 
 # ENTRYPOINT ignores leftover Cloud Run Job --args from a previous revision.
 # Production deploys must never reset, force-push, or seed this database.
-ENTRYPOINT ["/usr/local/bin/voz-prod-migrate.sh"]
+ENTRYPOINT ["/usr/local/bin/nexo-prod-migrate.sh"]
 CMD []
 
 # ── Runtime API/Worker (producción) ─────────────────────────────────────────
@@ -134,6 +134,6 @@ ENTRYPOINT ["/sbin/tini", "--"]
 CMD ["node", "dist/server.js"]
 
 # Same layers as runner; only the default process changes so Cloud Run/Compose
-# do not depend on a --command override to avoid serving the API on voz-worker.
+# do not depend on a --command override to avoid serving the API on nexo-worker.
 FROM runner AS worker
 CMD ["node", "dist/worker.js"]

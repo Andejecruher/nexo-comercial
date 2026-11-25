@@ -11,8 +11,6 @@ export class ScopeService {
       where: { id: userId },
       select: {
         userRoles: { select: { role: { select: { name: true } } } },
-        coordinator: { select: { id: true, sectionId: true } },
-        leader: { select: { id: true, sectionId: true, coordinatorId: true } },
       },
     });
 
@@ -21,23 +19,6 @@ export class ScopeService {
     const roleNames = user.userRoles.map((userRole) => userRole.role.name);
     if (roleNames.includes('SUPER_ADMIN') || roleNames.includes('CAPTURISTA')) {
       return { kind: 'admin' };
-    }
-
-    if (user.coordinator) {
-      return {
-        kind: 'coordinator',
-        sectionId: user.coordinator.sectionId,
-        coordinatorId: user.coordinator.id,
-      };
-    }
-
-    if (user.leader) {
-      return {
-        kind: 'leader',
-        sectionId: user.leader.sectionId,
-        leaderId: user.leader.id,
-        coordinatorId: user.leader.coordinatorId,
-      };
     }
 
     return { kind: 'none' };

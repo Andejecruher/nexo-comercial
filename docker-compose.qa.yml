@@ -1,4 +1,4 @@
-name: voz-ciudadana-qa
+name: nexo-comercial-qa
 
 # QA aislado y production-like: usa los mismos targets inmutables que produccion
 # (tools / runner / prod) pero con proyecto, volumenes y (opcional) dominio propios,
@@ -31,16 +31,16 @@ services:
     restart: unless-stopped
     env_file: *root-env-file
     environment:
-      POSTGRES_USER: ${POSTGRES_USER:-voz}
+      POSTGRES_USER: ${POSTGRES_USER:-nexo}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD requerido en QA}
-      POSTGRES_DB: ${POSTGRES_DB:-vozcuidadana_qa}
+      POSTGRES_DB: ${POSTGRES_DB:-nexocomercial_qa}
     volumes:
       - postgres_data_qa:/var/lib/postgresql/data
     healthcheck:
       test:
         [
           "CMD-SHELL",
-          "pg_isready -U ${POSTGRES_USER:-voz} -d ${POSTGRES_DB:-vozcuidadana_qa}",
+          "pg_isready -U ${POSTGRES_USER:-nexo} -d ${POSTGRES_DB:-nexocomercial_qa}",
         ]
       interval: 10s
       timeout: 5s

@@ -1,11 +1,45 @@
 # SOP de infraestructura y despliegue en GCP
 
+## Construcción vigente
+
+Esta es la construcción que ya funciona. Nexo Comercial no cambia el diseño: conserva el mismo flujo, las mismas imágenes, el mismo orden de despliegue y las mismas variables. Lo único que cambia son los nombres, para que el contrato sea de este proyecto y no de Voz Ciudadana.
+
+GitHub no ejecuta nada de esto. El archivo [`docs/deploy/deploy-gcp.yml`](deploy/deploy-gcp.yml) está fuera de `.github/workflows` y su bloque `on:` está comentado. Los jobs quedan escritos completos. `make gcp-*`, `scripts/deploy-gcp-local.sh` y `deploy-infrastructure.sh` no llaman a GCP.
+
+| Pieza                         | Nombre en Nexo Comercial |
+| ----------------------------- | ------------------------ |
+| API Cloud Run                 | `nexo-api`               |
+| Worker Cloud Run              | `nexo-worker`            |
+| Relay realtime                | `nexo-realtime-relay`    |
+| Frontend Cloud Run            | `nexo-frontend`          |
+| Job de migraciones            | `nexo-migrator`          |
+| Imagen de herramientas        | `nexo-tools`             |
+| Artifact Registry y Cloud SQL | `nexo-comercial`         |
+| Base PostgreSQL               | `nexocomercial`          |
+
+El flujo, en el mismo orden del pipeline que ya está en producción:
+
+1. `detect` mira qué superficies cambiaron.
+2. `quality` y `backend-ci` corren como workflows reutilizables, sin un build Docker duplicado, y `ci-gate` los espera.
+3. `build` publica en paralelo `nexo-api` y `nexo-worker` desde `backend/Dockerfile` (`runner` y `worker`), `nexo-tools` para el migrador, y `nexo-frontend`.
+4. `migrate` ejecuta el job `nexo-migrator` con `prisma migrate deploy`. Si falla, el backend no se despliega.
+5. `deploy` sube primero worker y relay, después la API, y el frontend al final.
+6. `verify` revisa salud, Cloud Tasks, Scheduler, Pub/Sub y los flags de costo de cada servicio.
+
+El presupuesto de conexiones no se toca: API máximo 5 instancias con pool 5, worker máximo 5 con pool 2, relay máximo 2 con pool 2. El detalle sigue en [CLOUD_SQL_CONNECTION.md](CLOUD_SQL_CONNECTION.md).
+
+`<GCP_PROJECT_ID>` es un placeholder. Esta guía no apunta a un proyecto existente.
+
+Para volver a desplegar, más adelante: crear el proyecto GCP, descomentar el bloque `on:` y copiar `docs/deploy/deploy-gcp.yml` a `.github/workflows/deploy-gcp.yml`. Hasta ese momento el archivo es la documentación de la construcción, no un despliegue.
+
+
+
 > Actualización realtime (2026-10-13): el workflow preparado en esta revisión cambia API a min 1/timeout 3600 s, incorpora un relay privado min 1 con CPU permanente y pool 2, y separa colas IA/entrega/documentos. Antes de ejecutar los comandos históricos de esta guía, consultar [implementación y rollout realtime](analysis/realtime-implementation.md), que detalla migración, orden, flags, coste y rollback. Estos cambios aún requieren despliegue y medición en el proyecto.
 
 
-Playbook reproducible para crear un entorno nuevo de Voz Ciudadana en Google Cloud Platform. Cubre la infraestructura activa, identidades, secretos, compilación, migraciones, seeds, despliegue, verificación, rollback y diagnóstico del monorepo (`backend` Express + Prisma y `frontend` Next.js).
+Playbook reproducible para crear un entorno nuevo de Nexo Comercial en Google Cloud Platform. Cubre la infraestructura activa, identidades, secretos, compilación, migraciones, seeds, despliegue, verificación, rollback y diagnóstico del monorepo (`backend` Express + Prisma y `frontend` Next.js).
 
-> **Alcance y fuente de verdad.** Este documento reconcilia el repositorio con una lectura de producción realizada el 15 de agosto de 2026, la activación request-driven verificada el 19 de agosto de 2026 y la auditoría de costos de Cloud Run/Cloud SQL y la remoción del Serverless VPC Access Connector `voz-connector` con Memorystore for Redis de septiembre de 2026 en el proyecto de referencia `voz-ciudadana-505319`, región `us-central1`. Los comandos usan placeholders y no contienen credenciales ni datos personales. La ruta canónica de entregas repetibles es [`.github/workflows/deploy-gcp.yml`](../.github/workflows/deploy-gcp.yml); el `Makefile` es auxiliar. La política vigente de scale-to-zero y CPU está en [Optimización de costos y buenas prácticas de despliegue](#optimización-de-costos-y-buenas-prácticas-de-despliegue).
+> **Alcance y fuente de verdad.** Este documento reconcilia el repositorio con una lectura de producción realizada el 15 de agosto de 2026, la activación request-driven verificada el 19 de agosto de 2026 y la auditoría de costos de Cloud Run/Cloud SQL y la remoción del Serverless VPC Access Connector `voz-connector` con Memorystore for Redis de septiembre de 2026 en el proyecto de referencia `<GCP_PROJECT_ID>`, región `us-central1`. Los comandos usan placeholders y no contienen credenciales ni datos personales. La ruta canónica de entregas repetibles es [`docs/deploy/deploy-gcp.yml`](deploy/deploy-gcp.yml); el `Makefile` es auxiliar. La política vigente de scale-to-zero y CPU está en [Optimización de costos y buenas prácticas de despliegue](#optimización-de-costos-y-buenas-prácticas-de-despliegue).
 
 ## Resultado esperado
 
@@ -13,14 +47,14 @@ Al terminar existirán:
 
 | Recurso                 | Nombre de plantilla                                       | Acceso              | Función                                                            |
 | ----------------------- | --------------------------------------------------------- | ------------------- | ------------------------------------------------------------------ |
-| Artifact Registry       | `voz-ciudadana`                                           | Privado             | Imágenes `voz-api`, `voz-worker`, `voz-tools`, `voz-frontend`      |
-| Cloud SQL PostgreSQL 16 | `voz-ciudadana`                                           | Cloud SQL connector | Base `vozcuidadana`; migraciones Prisma                            |
+| Artifact Registry       | `nexo-comercial`                                          | Privado             | Imágenes `nexo-api`, `nexo-worker`, `nexo-tools`, `nexo-frontend`  |
+| Cloud SQL PostgreSQL 16 | `nexo-comercial`                                          | Cloud SQL connector | Base `nexocomercial`; migraciones Prisma                           |
 | Pub/Sub                 | Topics `realtime-events`, `ai-stream`, `socketio-adapter` | Push + adapter      | Realtime durable, streaming IA y fan-out Socket.IO multi-instancia |
-| Cloud Run service       | `voz-api`                                                 | Público             | HTTP, WebSocket y webhook; JWT/RBAC en Express                     |
-| Cloud Run service       | `voz-worker`                                              | Privado             | Handlers HTTP de Cloud Tasks; polling solo para bootstrap/rollback |
-| Cloud Run service       | `voz-frontend`                                            | Público             | Next.js                                                            |
-| Cloud Run job           | `voz-migrator`                                            | Operacional         | `prisma migrate deploy`                                            |
-| Cloud Run jobs          | `voz-seeder-core`, `voz-seeder-dev`                       | Operacional         | Bootstrap auditado, solo cuando corresponda                        |
+| Cloud Run service       | `nexo-api`                                                | Público             | HTTP, WebSocket y webhook; JWT/RBAC en Express                     |
+| Cloud Run service       | `nexo-worker`                                             | Privado             | Handlers HTTP de Cloud Tasks; polling solo para bootstrap/rollback |
+| Cloud Run service       | `nexo-frontend`                                           | Público             | Next.js                                                            |
+| Cloud Run job           | `nexo-migrator`                                           | Operacional         | `prisma migrate deploy`                                            |
+| Cloud Run jobs          | `nexo-seeder-core`, `nexo-seeder-dev`                     | Operacional         | Bootstrap auditado, solo cuando corresponda                        |
 | Service accounts        | runtime y CI/CD                                           | IAM mínimo          | Ejecución separada de despliegue                                   |
 | WIF                     | pool y provider GitHub                                    | OIDC                | CI/CD sin llave JSON                                               |
 
@@ -35,21 +69,21 @@ GitHub Actions --OIDC/WIF--> SA de despliegue
        v
 Artifact Registry
        |
-       +--> voz-api ------------+--> Cloud SQL (socket /cloudsql/...)
+       +--> nexo-api ------------+--> Cloud SQL (socket /cloudsql/...)
        |       |                +<--- Pub/Sub push (realtime-events, ai-stream)
        |       |                +<--- Pub/Sub adapter (socketio-adapter, per-instance subscriptions)
        |       +--> Document AI (ADC de la SA runtime)
        |       +--> Google Drive (OAuth runtime)
        |
-       +--> voz-worker <---OIDC--- Cloud Tasks / Cloud Scheduler
+       +--> nexo-worker <---OIDC--- Cloud Tasks / Cloud Scheduler
        |       +-----------> Cloud SQL + proveedores
        |       +-----------> Publica en Pub/Sub (realtime-events, ai-stream)
        |
-       +--> voz-frontend -------> voz-api (URL congelada durante next build)
+       +--> nexo-frontend -------> nexo-api (URL congelada durante next build)
 
-Internet --> voz-frontend (público)
-Internet --> voz-api (público; Express JWT/RBAC es la frontera de aplicación)
-Internet -X-> voz-worker (privado)
+Internet --> nexo-frontend (público)
+Internet --> nexo-api (público; Express JWT/RBAC es la frontera de aplicación)
+Internet -X-> nexo-worker (privado)
 ```
 
 ## Ruta rápida
@@ -62,45 +96,45 @@ Use esta secuencia para un entorno nuevo. Las secciones posteriores contienen lo
 4. Crear todos los nombres y versiones de [Secret Manager](#6-crear-secretos).
 5. Configurar los tres secrets y seis variables activos de GitHub.
 6. Construir y publicar `runner`, `tools` y `frontend` con tags `sha-*`.
-7. Desplegar y ejecutar `voz-migrator`; detenerse si falla.
-8. En un bootstrap vacío, ejecutar `voz-seeder-core` y luego `voz-seeder-dev`, ambos con `NODE_ENV=staging`.
+7. Desplegar y ejecutar `nexo-migrator`; detenerse si falla.
+8. En un bootstrap vacío, ejecutar `nexo-seeder-core` y luego `nexo-seeder-dev`, ambos con `NODE_ENV=staging`.
 9. Para la primera activación request-driven, seguir [Primer despliegue del worker con Cloud Tasks y Cloud Scheduler](#primer-despliegue-del-worker-con-cloud-tasks-y-cloud-scheduler). Nunca desplegar el worker con `--source`.
 10. Hacer públicos solo API y frontend; mantener privado el worker.
 11. Verificar salud, IAM, flags de costo (min 0, CPU throttling, timeouts), pools, imágenes y logs.
 
 ### Gate de finalización
 
-- [ ] `voz-migrator` terminó con `EXECUTION_SUCCEEDED`.
+- [ ] `nexo-migrator` terminó con `EXECUTION_SUCCEEDED`.
 - [ ] API `/ready`, worker `/ready` (autenticado) y frontend `/` responden.
 - [ ] API y frontend tienen `allUsers -> roles/run.invoker`; worker no.
 - [ ] Worker privado usa `BACKGROUND_EXECUTION_BACKEND=cloud_tasks`, 1 CPU, 1 GiB, min 0, max 5, `--cpu-throttling` y timeout 300 s.
 - [ ] API usa max 5, `--cpu-throttling` (ver *Contrato que CI/CD no debe revertir*).
 - [ ] Queue `background-tasks` está `RUNNING` y Scheduler `background-tasks-reconcile` está `ENABLED`.
 - [ ] API usa `PRISMA_CONNECTION_LIMIT=5`, worker `2` y relay `2` (regla de oro: [docs/CLOUD_SQL_CONNECTION.md](./CLOUD_SQL_CONNECTION.md) §3).
-- [ ] Las imágenes activas provienen de `REGION-docker.pkg.dev/PROJECT_ID/voz-ciudadana`, no de `cloud-run-source-deploy`.
+- [ ] Las imágenes activas provienen de `REGION-docker.pkg.dev/PROJECT_ID/nexo-comercial`, no de `cloud-run-source-deploy`.
 - [ ] `DOCUMENT_AI_PROCESSOR_ID` es una referencia de Secret Manager.
 - [ ] No se imprimió ni consultó ningún valor secreto durante la verificación.
 
 ## Primer despliegue del worker con Cloud Tasks y Cloud Scheduler
 
-Esta sección es el gate obligatorio para migrar por primera vez el worker existente desde polling continuo al procesamiento request-driven. La preparación debe ocurrir **antes** del deploy, pero la queue y Scheduler deben permanecer pausados hasta que la nueva revisión de `voz-worker` esté sana. El contrato de handlers, reintentos e idempotencia se detalla en el [runbook de Cloud Tasks](CLOUD_TASKS_WORKER.md).
+Esta sección es el gate obligatorio para migrar por primera vez el worker existente desde polling continuo al procesamiento request-driven. La preparación debe ocurrir **antes** del deploy, pero la queue y Scheduler deben permanecer pausados hasta que la nueva revisión de `nexo-worker` esté sana. El contrato de handlers, reintentos e idempotencia se detalla en el [runbook de Cloud Tasks](CLOUD_TASKS_WORKER.md).
 
 ### 1. Fijar proyecto, región, servicios e identidades
 
-Use el ID real y accesible del proyecto, no un alias corto ni un nombre de configuración local. `voz-api` y `voz-worker` deben existir en `us-central1`; si el worker todavía no existe, despliegue primero el [worker polling de bootstrap](#worker-polling-de-bootstrap-o-rollback) con min 1.
+Use el ID real y accesible del proyecto, no un alias corto ni un nombre de configuración local. `nexo-api` y `nexo-worker` deben existir en `us-central1`; si el worker todavía no existe, despliegue primero el [worker polling de bootstrap](#worker-polling-de-bootstrap-o-rollback) con min 1.
 
 ```bash
 export PROJECT_ID="<gcp-project-id-real>"
 export REGION="us-central1"
-export API_SERVICE_NAME="voz-api"
-export WORKER_SERVICE_NAME="voz-worker"
-export GITHUB_REPO="Andejecruher/voz-ciudadana"
+export API_SERVICE_NAME="nexo-api"
+export WORKER_SERVICE_NAME="nexo-worker"
+export GITHUB_REPO="Andejecruher/nexo-comercial"
 
-export API_RUNTIME_SERVICE_ACCOUNT="voz-ciudadana-run-sa@${PROJECT_ID}.iam.gserviceaccount.com"
+export API_RUNTIME_SERVICE_ACCOUNT="nexo-comercial-run-sa@${PROJECT_ID}.iam.gserviceaccount.com"
 export WORKER_RUNTIME_SERVICE_ACCOUNT="${API_RUNTIME_SERVICE_ACCOUNT}"
 export TASKS_SERVICE_ACCOUNT_NAME="cloud-tasks-invoker"
 export TASKS_SERVICE_ACCOUNT_EMAIL="${TASKS_SERVICE_ACCOUNT_NAME}@${PROJECT_ID}.iam.gserviceaccount.com"
-export CICD_SERVICE_ACCOUNT_EMAIL="voz-ciudadana-cicd-sa@${PROJECT_ID}.iam.gserviceaccount.com"
+export CICD_SERVICE_ACCOUNT_EMAIL="nexo-comercial-cicd-sa@${PROJECT_ID}.iam.gserviceaccount.com"
 
 export TASKS_QUEUE_NAME="background-tasks"
 export SCHEDULER_JOB_NAME="background-tasks-reconcile"
@@ -113,7 +147,7 @@ gcloud run services describe "$WORKER_SERVICE_NAME" \
   --region="$REGION" --project="$PROJECT_ID" --format='value(metadata.name)'
 ```
 
-**Identidades:** API y worker usan la SA runtime; en este entorno comparten `voz-ciudadana-run-sa`. Cloud Tasks y Scheduler presentan OIDC como `cloud-tasks-invoker`. GitHub Actions se autentica como `voz-ciudadana-cicd-sa`. No intercambie estas responsabilidades ni use una llave JSON.
+**Identidades:** API y worker usan la SA runtime; en este entorno comparten `nexo-comercial-run-sa`. Cloud Tasks y Scheduler presentan OIDC como `cloud-tasks-invoker`. GitHub Actions se autentica como `nexo-comercial-cicd-sa`. No intercambie estas responsabilidades ni use una llave JSON.
 
 ### 2. Aplicar IAM antes del primer workflow
 
@@ -179,7 +213,7 @@ gcloud iam service-accounts add-iam-policy-binding "$TASKS_SERVICE_ACCOUNT_EMAIL
   --project="$PROJECT_ID"
 ```
 
-La SA CI/CD requiere además estos tres roles porque [el workflow](../.github/workflows/deploy-gcp.yml) describe y reanuda la queue y Scheduler, y verifica los topics y push subscriptions de Pub/Sub. **Son prerrequisitos de primer deploy:** su ausencia ya causó fallos reales (activación después de desplegar el worker, y verificación de Pub/Sub reportada como "topic missing" cuando en realidad faltaba `pubsub.viewer`).
+La SA CI/CD requiere además estos tres roles porque [el workflow](deploy/deploy-gcp.yml) describe y reanuda la queue y Scheduler, y verifica los topics y push subscriptions de Pub/Sub. **Son prerrequisitos de primer deploy:** su ausencia ya causó fallos reales (activación después de desplegar el worker, y verificación de Pub/Sub reportada como "topic missing" cuando en realidad faltaba `pubsub.viewer`).
 
 ```bash
 for role in roles/cloudtasks.queueAdmin roles/cloudscheduler.admin roles/pubsub.viewer; do
@@ -207,7 +241,7 @@ un token OIDC (`--push-auth-service-account`) y ordenamiento por conversación
 
 El audience del token debe ser el origen canónico del API. Pase `API_BASE_URL`
 al script con el mismo valor que `GCP_API_BASE_URL`; si lo omite, el script usa
-la URL `run.app` de `voz-api`, que también sirve siempre que el API reciba
+la URL `run.app` de `nexo-api`, que también sirve siempre que el API reciba
 `PUBSUB_PUSH_AUDIENCE` con ese mismo origen. La salida imprime
 `PUBSUB_PUSH_SERVICE_ACCOUNT_EMAIL` y `PUBSUB_PUSH_AUDIENCE`.
 
@@ -278,7 +312,7 @@ gh variable set GCP_PUBSUB_PUSH_SERVICE_ACCOUNT_EMAIL \
 Después haga push a `main` o ejecute `workflow_dispatch`. El workflow canónico:
 
 1. Construye las imágenes y aplica `prisma migrate deploy`, incluidas las columnas de lease durables.
-2. Despliega `voz-api` y `voz-worker` con `BACKGROUND_EXECUTION_BACKEND=cloud_tasks`.
+2. Despliega `nexo-api` y `nexo-worker` con `BACKGROUND_EXECUTION_BACKEND=cloud_tasks`.
 3. Mantiene `WORKERS_ENABLED=false` en API y `true` en worker.
 4. Configura el worker con min 0, max 20, `--cpu-throttling` y timeout 300 s.
 5. Solo después de que el deploy del worker termina correctamente, reanuda la queue y Scheduler.
@@ -319,7 +353,7 @@ gcloud run services describe "$API_SERVICE_NAME" \
 gcloud scheduler jobs run "$SCHEDULER_JOB_NAME" \
   --location="$REGION" --project="$PROJECT_ID"
 gcloud logging read \
-  'resource.type="cloud_run_revision" AND resource.labels.service_name="voz-worker" AND httpRequest.requestUrl:"/tasks/reconcile" AND httpRequest.status=200' \
+  'resource.type="cloud_run_revision" AND resource.labels.service_name="nexo-worker" AND httpRequest.requestUrl:"/tasks/reconcile" AND httpRequest.status=200' \
   --project="$PROJECT_ID" --freshness=30m --limit=20
 
 gcloud tasks list --queue="$TASKS_QUEUE_NAME" \
@@ -392,7 +426,7 @@ gcloud run services update "$WORKER_SERVICE_NAME" \
 ### Errores comunes
 
 - No use un alias corto, inaccesible o inferido para el proyecto. Verifique el `PROJECT_ID` real con `gcloud projects describe` antes de crear IAM o recursos.
-- Cloud Tasks no puede invocar `localhost`; `GCP_WORKER_SERVICE_URL` debe ser la URL HTTPS privada `run.app` de `voz-worker`.
+- Cloud Tasks no puede invocar `localhost`; `GCP_WORKER_SERVICE_URL` debe ser la URL HTTPS privada `run.app` de `nexo-worker`.
 - Cloud Tasks considera exitosos solo los `2xx`; cualquier respuesta no `2xx`, incluidos `4xx`, se reintenta según la política de la queue.
 - La escritura en PostgreSQL y la creación de Cloud Tasks no son atómicas. Scheduler y `/tasks/reconcile` son obligatorios para cerrar esos gaps.
 - No reduzca el worker polling legado a min 0 antes de desplegar y validar los endpoints `/tasks/*`; hacerlo deja el trabajo durable sin consumidor.
@@ -402,20 +436,20 @@ gcloud run services update "$WORKER_SERVICE_NAME" \
 
 La siguiente tabla evita confundir infraestructura activa con intención histórica.
 
-En el snapshot histórico de referencia anterior a Cloud Tasks, la revisión activa del worker era `voz-worker-00020-kv2`: Ready, 100 % del tráfico, 1 CPU, 1 GiB, min 1, max 5 y `run.googleapis.com/cpu-throttling=false`. Ese estado polling se conserva como bootstrap/rollback; el objetivo actual es request-driven con min 0.
+En el snapshot histórico de referencia anterior a Cloud Tasks, la revisión activa del worker era `nexo-worker-00020-kv2`: Ready, 100 % del tráfico, 1 CPU, 1 GiB, min 1, max 5 y `run.googleapis.com/cpu-throttling=false`. Ese estado polling se conserva como bootstrap/rollback; el objetivo actual es request-driven con min 0.
 
-| Área                       | Producción de referencia                                                                                             | Repositorio                                               | Acción para reproducir                                                            |
-| -------------------------- | -------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------- | --------------------------------------------------------------------------------- |
-| Cloud Run                  | API, worker y frontend Ready                                                                                         | Workflow despliega los tres                               | Reproducir                                                                        |
-| Worker CPU                 | Snapshot polling: `cpu-throttling=false`, min 1, max 5                                                               | Workflow `cloud_tasks`: min 0, max 5, `--cpu-throttling`  | Nunca omitir `--cpu-throttling` en request-driven: `gcloud` puede heredar `false` |
-| Worker timeout/concurrency | Snapshot polling: 600 s y 50                                                                                         | Workflow: 300 s y 50                                      | Declararlos en cada deploy; 300 s alinea Scheduler `--attempt-deadline=300s`      |
-| API scale/timeout          | Histórico min 1 / 300 s (instancia fija)                                                                             | Workflow: min 1, max 5                                    | El min 1 sostiene las conexiones WebSocket; el techo de conexiones lo fija max 5   |
-| Cloud SQL                  | HA, backups y PITR; bootstrap `db-custom-2-7680`; tier productivo `db-g1-small`; IP pública; deletion protection off  | Socket obligatorio; sin VPC connector                     | El tier `db-g1-small` acota el presupuesto de conexiones: ver la regla de oro     |
-| GitHub `GCP_DOC_AI_PROC`   | Existe como variable heredada                                                                                        | El workflow ya no la consume                              | No crear; usar Secret Manager                                                     |
+| Área                       | Producción de referencia                                                                                             | Repositorio                                              | Acción para reproducir                                                            |
+| -------------------------- | -------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------- | --------------------------------------------------------------------------------- |
+| Cloud Run                  | API, worker y frontend Ready                                                                                         | Workflow despliega los tres                              | Reproducir                                                                        |
+| Worker CPU                 | Snapshot polling: `cpu-throttling=false`, min 1, max 5                                                               | Workflow `cloud_tasks`: min 0, max 5, `--cpu-throttling` | Nunca omitir `--cpu-throttling` en request-driven: `gcloud` puede heredar `false` |
+| Worker timeout/concurrency | Snapshot polling: 600 s y 50                                                                                         | Workflow: 300 s y 50                                     | Declararlos en cada deploy; 300 s alinea Scheduler `--attempt-deadline=300s`      |
+| API scale/timeout          | Histórico min 1 / 300 s (instancia fija)                                                                             | Workflow: min 1, max 5                                   | El min 1 sostiene las conexiones WebSocket; el techo de conexiones lo fija max 5  |
+| Cloud SQL                  | HA, backups y PITR; bootstrap `db-custom-2-7680`; tier productivo `db-g1-small`; IP pública; deletion protection off | Socket obligatorio; sin VPC connector                    | El tier `db-g1-small` acota el presupuesto de conexiones: ver la regla de oro     |
+| GitHub `GCP_DOC_AI_PROC`   | Existe como variable heredada                                                                                        | El workflow ya no la consume                             | No crear; usar Secret Manager                                                     |
 
 ## Optimización de costos y buenas prácticas de despliegue
 
-Tras la auditoría de septiembre de 2026, producción deja de pagar instancias fijas y CPU idle. El workflow canónico debe **declarar** estos flags en cada `gcloud run deploy`. Omitirlos no es seguro: `gcloud` reutiliza la revisión anterior y puede reintroducir `--min-instances=1` o `--no-cpu-throttling`. `voz-worker` opera con `--min-instances=0` (escalado a cero: sin instancia ni memoria en reposo) y `--cpu-throttling` (CPU facturada solo durante requests); `voz-api` conserva `--min-instances=1` porque necesita una réplica caliente para las sesiones WebSocket, y por eso su pool Prisma (5 conexiones) está siempre activo y cuenta contra el presupuesto de Cloud SQL. Como `gcloud run deploy` **hereda** la configuración de la revisión anterior, cada deploy declara también `--clear-vpc-connector`; sin un limpiado explícito, un servicio que quedó desplegado con el conector borrado recién en producción fracasa al crear la revisión con *"VPC connector ... does not exist, or Cloud Run does not have permission to use it"*.
+Tras la auditoría de septiembre de 2026, producción deja de pagar instancias fijas y CPU idle. El workflow canónico debe **declarar** estos flags en cada `gcloud run deploy`. Omitirlos no es seguro: `gcloud` reutiliza la revisión anterior y puede reintroducir `--min-instances=1` o `--no-cpu-throttling`. `nexo-worker` opera con `--min-instances=0` (escalado a cero: sin instancia ni memoria en reposo) y `--cpu-throttling` (CPU facturada solo durante requests); `nexo-api` conserva `--min-instances=1` porque necesita una réplica caliente para las sesiones WebSocket, y por eso su pool Prisma (5 conexiones) está siempre activo y cuenta contra el presupuesto de Cloud SQL. Como `gcloud run deploy` **hereda** la configuración de la revisión anterior, cada deploy declara también `--clear-vpc-connector`; sin un limpiado explícito, un servicio que quedó desplegado con el conector borrado recién en producción fracasa al crear la revisión con *"VPC connector ... does not exist, or Cloud Run does not have permission to use it"*.
 
 ### Topología sin red privada: sin VPC Access Connector ni Memorystore
 
@@ -426,23 +460,23 @@ Con la migración Redis-free, el Serverless VPC Access Connector `voz-connector`
 - En un entorno nuevo no se habilita `vpcaccess.googleapis.com` ni se crea el conector, sus rangos o una instancia Memorystore.
 - No existe `VPC_CONN` en el workflow ni en el inventario de configuración.
 
-El enrutamiento hacia la base de datos se mantiene **intacto y seguro** y no depende de la VPC: `voz-api` y `voz-worker` entran a Cloud SQL exclusivamente por el **Cloud SQL Auth Proxy embebido** (`--add-cloudsql-instances` monta el socket `/cloudsql/$INSTANCE_CONNECTION_NAME`). La instancia conserva IP pública pero sin redes autorizadas, así que el socket es el único camino de entrada; el conector no formaba parte de ese camino.
+El enrutamiento hacia la base de datos se mantiene **intacto y seguro** y no depende de la VPC: `nexo-api` y `nexo-worker` entran a Cloud SQL exclusivamente por el **Cloud SQL Auth Proxy embebido** (`--add-cloudsql-instances` monta el socket `/cloudsql/$INSTANCE_CONNECTION_NAME`). La instancia conserva IP pública pero sin redes autorizadas, así que el socket es el único camino de entrada; el conector no formaba parte de ese camino.
 
 ### Quick path
 
-1. Despliegue solo con [`.github/workflows/deploy-gcp.yml`](../.github/workflows/deploy-gcp.yml) o copie sus flags al comando manual.
+1. Despliegue solo con [`docs/deploy/deploy-gcp.yml`](deploy/deploy-gcp.yml) o copie sus flags al comando manual.
 2. Confirme `minScale=0` y `cpu-throttling=true` en API, worker y frontend.
 3. No ejecute la [guarda de CPU para polling](#guarda-de-cpu-para-polling) sobre un worker `cloud_tasks`.
 
 ### Contrato que CI/CD no debe revertir
 
-| Servicio              | min | max | timeout | CPU durante request | Prohibido en `cloud_tasks`          | Por qué                                                                           |
-| --------------------- | --- | --- | ------- | ------------------- | ----------------------------------- | --------------------------------------------------------------------------------- |
-| `voz-api`             | 1   | 5   | 3600 s  | `--cpu-throttling`  | `--max-instances>5`                 | min 1 sostiene las conexiones WebSocket; max 5 acota el pool de Prisma (5 × 5 conn) |
-| `voz-worker`          | 0   | 5   | 300 s   | `--cpu-throttling`  | `--no-cpu-throttling`, `--max-instances>5` | CPU always-on facturaba al 100 %; max 5 × pool 2 = 10 conexiones |
-| `voz-realtime-relay`  | 1   | 2   | 300 s   | `--no-cpu-throttling` | `--cpu-throttling`               | Recuperación realtime: CPU fuera de requests; pool 2 × 2 = 4 conexiones           |
-| `voz-frontend`        | 0   | 10  | 300 s   | `--cpu-throttling`  | `--min-instances>=1`                | Scale-to-zero fuera de tráfico; sin conexión a la base                            |
-| `voz-ciudadana` (SQL) | —   | —   | —       | —                   | Subir `max-instances`/pool sin escalar el tier | Regla de oro: ver [CLOUD_SQL_CONNECTION.md](./CLOUD_SQL_CONNECTION.md) §3.2       |
+| Servicio               | min | max | timeout | CPU durante request   | Prohibido en `cloud_tasks`                     | Por qué                                                                             |
+| ---------------------- | --- | --- | ------- | --------------------- | ---------------------------------------------- | ----------------------------------------------------------------------------------- |
+| `nexo-api`             | 1   | 5   | 3600 s  | `--cpu-throttling`    | `--max-instances>5`                            | min 1 sostiene las conexiones WebSocket; max 5 acota el pool de Prisma (5 × 5 conn) |
+| `nexo-worker`          | 0   | 5   | 300 s   | `--cpu-throttling`    | `--no-cpu-throttling`, `--max-instances>5`     | CPU always-on facturaba al 100 %; max 5 × pool 2 = 10 conexiones                    |
+| `nexo-realtime-relay`  | 1   | 2   | 300 s   | `--no-cpu-throttling` | `--cpu-throttling`                             | Recuperación realtime: CPU fuera de requests; pool 2 × 2 = 4 conexiones             |
+| `nexo-frontend`        | 0   | 10  | 300 s   | `--cpu-throttling`    | `--min-instances>=1`                           | Scale-to-zero fuera de tráfico; sin conexión a la base                              |
+| `nexo-comercial` (SQL) | —   | —   | —       | —                     | Subir `max-instances`/pool sin escalar el tier | Regla de oro: ver [CLOUD_SQL_CONNECTION.md](./CLOUD_SQL_CONNECTION.md) §3.2         |
 
 `--cpu-boost` (startup) no sustituye `--cpu-throttling`. `--cpu-boost` solo acelera el arranque; `--no-cpu-throttling` asigna CPU **fuera** de requests y genera cargo continuo mientras la instancia exista.
 
@@ -451,7 +485,7 @@ El timeout del worker bajó de 600 s (polling) a 300 s para cortar handlers colg
 ### Checklist post-deploy
 
 ```bash
-for svc in voz-api voz-worker voz-frontend; do
+for svc in nexo-api nexo-worker nexo-frontend; do
   echo "== $svc =="
   gcloud run services describe "$svc" \
     --region="$REGION" --project="$PROJECT_ID" \
@@ -467,7 +501,7 @@ done
 
 ### Cloud SQL
 
-La instancia `voz-ciudadana` se creó como `db-custom-2-7680` HA para réplica del snapshot y luego se redimensionó al tier productivo actual **`db-g1-small`** (1 vCPU compartida, 1.7 GB), elegido para acotar el consumo de conexiones tras la saturación del pool de Prisma. Ese tier **no es un contrato**: `max_connections` depende de la memoria, así que ajústelo según CPU/memoria observadas y el presupuesto de la regla de oro. No use un `gcloud sql instances create` de este SOP para “restaurar” un tier mayor que el productivo.
+La instancia `nexo-comercial` se creó como `db-custom-2-7680` HA para réplica del snapshot y luego se redimensionó al tier productivo actual **`db-g1-small`** (1 vCPU compartida, 1.7 GB), elegido para acotar el consumo de conexiones tras la saturación del pool de Prisma. Ese tier **no es un contrato**: `max_connections` depende de la memoria, así que ajústelo según CPU/memoria observadas y el presupuesto de la regla de oro. No use un `gcloud sql instances create` de este SOP para “restaurar” un tier mayor que el productivo.
 
 > ⚠️ GCP no incluye `db-f1-micro` ni `db-g1-small` en el SLA de Cloud SQL y los describe como tiers de desarrollo/pruebas. `db-g1-small` es un puente razonable para dejar de caer; el objetivo productivo es un tier de núcleo dedicado. Ver [CLOUD_SQL_CONNECTION.md](./CLOUD_SQL_CONNECTION.md) §3.3.
 
@@ -493,13 +527,13 @@ Reemplace todos los valores `<...>` antes de continuar. No pegue valores secreto
 export PROJECT_ID="<gcp-project-id>"
 export PROJECT_NUMBER="$(gcloud projects describe "$PROJECT_ID" --format='value(projectNumber)')"
 export REGION="us-central1"
-export AR_REPO="voz-ciudadana"
-export DB_INSTANCE="voz-ciudadana"
-export DB_NAME="vozcuidadana"
+export AR_REPO="nexo-comercial"
+export DB_INSTANCE="nexo-comercial"
+export DB_NAME="nexocomercial"
 export DB_USER="voz"
 export INSTANCE_CONNECTION_NAME="${PROJECT_ID}:${REGION}:${DB_INSTANCE}"
-export RUNTIME_SA="voz-ciudadana-run-sa"
-export DEPLOY_SA="voz-ciudadana-cicd-sa"
+export RUNTIME_SA="nexo-comercial-run-sa"
+export DEPLOY_SA="nexo-comercial-cicd-sa"
 export RUNTIME_SA_EMAIL="${RUNTIME_SA}@${PROJECT_ID}.iam.gserviceaccount.com"
 export DEPLOY_SA_EMAIL="${DEPLOY_SA}@${PROJECT_ID}.iam.gserviceaccount.com"
 export WIF_POOL="github-pool"
@@ -561,7 +595,7 @@ export PROCESSOR_NAME="$(curl --fail --silent --show-error \
   --header "Authorization: Bearer $(gcloud auth print-access-token)" \
   --header "x-goog-user-project: ${PROJECT_ID}" \
   --header "Content-Type: application/json; charset=utf-8" \
-  --data '{"displayName":"Voz Ciudadana OCR","type":"OCR_PROCESSOR"}' \
+  --data '{"displayName":"Nexo Comercial OCR","type":"OCR_PROCESSOR"}' \
   "https://${DOCUMENT_AI_LOCATION}-documentai.googleapis.com/v1/projects/${PROJECT_ID}/locations/${DOCUMENT_AI_LOCATION}/processors" \
   | jq --raw-output '.name')"
 
@@ -605,11 +639,11 @@ El helper solicita scope `https://www.googleapis.com/auth/drive.file` y muestra 
 
 ```bash
 gcloud iam service-accounts create "$RUNTIME_SA" \
-  --display-name="Voz Ciudadana runtime" \
+  --display-name="Nexo Comercial runtime" \
   --project="$PROJECT_ID"
 
 gcloud iam service-accounts create "$DEPLOY_SA" \
-  --display-name="Voz Ciudadana GitHub deploy" \
+  --display-name="Nexo Comercial GitHub deploy" \
   --project="$PROJECT_ID"
 ```
 
@@ -695,7 +729,7 @@ gcloud iam service-accounts get-iam-policy "$DEPLOY_SA_EMAIL" \
 gcloud artifacts repositories create "$AR_REPO" \
   --repository-format=docker \
   --location="$REGION" \
-  --description="Imágenes Docker de Voz Ciudadana" \
+  --description="Imágenes Docker de Nexo Comercial" \
   --project="$PROJECT_ID"
 
 gcloud artifacts repositories add-iam-policy-binding "$AR_REPO" \
@@ -778,12 +812,12 @@ No intercambie los flags.
 
 [`backend/src/database/datasource-url.ts`](../backend/src/database/datasource-url.ts) reconstruye la URL desde `CLOUDSQL_*`:
 
-| Proceso                  | Default de código | Valor productivo | Motivo                                             |
-| ------------------------ | ----------------- | ---------------- | -------------------------------------------------- |
-| API                      | `10`              | `connection_limit=5` | Acotar conexiones por instancia serverless     |
-| Worker                   | `8`               | `connection_limit=2` | Pollers concurrentes de inbox, outbox y OCR    |
-| Realtime relay           | `8`               | `connection_limit=2` | Un solo propósito (relay recuperado)           |
-| Migrator / seeds (CLI)   | —                 | `connection_limit=1` | Job de una sola tarea, vía Secret `DATABASE_URL` |
+| Proceso                | Default de código | Valor productivo     | Motivo                                           |
+| ---------------------- | ----------------- | -------------------- | ------------------------------------------------ |
+| API                    | `10`              | `connection_limit=5` | Acotar conexiones por instancia serverless       |
+| Worker                 | `8`               | `connection_limit=2` | Pollers concurrentes de inbox, outbox y OCR      |
+| Realtime relay         | `8`               | `connection_limit=2` | Un solo propósito (relay recuperado)             |
+| Migrator / seeds (CLI) | —                 | `connection_limit=1` | Job de una sola tarea, vía Secret `DATABASE_URL` |
 
 `PRISMA_CONNECTION_LIMIT` sobrescribe esos defaults. `CLOUDSQL_USE_PGBOUNCER=true` solo añade `pgbouncer=true` a la URL de Prisma; no crea ni enruta hacia un PgBouncer. Producción no tiene esa variable ni un pool de Cloud SQL configurado. Manténgala ausente hasta que exista un pooler real, su endpoint esté conectado y se hayan validado transacciones y prepared statements.
 
@@ -951,7 +985,7 @@ gh secret set GH_SA_CICD --repo="$GITHUB_REPO" --body="$DEPLOY_SA_EMAIL"
 | `GCP_FRONTEND_URL`                      | URL pública canónica de frontend                |
 | `GCP_DOC_AI_LOC`                        | Ubicación del processor, por ejemplo `us`       |
 | `GCP_TASKS_QUEUE_NAME`                  | Queue preparada, normalmente `background-tasks` |
-| `GCP_WORKER_SERVICE_URL`                | URL HTTPS `run.app` privada de `voz-worker`     |
+| `GCP_WORKER_SERVICE_URL`                | URL HTTPS `run.app` privada de `nexo-worker`    |
 | `GCP_TASKS_SERVICE_ACCOUNT_EMAIL`       | Email de la SA OIDC `cloud-tasks-invoker`       |
 | `GCP_PUBSUB_PUSH_SERVICE_ACCOUNT_EMAIL` | Email de la SA OIDC `pubsub-push-invoker`       |
 
@@ -973,12 +1007,12 @@ Para usar URLs `run.app` en el primer despliegue, siga [Bootstrap de URLs](#boot
 
 Los contextos Docker siempre son la raíz del monorepo. No use `backend/` o `frontend/` como contextos.
 
-| Imagen                      | Dockerfile/target              | Uso                                    |
-| --------------------------- | ------------------------------ | -------------------------------------- |
-| `voz-api:sha-$GIT_SHA`      | `backend/Dockerfile`, `runner` | API                                    |
-| `voz-worker:sha-$GIT_SHA`   | `backend/Dockerfile`, `worker` | Worker (`tini -- node dist/worker.js`) |
-| `voz-tools:sha-$GIT_SHA`    | `backend/Dockerfile`, `tools`  | Migraciones y seeds                    |
-| `voz-frontend:sha-$GIT_SHA` | `frontend/Dockerfile`, `prod`  | Next.js                                |
+| Imagen                       | Dockerfile/target              | Uso                                    |
+| ---------------------------- | ------------------------------ | -------------------------------------- |
+| `nexo-api:sha-$GIT_SHA`      | `backend/Dockerfile`, `runner` | API                                    |
+| `nexo-worker:sha-$GIT_SHA`   | `backend/Dockerfile`, `worker` | Worker (`tini -- node dist/worker.js`) |
+| `nexo-tools:sha-$GIT_SHA`    | `backend/Dockerfile`, `tools`  | Migraciones y seeds                    |
+| `nexo-frontend:sha-$GIT_SHA` | `frontend/Dockerfile`, `prod`  | Next.js                                |
 
 ### Backend y tools
 
@@ -986,21 +1020,21 @@ Los contextos Docker siempre son la raíz del monorepo. No use `backend/` o `fro
 docker buildx build \
   --file backend/Dockerfile \
   --target runner \
-  --tag "${IMAGE_ROOT}/voz-api:sha-${GIT_SHA}" \
+  --tag "${IMAGE_ROOT}/nexo-api:sha-${GIT_SHA}" \
   --push \
   .
 
 docker buildx build \
   --file backend/Dockerfile \
   --target worker \
-  --tag "${IMAGE_ROOT}/voz-worker:sha-${GIT_SHA}" \
+  --tag "${IMAGE_ROOT}/nexo-worker:sha-${GIT_SHA}" \
   --push \
   .
 
 docker buildx build \
   --file backend/Dockerfile \
   --target tools \
-  --tag "${IMAGE_ROOT}/voz-tools:sha-${GIT_SHA}" \
+  --tag "${IMAGE_ROOT}/nexo-tools:sha-${GIT_SHA}" \
   --push \
   .
 ```
@@ -1015,7 +1049,7 @@ docker buildx build \
   --target prod \
   --build-arg "NEXT_PUBLIC_API_URL=${API_URL}" \
   --build-arg "NEXT_PUBLIC_WS_URL=${API_URL}" \
-  --tag "${IMAGE_ROOT}/voz-frontend:sha-${GIT_SHA}" \
+  --tag "${IMAGE_ROOT}/nexo-frontend:sha-${GIT_SHA}" \
   --push \
   .
 ```
@@ -1029,8 +1063,8 @@ El ejemplo del frontend también contiene `NEXT_PUBLIC_BASE_URL`, `NEXT_PUBLIC_W
 Despliegue el Job con la imagen `tools` del mismo SHA que los runtimes:
 
 ```bash
-gcloud run jobs deploy voz-migrator \
-  --image="${IMAGE_ROOT}/voz-tools:sha-${GIT_SHA}" \
+gcloud run jobs deploy nexo-migrator \
+  --image="${IMAGE_ROOT}/nexo-tools:sha-${GIT_SHA}" \
   --region="$REGION" \
   --tasks=1 \
   --max-retries=0 \
@@ -1041,7 +1075,7 @@ gcloud run jobs deploy voz-migrator \
   --service-account="$RUNTIME_SA_EMAIL" \
   --project="$PROJECT_ID"
 
-gcloud run jobs execute voz-migrator \
+gcloud run jobs execute nexo-migrator \
   --region="$REGION" \
   --project="$PROJECT_ID" \
   --wait
@@ -1051,16 +1085,16 @@ gcloud run jobs execute voz-migrator \
 
 ## 10. Bootstrap de seeds
 
-Los seeds **no** forman parte de `.github/workflows/deploy-gcp.yml`. Cada release solo aplica `prisma migrate deploy` (forward-only). Corra seeders solo en una base vacía o bajo una solicitud operativa auditada (por ejemplo, repoblar catálogo tras pérdida de datos).
+Los seeds **no** forman parte de `docs/deploy/deploy-gcp.yml`. Cada release solo aplica `prisma migrate deploy` (forward-only). Corra seeders solo en una base vacía o bajo una solicitud operativa auditada (por ejemplo, repoblar catálogo tras pérdida de datos).
 
-La imagen `voz-tools` usa `ENTRYPOINT /usr/local/bin/voz-prod-migrate.sh`, que **solo** ejecuta `migrate:deploy` y rechaza `reset` / `seed`. Los jobs de seed **deben** sustituir ese entrypoint con `--command=pnpm`. Si omite `--command`, el job migrará (o fallará) y **no** sembrará.
+La imagen `nexo-tools` usa `ENTRYPOINT /usr/local/bin/nexo-prod-migrate.sh`, que **solo** ejecuta `migrate:deploy` y rechaza `reset` / `seed`. Los jobs de seed **deben** sustituir ese entrypoint con `--command=pnpm`. Si omite `--command`, el job migrará (o fallará) y **no** sembrará.
 
 ### Qué siembra cada scope (código actual)
 
-| Job               | Script                      | Contenido                                                    |
-| ----------------- | --------------------------- | ------------------------------------------------------------ |
-| `voz-seeder-core` | `pnpm run prisma:seed:core` | Colonias, roles, permisos, `role_permissions`, departamentos |
-| `voz-seeder-dev`  | `pnpm run prisma:seed:dev`  | Superadmin + módulo IA (agente, topics, tools, línea)        |
+| Job                | Script                      | Contenido                                                    |
+| ------------------ | --------------------------- | ------------------------------------------------------------ |
+| `nexo-seeder-core` | `pnpm run prisma:seed:core` | Colonias, roles, permisos, `role_permissions`, departamentos |
+| `nexo-seeder-dev`  | `pnpm run prisma:seed:dev`  | Superadmin + módulo IA (agente, topics, tools, línea)        |
 
 `prisma:seed:all` también corre fixtures de test: **prohibido** en GCP.
 
@@ -1069,23 +1103,23 @@ La imagen `voz-tools` usa `ENTRYPOINT /usr/local/bin/voz-prod-migrate.sh`, que *
 - Orden: `core`, después `dev`. No ejecute `dev` si `core` falló.
 - `NODE_ENV=staging`. Con `production` el orquestador (`backend/prisma/seed/index.ts`) aborta.
 - `--command=pnpm` y `--args=run,prisma:seed:core` / `prisma:seed:dev` en cada `jobs deploy`.
-- Imagen `voz-tools:sha-…` **igual** a la de `voz-migrator` (mismo SHA que el release aplicado).
+- Imagen `nexo-tools:sha-…` **igual** a la de `nexo-migrator` (mismo SHA que el release aplicado).
 - `SUPERADMIN_*` desde Secret Manager. El upsert del superadmin **no** rota `hashedPassword` si el usuario ya existe.
-- Los seeds no recrean datos de negocio (promovidos, conversaciones, tickets).
+- Los seeds no recrean datos de negocio (conversaciones, tickets).
 
 ### 1. Tomar el SHA de la imagen ya desplegada
 
-Espere a que el workflow Deploy GCP haya construido y empujado `voz-tools` (job migrator en verde). Luego:
+Espere a que el workflow Deploy GCP haya construido y empujado `nexo-tools` (job migrator en verde). Luego:
 
 ```bash
 export PROJECT_ID="$(gcloud config get-value project)"
 export REGION=us-central1
-export IMAGE_ROOT="${REGION}-docker.pkg.dev/${PROJECT_ID}/voz-ciudadana"
-export INSTANCE_CONNECTION_NAME="${PROJECT_ID}:${REGION}:voz-ciudadana"
-export RUNTIME_SA_EMAIL="voz-ciudadana-run-sa@${PROJECT_ID}.iam.gserviceaccount.com"
-export API_URL="https://api.voz-ciudadana.com.mx"
+export IMAGE_ROOT="${REGION}-docker.pkg.dev/${PROJECT_ID}/nexo-comercial"
+export INSTANCE_CONNECTION_NAME="${PROJECT_ID}:${REGION}:nexo-comercial"
+export RUNTIME_SA_EMAIL="nexo-comercial-run-sa@${PROJECT_ID}.iam.gserviceaccount.com"
+export API_URL="https://api.nexo-comercial.example"
 
-TOOLS_IMAGE="$(gcloud run jobs describe voz-migrator \
+TOOLS_IMAGE="$(gcloud run jobs describe nexo-migrator \
   --region="$REGION" --project="$PROJECT_ID" \
   --format='value(spec.template.spec.template.spec.containers[0].image)')"
 echo "Usar: $TOOLS_IMAGE"
@@ -1095,12 +1129,12 @@ No apunte a un SHA local de `git rev-parse` si ese tag aún no está en Artifact
 
 ### 2. Desplegar (o actualizar) los Jobs
 
-`--command=pnpm` sustituye el ENTRYPOINT del migrador. `--args` son argumentos de `pnpm`, no del script `voz-prod-migrate.sh`.
+`--command=pnpm` sustituye el ENTRYPOINT del migrador. `--args` son argumentos de `pnpm`, no del script `nexo-prod-migrate.sh`.
 
 ```bash
 export SEED_SECRETS="DATABASE_URL=DATABASE_URL:latest,ENCRYPTION_KEY=ENCRYPTION_KEY:latest,JWT_SECRET=JWT_SECRET:latest,JWT_REFRESH_SECRET=JWT_REFRESH_SECRET:latest,WHATSAPP_VERIFY_TOKEN=WHATSAPP_VERIFY_TOKEN:latest,WHATSAPP_APP_ID=WHATSAPP_APP_ID:latest,WHATSAPP_APP_SECRET=WHATSAPP_APP_SECRET:latest,WHATSAPP_ACCESS_TOKEN=WHATSAPP_ACCESS_TOKEN:latest,WHATSAPP_PHONE_NUMBER_ID=WHATSAPP_PHONE_NUMBER_ID:latest,WHATSAPP_BUSINESS_ACCOUNT_ID=WHATSAPP_BUSINESS_ACCOUNT_ID:latest,SUPERADMIN_EMAIL=SUPERADMIN_EMAIL:latest,SUPERADMIN_PASSWORD=SUPERADMIN_PASSWORD:latest,SUPERADMIN_FULL_NAME=SUPERADMIN_FULL_NAME:latest"
 
-gcloud run jobs deploy voz-seeder-core \
+gcloud run jobs deploy nexo-seeder-core \
   --image="$TOOLS_IMAGE" \
   --region="$REGION" \
   --command=pnpm \
@@ -1115,7 +1149,7 @@ gcloud run jobs deploy voz-seeder-core \
   --service-account="$RUNTIME_SA_EMAIL" \
   --project="$PROJECT_ID"
 
-gcloud run jobs deploy voz-seeder-dev \
+gcloud run jobs deploy nexo-seeder-dev \
   --image="$TOOLS_IMAGE" \
   --region="$REGION" \
   --command=pnpm \
@@ -1134,15 +1168,15 @@ gcloud run jobs deploy voz-seeder-dev \
 Atajo con el `Makefile` (misma imagen que `IMG_TOOLS` / `GIT_SHA` local; exporte `GCP_API_BASE_URL` canónico):
 
 ```bash
-export GCP_API_BASE_URL=https://api.voz-ciudadana.com.mx
+export GCP_API_BASE_URL=https://api.nexo-comercial.example
 make gcp-seed
 ```
 
 ### 3. Ejecutar en orden
 
 ```bash
-gcloud run jobs execute voz-seeder-core --region="$REGION" --project="$PROJECT_ID" --wait
-gcloud run jobs execute voz-seeder-dev --region="$REGION" --project="$PROJECT_ID" --wait
+gcloud run jobs execute nexo-seeder-core --region="$REGION" --project="$PROJECT_ID" --wait
+gcloud run jobs execute nexo-seeder-dev --region="$REGION" --project="$PROJECT_ID" --wait
 ```
 
 Si los jobs ya apuntan a la imagen correcta y a `pnpm run prisma:seed:*`, puede omitir el `deploy` y solo `execute`.
@@ -1151,7 +1185,7 @@ Si los jobs ya apuntan a la imagen correcta y a `pnpm run prisma:seed:*`, puede 
 
 ```bash
 gcloud logging read \
-  'resource.type="cloud_run_job" AND resource.labels.job_name="voz-seeder-core"' \
+  'resource.type="cloud_run_job" AND resource.labels.job_name="nexo-seeder-core"' \
   --project="$PROJECT_ID" --limit=30 --format='value(textPayload)'
 ```
 
@@ -1177,14 +1211,14 @@ export DOCUMENT_AI_LOCATION="<document-ai-location>"
 
 export BACKEND_SECRETS="DATABASE_URL=DATABASE_URL:latest,CLOUDSQL_DB_USER=DB_USER:latest,CLOUDSQL_DB_PASS=DB_PASS:latest,CLOUDSQL_DB_NAME=DB_NAME:latest,CLOUDSQL_INSTANCE_CONNECTION_NAME=INSTANCE_CONNECTION_NAME:latest,JWT_SECRET=JWT_SECRET:latest,JWT_REFRESH_SECRET=JWT_REFRESH_SECRET:latest,ENCRYPTION_KEY=ENCRYPTION_KEY:latest,WHATSAPP_VERIFY_TOKEN=WHATSAPP_VERIFY_TOKEN:latest,WHATSAPP_APP_ID=WHATSAPP_APP_ID:latest,WHATSAPP_APP_SECRET=WHATSAPP_APP_SECRET:latest,WHATSAPP_ACCESS_TOKEN=WHATSAPP_ACCESS_TOKEN:latest,WHATSAPP_PHONE_NUMBER_ID=WHATSAPP_PHONE_NUMBER_ID:latest,WHATSAPP_BUSINESS_ACCOUNT_ID=WHATSAPP_BUSINESS_ACCOUNT_ID:latest,MAILTRAP_API_TOKEN=MAILTRAP_API_TOKEN:latest,MAILTRAP_API_URL=MAILTRAP_API_URL:latest,MAIL_FROM_ADDRESS=MAIL_FROM_ADDRESS:latest,MAIL_REPLY_TO_ADDRESS=MAIL_REPLY_TO_ADDRESS:latest,MAIL_SUPPORT_EMAIL=MAIL_SUPPORT_EMAIL:latest,OPENAI_API_KEY=OPENAI_API_KEY:latest,NVIDIA_API_KEY=NVIDIA_API_KEY:latest,ANTHROPIC_API_KEY=ANTHROPIC_API_KEY:latest,GOOGLE_DRIVE_FOLDER_ID=GOOGLE_DRIVE_FOLDER_ID:latest,GOOGLE_OAUTH_CLIENT_ID=GOOGLE_OAUTH_CLIENT_ID:latest,GOOGLE_OAUTH_CLIENT_SECRET=GOOGLE_OAUTH_CLIENT_SECRET:latest,GOOGLE_DRIVE_REFRESH_TOKEN=GOOGLE_DRIVE_REFRESH_TOKEN:latest,DOCUMENT_AI_PROCESSOR_ID=DOCUMENT_AI_PROCESSOR_ID:latest"
 
-export COMMON_ENV="NODE_ENV=production,BASE_URL=${API_URL},FRONTEND_URL=${FRONTEND_URL},CORS_ORIGIN=${FRONTEND_URL},GOOGLE_CLOUD_PROJECT_ID=${PROJECT_ID},DOCUMENT_AI_LOCATION=${DOCUMENT_AI_LOCATION},INE_OCR_ENABLED=true,ENABLE_XLSX_EXPORT=true,REALTIME_DURABLE_ENABLED=true,MAIL_PROVIDER=mailtrap,MAIL_FROM_NAME=Voz Ciudadana,MAIL_PLATFORM_NAME=Voz Ciudadana,MAIL_TIME_ZONE=America/Mexico_City,MAIL_SEND_TIMEOUT_MS=10000"
+export COMMON_ENV="NODE_ENV=production,BASE_URL=${API_URL},FRONTEND_URL=${FRONTEND_URL},CORS_ORIGIN=${FRONTEND_URL},GOOGLE_CLOUD_PROJECT_ID=${PROJECT_ID},DOCUMENT_AI_LOCATION=${DOCUMENT_AI_LOCATION},ENABLE_XLSX_EXPORT=true,REALTIME_DURABLE_ENABLED=true,MAIL_PROVIDER=mailtrap,MAIL_FROM_NAME=Nexo Comercial,MAIL_PLATFORM_NAME=Nexo Comercial,MAIL_TIME_ZONE=America/Mexico_City,MAIL_SEND_TIMEOUT_MS=10000"
 ```
 
 ### API
 
 ```bash
-gcloud run deploy voz-api \
-  --image="${IMAGE_ROOT}/voz-api:sha-${GIT_SHA}" \
+gcloud run deploy nexo-api \
+  --image="${IMAGE_ROOT}/nexo-api:sha-${GIT_SHA}" \
   --region="$REGION" \
   --allow-unauthenticated \
   --service-account="$RUNTIME_SA_EMAIL" \
@@ -1211,8 +1245,8 @@ La API debe ser invocable sin autenticación IAM para el navegador y el webhook 
 Este es el comando alineado con el workflow. Requiere `BACKGROUND_EXECUTION_BACKEND=cloud_tasks` y los flags de costo de la sección anterior.
 
 ```bash
-gcloud run deploy voz-worker \
-  --image="${IMAGE_ROOT}/voz-worker:sha-${GIT_SHA}" \
+gcloud run deploy nexo-worker \
+  --image="${IMAGE_ROOT}/nexo-worker:sha-${GIT_SHA}" \
   --region="$REGION" \
   --no-allow-unauthenticated \
   --ingress=all \
@@ -1244,8 +1278,8 @@ Con `--max-instances=5` y `PRISMA_CONNECTION_LIMIT=2`, el worker aporta 10 conex
 Servicio de recuperación que sirve el worker image con `node dist/realtime-relay.js`. También abre el socket de Cloud SQL, así que entra en el presupuesto:
 
 ```bash
-gcloud run deploy voz-realtime-relay \
-  --image="${IMAGE_ROOT}/voz-worker:sha-${GIT_SHA}" \
+gcloud run deploy nexo-realtime-relay \
+  --image="${IMAGE_ROOT}/nexo-worker:sha-${GIT_SHA}" \
   --region="$REGION" \
   --no-allow-unauthenticated \
   --ingress=all \
@@ -1275,8 +1309,8 @@ gcloud run deploy voz-realtime-relay \
 Use este despliegue siempre activo solo para crear el servicio antes de la primera preparación de Cloud Tasks o para rollback. El estado productivo request-driven se despliega mediante el [procedimiento de primer despliegue](#primer-despliegue-del-worker-con-cloud-tasks-y-cloud-scheduler) y el workflow canónico.
 
 ```bash
-gcloud run deploy voz-worker \
-  --image="${IMAGE_ROOT}/voz-worker:sha-${GIT_SHA}" \
+gcloud run deploy nexo-worker \
+  --image="${IMAGE_ROOT}/nexo-worker:sha-${GIT_SHA}" \
   --region="$REGION" \
   --no-allow-unauthenticated \
   --ingress=all \
@@ -1303,8 +1337,8 @@ gcloud run deploy voz-worker \
 Nunca use:
 
 ```bash
-# PROHIBIDO para voz-worker
-gcloud run deploy voz-worker --source=...
+# PROHIBIDO para nexo-worker
+gcloud run deploy nexo-worker --source=...
 ```
 
 Los builds automáticos bajo `cloud-run-source-deploy` produjeron revisiones donde `--command=node` falló con `node` fuera de `PATH` (ese flag sustituye el ENTRYPOINT `tini`). Use exclusivamente la imagen `worker` de Artifact Registry y restaure defaults con `--command="" --args=""`.
@@ -1312,8 +1346,8 @@ Los builds automáticos bajo `cloud-run-source-deploy` produjeron revisiones don
 ### Frontend
 
 ```bash
-gcloud run deploy voz-frontend \
-  --image="${IMAGE_ROOT}/voz-frontend:sha-${GIT_SHA}" \
+gcloud run deploy nexo-frontend \
+  --image="${IMAGE_ROOT}/nexo-frontend:sha-${GIT_SHA}" \
   --region="$REGION" \
   --allow-unauthenticated \
   --service-account="$RUNTIME_SA_EMAIL" \
@@ -1338,7 +1372,7 @@ Las env runtime mantienen consistente el proceso server-side; no cambian el bund
 Cuando el worker opera en polling, mantenga CPU disponible fuera de requests:
 
 ```bash
-gcloud run services update voz-worker \
+gcloud run services update nexo-worker \
   --region="$REGION" \
   --no-cpu-throttling \
   --min-instances=1 \
@@ -1364,8 +1398,8 @@ Si no existe dominio canónico ni servicios previos:
 8. Prepare y active Cloud Tasks siguiendo el [gate de primer despliegue](#primer-despliegue-del-worker-con-cloud-tasks-y-cloud-scheduler).
 
 ```bash
-export API_URL="$(gcloud run services describe voz-api --region="$REGION" --project="$PROJECT_ID" --format='value(status.url)')"
-export FRONTEND_URL="$(gcloud run services describe voz-frontend --region="$REGION" --project="$PROJECT_ID" --format='value(status.url)')"
+export API_URL="$(gcloud run services describe nexo-api --region="$REGION" --project="$PROJECT_ID" --format='value(status.url)')"
+export FRONTEND_URL="$(gcloud run services describe nexo-frontend --region="$REGION" --project="$PROJECT_ID" --format='value(status.url)')"
 test -n "$API_URL"
 test -n "$FRONTEND_URL"
 ```
@@ -1411,16 +1445,16 @@ Leyenda: **SM** = Secret Manager; **GH var/secret** = GitHub Actions; **env** = 
 | `GCP_FRONTEND_URL`                      | Runtime       | GH var         | Sí                         | URL canónica frontend                                  |
 | `GCP_DOC_AI_LOC`                        | Runtime       | GH var         | Si OCR activo              | `us` u otra ubicación del processor                    |
 | `GCP_TASKS_QUEUE_NAME`                  | Runtime       | GH var         | Sí                         | `background-tasks`                                     |
-| `GCP_WORKER_SERVICE_URL`                | Runtime       | GH var         | Sí                         | URL HTTPS privada de `voz-worker`                      |
+| `GCP_WORKER_SERVICE_URL`                | Runtime       | GH var         | Sí                         | URL HTTPS privada de `nexo-worker`                     |
 | `GCP_TASKS_SERVICE_ACCOUNT_EMAIL`       | Runtime       | GH var         | Sí                         | SA OIDC `cloud-tasks-invoker`                          |
 | `GCP_PUBSUB_PUSH_SERVICE_ACCOUNT_EMAIL` | Runtime       | GH var         | Sí                         | SA OIDC `pubsub-push-invoker`                          |
 | `GCP_WS_URL`                            | Build         | Make/env local | Default `GCP_API_BASE_URL` | Solo targets Make; workflow usa API URL                |
 | `GCP_CORS_ORIGIN`                       | Runtime       | Make/env local | Default frontend URL       | Solo targets Make                                      |
 | `GCP_DOC_AI_PROC`                       | Runtime       | Make/env local | Obsoleta                   | No usar; processor en SM                               |
 | `GCP_REGION`                            | CI            | Workflow/env   | Sí                         | `us-central1`                                          |
-| `AR_REPO`                               | CI            | Workflow/env   | Sí                         | `voz-ciudadana`                                        |
-| `DB_INSTANCE`                           | CI            | Workflow/env   | Sí                         | `voz-ciudadana`                                        |
-| `SA_RUN`                                | CI            | Workflow/env   | Sí                         | `voz-ciudadana-run-sa`                                 |
+| `AR_REPO`                               | CI            | Workflow/env   | Sí                         | `nexo-comercial`                                       |
+| `DB_INSTANCE`                           | CI            | Workflow/env   | Sí                         | `nexo-comercial`                                       |
+| `SA_RUN`                                | CI            | Workflow/env   | Sí                         | `nexo-comercial-run-sa`                                |
 | `CLOUDSDK_CORE_DISABLE_PROMPTS`         | CI            | Workflow env   | `1`                        | Evita prompts interactivos                             |
 
 ### Backend: runtime y transporte
@@ -1445,23 +1479,23 @@ Leyenda: **SM** = Secret Manager; **GH var/secret** = GitHub Actions; **env** = 
 
 ### Base de datos y colas
 
-| Variable                            | Scope               | Almacenamiento                | Req./default    | Nota                              |
-| ----------------------------------- | ------------------- | ----------------------------- | --------------- | --------------------------------- |
-| `DATABASE_URL`                      | API/worker/jobs     | SM                            | Obligatoria     | Socket con `@localhost`           |
-| `CLOUDSQL_DB_USER`                  | API/worker/migrator | SM `DB_USER`                  | Prod            | Componente de URL runtime         |
-| `CLOUDSQL_DB_PASS`                  | API/worker/migrator | SM `DB_PASS`                  | Prod            | Secreto                           |
-| `CLOUDSQL_DB_NAME`                  | API/worker/migrator | SM `DB_NAME`                  | Prod            | Nombre de base                    |
-| `CLOUDSQL_INSTANCE_CONNECTION_NAME` | API/worker/migrator | SM `INSTANCE_CONNECTION_NAME` | Prod            | `project:region:instance`         |
-| `CLOUDSQL_USE_PGBOUNCER`            | API/worker          | env                           | Ausente/false   | No habilita un pooler por sí sola |
-| `PRISMA_CONNECTION_LIMIT`           | API/worker/relay    | env                           | API 5, worker 2, relay 2 | Rango 1-40; ver regla de oro |
-| `GCP_PROJECT_ID`                    | API/worker          | env                           | Cloud Tasks     | ID real del proyecto              |
-| `GCP_LOCATION`                      | API/worker          | env                           | `us-central1`   | Región de queue y worker          |
-| `TASKS_QUEUE_NAME`                  | API/worker          | GH var -> env                 | Cloud Tasks     | `background-tasks`                |
-| `WORKER_SERVICE_URL`                | API/worker          | GH var -> env                 | Cloud Tasks     | URL HTTPS, nunca `localhost`      |
-| `TASKS_SERVICE_ACCOUNT_EMAIL`       | API/worker          | GH var -> env                 | Cloud Tasks     | Identidad OIDC invoker            |
-| `INBOX_POLL_INTERVAL_MS`            | worker              | env                           | 2000            | Milisegundos                      |
-| `OUTBOX_POLL_INTERVAL_MS`           | worker              | env                           | 1000            | Milisegundos                      |
-| `QUEUE_RETRY_PROMOTION_INTERVAL_MS` | worker              | env                           | 5000            | Milisegundos                      |
+| Variable                            | Scope               | Almacenamiento                | Req./default             | Nota                              |
+| ----------------------------------- | ------------------- | ----------------------------- | ------------------------ | --------------------------------- |
+| `DATABASE_URL`                      | API/worker/jobs     | SM                            | Obligatoria              | Socket con `@localhost`           |
+| `CLOUDSQL_DB_USER`                  | API/worker/migrator | SM `DB_USER`                  | Prod                     | Componente de URL runtime         |
+| `CLOUDSQL_DB_PASS`                  | API/worker/migrator | SM `DB_PASS`                  | Prod                     | Secreto                           |
+| `CLOUDSQL_DB_NAME`                  | API/worker/migrator | SM `DB_NAME`                  | Prod                     | Nombre de base                    |
+| `CLOUDSQL_INSTANCE_CONNECTION_NAME` | API/worker/migrator | SM `INSTANCE_CONNECTION_NAME` | Prod                     | `project:region:instance`         |
+| `CLOUDSQL_USE_PGBOUNCER`            | API/worker          | env                           | Ausente/false            | No habilita un pooler por sí sola |
+| `PRISMA_CONNECTION_LIMIT`           | API/worker/relay    | env                           | API 5, worker 2, relay 2 | Rango 1-40; ver regla de oro      |
+| `GCP_PROJECT_ID`                    | API/worker          | env                           | Cloud Tasks              | ID real del proyecto              |
+| `GCP_LOCATION`                      | API/worker          | env                           | `us-central1`            | Región de queue y worker          |
+| `TASKS_QUEUE_NAME`                  | API/worker          | GH var -> env                 | Cloud Tasks              | `background-tasks`                |
+| `WORKER_SERVICE_URL`                | API/worker          | GH var -> env                 | Cloud Tasks              | URL HTTPS, nunca `localhost`      |
+| `TASKS_SERVICE_ACCOUNT_EMAIL`       | API/worker          | GH var -> env                 | Cloud Tasks              | Identidad OIDC invoker            |
+| `INBOX_POLL_INTERVAL_MS`            | worker              | env                           | 2000                     | Milisegundos                      |
+| `OUTBOX_POLL_INTERVAL_MS`           | worker              | env                           | 1000                     | Milisegundos                      |
+| `QUEUE_RETRY_PROMOTION_INTERVAL_MS` | worker              | env                           | 5000                     | Milisegundos                      |
 
 ### Auth, seguridad y rate limits
 
@@ -1497,19 +1531,13 @@ Leyenda: **SM** = Secret Manager; **GH var/secret** = GitHub Actions; **env** = 
 | `ANTHROPIC_API_KEY`                | API/worker       | SM             | Opcional en código; referenciada por workflow | No frontend                  |
 | `AI_TIMEOUT_MS`                    | API/worker       | env            | 30000                                         | Milisegundos                 |
 | `AI_DUPLICATE_TOOL_LOOP_THRESHOLD` | API/worker       | env            | 3                                             | Mínimo 2                     |
-| `INE_OCR_ENABLED`                  | API/worker       | env            | `false`; prod true                            | Exige configuración Google   |
-| `INE_UPLOAD_MAX_BYTES`             | API              | env            | 10485760                                      | Máximo 10 MiB                |
-| `INE_UPLOAD_ALLOWED_MIME_TYPES`    | API              | env            | JPEG, PNG, PDF                                | Lista exacta validada        |
-| `GOOGLE_CLOUD_PROJECT_ID`          | API/worker       | env            | Si OCR activo                                 | Normalmente `PROJECT_ID`     |
-| `DOCUMENT_AI_LOCATION`             | API/worker       | GH var -> env  | Si OCR activo                                 | Debe coincidir con processor |
-| `DOCUMENT_AI_PROCESSOR_ID`         | API/worker       | SM             | Si OCR activo                                 | No GH variable               |
+| `GOOGLE_CLOUD_PROJECT_ID`          | API/worker       | env            | Si Document AI está activo                    | Normalmente `PROJECT_ID`     |
+| `DOCUMENT_AI_LOCATION`             | API/worker       | GH var -> env  | Si Document AI está activo                    | Debe coincidir con processor |
+| `DOCUMENT_AI_PROCESSOR_ID`         | API/worker       | SM             | Si Document AI está activo                    | No GH variable               |
 | `GOOGLE_DRIVE_FOLDER_ID`           | API/worker       | SM             | Si Drive activo                               | Runtime                      |
 | `GOOGLE_OAUTH_CLIENT_ID`           | API/worker       | SM             | Si Drive activo                               | Runtime                      |
 | `GOOGLE_OAUTH_CLIENT_SECRET`       | API/worker       | SM             | Si Drive activo                               | Runtime                      |
 | `GOOGLE_DRIVE_REFRESH_TOKEN`       | API/worker       | SM             | Si Drive activo                               | Runtime                      |
-| `INE_OCR_JOB_POLL_INTERVAL_MS`     | worker           | env            | 2000                                          | Mínimo 250                   |
-| `INE_OCR_JOB_BATCH_SIZE`           | worker           | env            | 5                                             | 1-50                         |
-| `INE_OCR_JOB_MAX_ATTEMPTS`         | worker           | env            | 3                                             | 1-10                         |
 
 ### Export XLSX
 
@@ -1535,10 +1563,10 @@ Kill switch y tunables. Solo `ENABLE_XLSX_EXPORT` se fija en Cloud Run; el resto
 | `MAILTRAP_API_TOKEN`                   | API/worker | SM             | Referenciada por workflow                               |
 | `MAILTRAP_API_URL`                     | API/worker | SM             | Referenciada por workflow                               |
 | `MAIL_FROM_ADDRESS`                    | API/worker | SM             | Referenciada por workflow                               |
-| `MAIL_FROM_NAME`                       | API/worker | env            | `Voz Ciudadana`                                         |
+| `MAIL_FROM_NAME`                       | API/worker | env            | `Nexo Comercial`                                        |
 | `MAIL_REPLY_TO_ADDRESS`                | API/worker | SM             | Referenciada por workflow                               |
 | `MAIL_SUPPORT_EMAIL`                   | API/worker | SM             | Referenciada por workflow                               |
-| `MAIL_PLATFORM_NAME`                   | API/worker | env            | `Voz Ciudadana`                                         |
+| `MAIL_PLATFORM_NAME`                   | API/worker | env            | `Nexo Comercial`                                        |
 | `MAIL_TIME_ZONE`                       | API/worker | env            | `America/Mexico_City`                                   |
 | `MAIL_SEND_TIMEOUT_MS`                 | API/worker | env            | 10000                                                   |
 | `ENABLE_EMAIL_TEST_ENDPOINTS`          | API        | env            | `false`                                                 |
@@ -1587,32 +1615,32 @@ Kill switch y tunables. Solo `ENABLE_XLSX_EXPORT` se fija en Cloud Run; el resto
 
 Estas variables provienen de `.env.example`, `docker-compose.prod.yml` y Caddy. No se inyectan en la arquitectura GCP gestionada.
 
-| Variable            | Scope                       | Req./default   | Nota                                         |
-| ------------------- | --------------------------- | -------------- | -------------------------------------------- |
-| `POSTGRES_USER`     | PostgreSQL Compose          | `voz`          | Sustituido por `DB_USER`/Cloud SQL en GCP    |
-| `POSTGRES_PASSWORD` | PostgreSQL Compose          | Obligatoria    | No reutilizar automáticamente en GCP         |
-| `POSTGRES_DB`       | PostgreSQL Compose          | `vozcuidadana` | QA sugiere `vozcuidadana_qa`                 |
-| `DATABASE_URL`      | API/worker/migrator Compose | Obligatoria    | Host interno `postgres`, no socket Cloud SQL |
-| `CADDY_DOMAIN`      | Caddy Compose               | Sin default    | Dominio TLS del VPS/on-premise               |
-| `QA_HTTP_PORT`      | Caddy QA                    | 8080           | Puerto host alternativo                      |
-| `QA_HTTPS_PORT`     | Caddy QA                    | 8443           | Puerto host alternativo                      |
+| Variable            | Scope                       | Req./default    | Nota                                         |
+| ------------------- | --------------------------- | --------------- | -------------------------------------------- |
+| `POSTGRES_USER`     | PostgreSQL Compose          | `voz`           | Sustituido por `DB_USER`/Cloud SQL en GCP    |
+| `POSTGRES_PASSWORD` | PostgreSQL Compose          | Obligatoria     | No reutilizar automáticamente en GCP         |
+| `POSTGRES_DB`       | PostgreSQL Compose          | `nexocomercial` | QA sugiere `nexocomercial_qa`                |
+| `DATABASE_URL`      | API/worker/migrator Compose | Obligatoria     | Host interno `postgres`, no socket Cloud SQL |
+| `CADDY_DOMAIN`      | Caddy Compose               | Sin default     | Dominio TLS del VPS/on-premise               |
+| `QA_HTTP_PORT`      | Caddy QA                    | 8080            | Puerto host alternativo                      |
+| `QA_HTTPS_PORT`     | Caddy QA                    | 8443            | Puerto host alternativo                      |
 
 [`backend/.env.example`](../backend/.env.example) no incluye `BASE_URL` aunque el schema la exige; el workflow sí la define. Trate al schema y al workflow como autoridad para GCP.
 
 ## 14. Scripts y drift
 
-| Fuente                             | Uso permitido                       | Limitaciones actuales                                                                                                         |
-| ---------------------------------- | ----------------------------------- | ----------------------------------------------------------------------------------------------------------------------------- |
-| `.github/workflows/deploy-gcp.yml` | Release regular canónico            | No automatiza seeds; requiere infraestructura preparada, tres variables Cloud Tasks y roles admin de queue/Scheduler en CI/CD. En GitHub Free privado también es el gate CI del release, porque no hay branch protection que exija checks de PR. |
-| `backend/Dockerfile`               | `runner` y `tools`                  | Correcto; `tools` incluye fuentes/tsconfig para seeds                                                                         |
-| `frontend/Dockerfile`              | Build `prod`                        | Solo cablea build args API/WS                                                                                                 |
-| `Makefile` targets `gcp-*`         | Diagnóstico o bootstrap supervisado | `gcp-migrate` / `gcp-seed` anclan command; alinee `gcp-deploy-*` con los flags de costo del workflow                          |
-| `generate-token-drive.ts`          | Generar refresh token localmente    | Usa callback 8000; su comentario superior que indica 3000 está desactualizado                                                 |
-| `docker-compose.prod.yml`          | VPS/on-prem alternativo             | No describe GCP; incluye PostgreSQL y Caddy locales                                                                           |
-| `deploy/Caddyfile`                 | Reverse proxy Compose               | No activo en GCP                                                                                                              |
-| `infra/**`                         | N/A                                 | No existe en el repositorio                                                                                                   |
+| Fuente                       | Uso permitido                       | Limitaciones actuales                                                                                                                                                                                                                            |
+| ---------------------------- | ----------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `docs/deploy/deploy-gcp.yml` | Release regular canónico            | No automatiza seeds; requiere infraestructura preparada, tres variables Cloud Tasks y roles admin de queue/Scheduler en CI/CD. En GitHub Free privado también es el gate CI del release, porque no hay branch protection que exija checks de PR. |
+| `backend/Dockerfile`         | `runner` y `tools`                  | Correcto; `tools` incluye fuentes/tsconfig para seeds                                                                                                                                                                                            |
+| `frontend/Dockerfile`        | Build `prod`                        | Solo cablea build args API/WS                                                                                                                                                                                                                    |
+| `Makefile` targets `gcp-*`   | Diagnóstico o bootstrap supervisado | `gcp-migrate` / `gcp-seed` anclan command; alinee `gcp-deploy-*` con los flags de costo del workflow                                                                                                                                             |
+| `generate-token-drive.ts`    | Generar refresh token localmente    | Usa callback 8000; su comentario superior que indica 3000 está desactualizado                                                                                                                                                                    |
+| `docker-compose.prod.yml`    | VPS/on-prem alternativo             | No describe GCP; incluye PostgreSQL y Caddy locales                                                                                                                                                                                              |
+| `deploy/Caddyfile`           | Reverse proxy Compose               | No activo en GCP                                                                                                                                                                                                                                 |
+| `infra/**`                   | N/A                                 | No existe en el repositorio                                                                                                                                                                                                                      |
 
-No ejecute `make gcp-deploy-all` para afirmar paridad productiva si los secrets o env del Makefile difieren del workflow. Los flags de costo de `gcp-deploy-*` deben coincidir con el workflow. El workflow publica `runner` como `voz-api` y el stage `worker` (mismo filesystem, CMD `dist/worker.js`) como `voz-worker`.
+No ejecute `make gcp-deploy-all` para afirmar paridad productiva si los secrets o env del Makefile difieren del workflow. Los flags de costo de `gcp-deploy-*` deben coincidir con el workflow. El workflow publica `runner` como `nexo-api` y el stage `worker` (mismo filesystem, CMD `dist/worker.js`) como `nexo-worker`.
 
 ### Despliegue manual de contingencia (sin minutos de GitHub Actions)
 
@@ -1645,9 +1673,9 @@ diagnóstico manual, revisión de IAM y drift que no forman parte del smoke auto
 gcloud run services list --region="$REGION" --project="$PROJECT_ID" \
   --format='table(name,status.url,status.latestReadyRevisionName)'
 
-export API_URL="$(gcloud run services describe voz-api --region="$REGION" --project="$PROJECT_ID" --format='value(status.url)')"
-export WORKER_URL="$(gcloud run services describe voz-worker --region="$REGION" --project="$PROJECT_ID" --format='value(status.url)')"
-export FRONTEND_URL="$(gcloud run services describe voz-frontend --region="$REGION" --project="$PROJECT_ID" --format='value(status.url)')"
+export API_URL="$(gcloud run services describe nexo-api --region="$REGION" --project="$PROJECT_ID" --format='value(status.url)')"
+export WORKER_URL="$(gcloud run services describe nexo-worker --region="$REGION" --project="$PROJECT_ID" --format='value(status.url)')"
+export FRONTEND_URL="$(gcloud run services describe nexo-frontend --region="$REGION" --project="$PROJECT_ID" --format='value(status.url)')"
 
 curl --fail --silent --show-error "${API_URL}/ready"
 curl --fail --silent --show-error "${FRONTEND_URL}/" >/dev/null
@@ -1674,7 +1702,7 @@ El smoke privado del worker requiere que la identidad operadora pueda invocar el
 ### IAM público/privado
 
 ```bash
-for service in voz-api voz-worker voz-frontend; do
+for service in nexo-api nexo-worker nexo-frontend; do
   gcloud run services get-iam-policy "$service" \
     --region="$REGION" --project="$PROJECT_ID" \
     --format='table(bindings.role,bindings.members)'
@@ -1686,15 +1714,15 @@ done
 ### Drift crítico
 
 ```bash
-gcloud run services describe voz-worker \
+gcloud run services describe nexo-worker \
   --region="$REGION" --project="$PROJECT_ID" \
   --format='yaml(status.latestReadyRevisionName,spec.template.metadata.annotations,spec.template.spec.containerConcurrency,spec.template.spec.timeoutSeconds,spec.template.spec.containers[0].image,spec.template.spec.containers[0].resources,spec.template.spec.containers[0].env)'
 
-gcloud run services describe voz-api \
+gcloud run services describe nexo-api \
   --region="$REGION" --project="$PROJECT_ID" \
   --format='yaml(spec.template.metadata.annotations,spec.template.spec.containers[0].env)'
 
-gcloud run services describe voz-frontend \
+gcloud run services describe nexo-frontend \
   --region="$REGION" --project="$PROJECT_ID" \
   --format='yaml(spec.template.metadata.annotations,spec.template.spec.containers[0].image,spec.template.spec.containers[0].env)'
 
@@ -1704,7 +1732,7 @@ gcloud run jobs list --region="$REGION" --project="$PROJECT_ID" \
 
 Confirme manualmente:
 
-- Worker request-driven: min 0, max 5, timeout 300 s, `cpu-throttling=true`, `BACKGROUND_EXECUTION_BACKEND=cloud_tasks`, imagen `voz-ciudadana/voz-worker` y pool 2.
+- Worker request-driven: min 0, max 5, timeout 300 s, `cpu-throttling=true`, `BACKGROUND_EXECUTION_BACKEND=cloud_tasks`, imagen `nexo-comercial/nexo-worker` y pool 2.
 - API: min 1, max 5, timeout 3600 s, `cpu-throttling=true`, `WORKERS_ENABLED=false`, `BACKGROUND_EXECUTION_BACKEND=cloud_tasks`, pool 5 y Cloud SQL (peor caso api+worker+relay = 39 conexiones; ver [CLOUD_SQL_CONNECTION.md](./CLOUD_SQL_CONNECTION.md) §3).
 - Cloud Tasks/Scheduler: queue `RUNNING`, Scheduler `ENABLED`, invoker OIDC correcto y reconciliación HTTP 200.
 - Frontend: bundle construido con URL API correcta.
@@ -1714,15 +1742,15 @@ Confirme manualmente:
 ### Logs
 
 ```bash
-gcloud run services logs read voz-api --region="$REGION" --project="$PROJECT_ID" --limit=200
-gcloud run services logs read voz-worker --region="$REGION" --project="$PROJECT_ID" --limit=200
+gcloud run services logs read nexo-api --region="$REGION" --project="$PROJECT_ID" --limit=200
+gcloud run services logs read nexo-worker --region="$REGION" --project="$PROJECT_ID" --limit=200
 
 gcloud logging read \
-  'resource.type="cloud_run_revision" AND resource.labels.service_name="voz-worker" AND (textPayload:"Transaction already closed" OR jsonPayload.message:"Transaction already closed")' \
+  'resource.type="cloud_run_revision" AND resource.labels.service_name="nexo-worker" AND (textPayload:"Transaction already closed" OR jsonPayload.message:"Transaction already closed")' \
   --project="$PROJECT_ID" --freshness=1h --limit=100
 
 gcloud logging read \
-  'resource.type="cloud_run_revision" AND resource.labels.service_name="voz-worker" AND textPayload:"error finding executable \"node\""' \
+  'resource.type="cloud_run_revision" AND resource.labels.service_name="nexo-worker" AND textPayload:"error finding executable \"node\""' \
   --project="$PROJECT_ID" --freshness=24h --limit=100
 ```
 
@@ -1737,9 +1765,9 @@ No empiece el rollback cambiando tráfico o escalado. Pause primero la queue y S
 Liste revisiones y enrute el 100 % a una revisión sana:
 
 ```bash
-gcloud run revisions list --service=voz-api --region="$REGION" --project="$PROJECT_ID"
+gcloud run revisions list --service=nexo-api --region="$REGION" --project="$PROJECT_ID"
 
-gcloud run services update-traffic voz-api \
+gcloud run services update-traffic nexo-api \
   --to-revisions="<known-good-revision>=100" \
   --region="$REGION" \
   --project="$PROJECT_ID"
@@ -1800,7 +1828,7 @@ Reglas:
 - No registrar valores secretos en tickets, logs, comandos de verificación o documentación.
 - Mantener API pública a nivel Cloud Run solo porque navegador y WhatsApp no presentan IAM; JWT/RBAC permanece obligatorio.
 - Mantener worker privado y min 0 con `--cpu-throttling` en `cloud_tasks`; usar min 1 y CPU no throttled solo en polling.
-- No restaurar `--min-instances=1` en `voz-api` ni omitir `--cpu-throttling` / `--timeout` en los deploys request-driven.
+- No restaurar `--min-instances=1` en `nexo-api` ni omitir `--cpu-throttling` / `--timeout` en los deploys request-driven.
 - Conservar tags inmutables `sha-*`; no usar `latest` para releases auditables.
 - Revisar cuotas de Cloud SQL, Cloud Run y Document AI antes de cargas masivas.
 - Habilitar alertas sobre errores 5xx, reinicios, latencia, conexiones SQL y ejecuciones fallidas de Jobs.
@@ -1818,7 +1846,7 @@ Reglas:
 - [ ] GitHub tiene exactamente tres secrets y siete variables activas del workflow.
 - [ ] Imágenes publicadas con el mismo SHA.
 - [ ] Migrator exitoso antes del deploy.
-- [ ] En bootstrap, seed core y luego dev con `--command=pnpm` sobre `voz-tools` del mismo SHA que `voz-migrator`; nunca `all`; `NODE_ENV=staging`.
+- [ ] En bootstrap, seed core y luego dev con `--command=pnpm` sobre `nexo-tools` del mismo SHA que `nexo-migrator`; nunca `all`; `NODE_ENV=staging`.
 - [ ] API pública y worker privado.
 - [ ] Worker `cloud_tasks` con 1 CPU/1 GiB, min 0/max 5, timeout 300 s, `--cpu-throttling` y pool 2; queue/Scheduler activos.
 - [ ] API min 1/max 5, timeout 3600 s, `--cpu-throttling` y pool 5; PgBouncer ausente salvo habilitación real aprobada.

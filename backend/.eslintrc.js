@@ -1,5 +1,5 @@
 /**
- * Configuración de ESLint para el backend de Voz Ciudadana.
+ * Configuración de ESLint para el backend de Nexo Comercial.
  * Usa @typescript-eslint con reglas estrictas adaptadas al proyecto.
  *
  * Supuesto: Se usa ESLint v8 con la API legacy de configuración (.eslintrc.js).

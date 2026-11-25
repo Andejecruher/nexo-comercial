@@ -1,10 +1,10 @@
 'use client';
 
-import { useRealtimeUserEvent } from '@/hooks/useRealtimeUserEvent';
+import { useRealtimeUserEvent } from '@/hooks/shared/useRealtimeUserEvent';
 import {
   RealtimeUserEvent,
   type RealtimeUserEventPayload,
-} from '@/lib/realtime/realtime-user-events';
+} from '@/lib/shared/realtime/realtime-user-events';
 import { useState } from 'react';
 
 /**

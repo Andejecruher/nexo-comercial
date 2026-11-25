@@ -5,13 +5,18 @@
 
 set -Eeuo pipefail
 
+if [ "${GCP_DEPLOY_ENABLED:-0}" != "1" ]; then
+  echo "GCP deploy is disabled for nexo-comercial. See docs/DEPLOYMENT_GCP.md" >&2
+  exit 1
+fi
+
 readonly REGION="${GCP_REGION:-us-central1}"
-readonly AR_REPO="${AR_REPO:-voz-ciudadana}"
-readonly API_SERVICE="voz-api"
-readonly WORKER_SERVICE="voz-worker"
-readonly RELAY_SERVICE="voz-realtime-relay"
-readonly FRONTEND_SERVICE="voz-frontend"
-readonly MIGRATOR_JOB="voz-migrator"
+readonly AR_REPO="${AR_REPO:-nexo-comercial}"
+readonly API_SERVICE="nexo-api"
+readonly WORKER_SERVICE="nexo-worker"
+readonly RELAY_SERVICE="nexo-realtime-relay"
+readonly FRONTEND_SERVICE="nexo-frontend"
+readonly MIGRATOR_JOB="nexo-migrator"
 readonly SCHEDULER_JOB="background-tasks-reconcile"
 
 usage() {
@@ -109,13 +114,13 @@ print(next((item["value"] for item in container.get("env", []) if item["name"] =
 }
 
 api_base_url="${GCP_API_BASE_URL:-$(run_env_value "$API_SERVICE" BASE_URL)}"
-[[ -n "$api_base_url" ]] || die 'Set GCP_API_BASE_URL or configure BASE_URL on voz-api before building the frontend.'
+[[ -n "$api_base_url" ]] || die 'Set GCP_API_BASE_URL or configure BASE_URL on nexo-api before building the frontend.'
 
 image_root="${REGION}-docker.pkg.dev/${project_id}/${AR_REPO}"
-api_image="${image_root}/voz-api:sha-${git_sha}"
-worker_image="${image_root}/voz-worker:sha-${git_sha}"
-tools_image="${image_root}/voz-tools:sha-${git_sha}"
-frontend_image="${image_root}/voz-frontend:sha-${git_sha}"
+api_image="${image_root}/nexo-api:sha-${git_sha}"
+worker_image="${image_root}/nexo-worker:sha-${git_sha}"
+tools_image="${image_root}/nexo-tools:sha-${git_sha}"
+frontend_image="${image_root}/nexo-frontend:sha-${git_sha}"
 
 printf 'Releasing revision %s to project %s as %s\n' "$git_sha" "$project_id" "$active_account"
 printf 'Running local validation...\n'
@@ -161,7 +166,7 @@ worker_url="$(service_url "$WORKER_SERVICE")"
 require_ready "$WORKER_SERVICE" "$worker_url"
 
 queue_base="$(run_env_value "$API_SERVICE" TASKS_QUEUE_NAME)"
-[[ -n "$queue_base" ]] || die 'TASKS_QUEUE_NAME is not configured on voz-api.'
+[[ -n "$queue_base" ]] || die 'TASKS_QUEUE_NAME is not configured on nexo-api.'
 for queue in "$queue_base" "$queue_base-ai" "$queue_base-delivery" "$queue_base-documents"; do
   state="$(gcloud tasks queues describe "$queue" --location="$REGION" --project="$project_id" --format='value(state)')"
   if [[ "$state" != 'RUNNING' ]]; then

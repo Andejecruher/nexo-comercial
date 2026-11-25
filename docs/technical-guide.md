@@ -17,7 +17,7 @@ Esta guia describe arquitectura, convenciones y flujos tecnicos del monorepo.
 ## Dependencias y lockfile
 
 - Gestion unica con **pnpm** en la raiz; el lockfile canonico es `pnpm-lock.yaml`.
-- Para altas/bajas de paquetes del backend: `pnpm --filter voz-ciudadana-api add|remove <pkg>` y commit de `pnpm-lock.yaml`.
+- Para altas/bajas de paquetes del backend: `pnpm --filter nexo-comercial-api add|remove <pkg>` y commit de `pnpm-lock.yaml`.
 - Instalacion reproducible: `pnpm install --frozen-lockfile`.
 - Docker backend: ver [dependency-policy.md](dependency-policy.md) y [infrastructure-containers.md](infrastructure-containers.md).
 
@@ -138,4 +138,4 @@ Operacion en Railway/Vercel:
 - backend/docs/database-schema.md
 - backend/docs/whatsapp-messaging-flow.md
 - docs/backend-modules-map.md
-- postman/voz-ciudadana.postman_collection.json
+- postman/nexo-comercial.postman_collection.json

@@ -23,8 +23,9 @@ const mockDrive = jest.fn(() => ({
   permissions: { create: mockPermissionsCreate },
 }));
 
-jest.mock('googleapis', () => ({
-  google: { auth: { OAuth2: mockOAuth2 }, drive: mockDrive },
+jest.mock('@googleapis/drive', () => ({
+  auth: { OAuth2: mockOAuth2 },
+  drive: mockDrive,
 }));
 
 import { GoogleDriveFileStorageProvider } from '../../services/ine/google-drive-file-storage.provider';

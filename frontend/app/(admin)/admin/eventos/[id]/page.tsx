@@ -1,5 +1,5 @@
-import { EventDetailView } from '@/components/admin/event-detail-view';
-import { PermissionGate } from '@/components/auth/PermissionGate';
+import { EventDetailView } from '@/components/eventos/event-detail-view';
+import { PermissionGate } from '@/components/shared/PermissionGate';
 
 interface PageProps {
   params: Promise<{ id: string }>;

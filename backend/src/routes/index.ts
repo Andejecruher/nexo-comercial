@@ -16,7 +16,6 @@ import { AnalyticsController } from '../controllers/analytics.controller';
 import { ConversationsController } from '../controllers/conversations.controller';
 import { HandoverController } from '../controllers/handover.controller';
 import { MessagesController } from '../controllers/messages.controller';
-import { PrecampanaAnalyticsController } from '../controllers/precampana-analytics.controller';
 import { TicketsController } from '../controllers/tickets.controller';
 import { WebhookController } from '../controllers/webhook.controller';
 import {
@@ -32,22 +31,16 @@ import {
   TagRepository,
   UserRepository,
 } from '../repositories';
-import { CoordinatorRepository } from '../repositories/coordinator.repository';
-import { StructureRepository } from '../repositories/structure.repository';
 import { AuthorizationRepository } from '../repositories/authorization.repository';
 import { ConversationRepository } from '../repositories/conversation.repository';
 import { MessageRepository } from '../repositories/message.repository';
-import { PrecampanaAnalyticsRepository } from '../repositories/precampana-analytics.repository';
 import { TicketRepository } from '../repositories/ticket.repository';
 import { AnalyticsService } from '../services/analytics/analytics.service';
-import { PrecampanaAnalyticsService } from '../services/analytics/precampana-analytics.service';
 import { AttendanceService } from '../services/attendance.service';
 import { AuditService } from '../services/audit.service';
 import { AuthService } from '../services/auth.service';
 import { AuthorizationService } from '../services/authorization.service';
 import { CitizensService } from '../services/citizens.service';
-import { CoordinatorService } from '../services/coordinator.service';
-import { StructureService } from '../services/structure.service';
 import { ConversationsService } from '../services/conversations.service';
 import { DepartmentsService } from '../services/departments.service';
 import { EmailDiagnosticsService } from '../services/email-diagnostics.service';
@@ -57,7 +50,6 @@ import { MailtrapEmailProvider } from '../services/email/mailtrap-email.provider
 import { EventService } from '../services/event.service';
 import { InboxProcessorService } from '../services/events/inbox-processor.service';
 import { OutboxProcessorService } from '../services/events/outbox-processor.service';
-import { IneOcrService } from '../services/ine/ine-ocr.service';
 import { LockoutService } from '../services/lockout.service';
 import { MessageService } from '../services/message.service';
 import { NeighborhoodsService } from '../services/neighborhoods.service';
@@ -89,20 +81,16 @@ import { createAnalyticsRouter } from './analytics.routes';
 import { createAuthRouter } from './auth.routes';
 import { createCitizensRouter } from './citizens.routes';
 import { createConversationsRouter } from './conversations.routes';
-import { createCoordinatorRouter } from './coordinator.routes';
-import { createStructureRouter } from './structure.routes';
 import { createDepartmentsRouter } from './departments.routes';
 import { createEmailDiagnosticsRouter } from './email-diagnostics.routes';
 import { createEventsRouter } from './events.routes';
 import { createExportsRouter } from './exports.routes';
 import { createHandoverRouter } from './handover.routes';
-import { createIneOcrRouter } from './ine-ocr.routes';
 import { createMultimodalTestRouter } from './multimodal-test.routes';
 import { createMultimodalTestOrchestrator } from '../services/multimodal-test/multimodal-test.factory';
 import { createMessagesRouter } from './messages.routes';
 import { createNeighborhoodsRouter } from './neighborhoods.routes';
 import { createNotificationsRouter } from './notifications.routes';
-import { createPrecampanaAnalyticsRouter } from './precampana-analytics.routes';
 import { createPublicRouter } from './public.routes';
 import { createRealtimeTelemetryRouter } from './realtime-telemetry.routes';
 import { createRolesPermissionsRouter } from './roles-permissions.routes';
@@ -133,8 +121,6 @@ export function registerRoutes(
   const auditRepository = new AuditRepository(deps.prisma);
   const auditService = new AuditService(auditRepository);
   const userRepository = new UserRepository(deps.prisma);
-  const coordinatorRepository = new CoordinatorRepository(deps.prisma);
-  const structureRepository = new StructureRepository(deps.prisma);
   const attendanceRepository = new AttendanceRepository(deps.prisma);
   const analyticsRepository = new AnalyticsRepository(deps.prisma);
   const citizenRepository = new CitizenRepository(deps.prisma);
@@ -153,14 +139,6 @@ export function registerRoutes(
   const emailService = new EmailService(emailProvider);
   const emailDiagnosticsService = new EmailDiagnosticsService(emailService, rateLimiter);
   const userService = new UserService(userRepository, emailService);
-  const coordinatorService = new CoordinatorService(
-    deps.prisma,
-    coordinatorRepository,
-    userRepository,
-    authorizationService,
-    emailService,
-  );
-  const structureService = new StructureService(structureRepository);
   const passwordResetService = new PasswordResetService(userRepository, emailService);
   const authService = new AuthService(
     userRepository,
@@ -175,12 +153,6 @@ export function registerRoutes(
   const tagsService = new TagsService(tagRepository);
   const systemService = new SystemService(systemRepository, taskDispatcher);
   const citizensService = new CitizensService(citizenRepository);
-  const ineOcrService = IneOcrService.createDefault(
-    deps.prisma,
-    taskDispatcher,
-    userRepository,
-    emailService,
-  );
   const newsletterService = new NewsletterService(newsletterRepository, emailService);
   const departmentsService = new DepartmentsService(departmentRepository);
   const attendanceService = new AttendanceService(attendanceRepository);
@@ -315,11 +287,6 @@ export function registerRoutes(
   apiRouter.use('/admin', createUsersRouter(userService, auditService, deps.prisma));
   apiRouter.use('/admin', createNotificationsRouter(deps.prisma));
   apiRouter.use(
-    '/coordinators',
-    createCoordinatorRouter(coordinatorService, auditService, deps.prisma),
-  );
-  apiRouter.use('/structures', createStructureRouter(structureService, auditService, deps.prisma));
-  apiRouter.use(
     '/admin',
     createRolesPermissionsRouter(deps.prisma, rolesPermissionsService, auditService),
   );
@@ -333,10 +300,6 @@ export function registerRoutes(
   apiRouter.use(
     '/citizens',
     createCitizensRouter(citizensService, auditService, deps.prisma, ticketService),
-  );
-  apiRouter.use(
-    '/ine-ocr',
-    createIneOcrRouter(ineOcrService, deps.prisma, auditService, scopeService),
   );
   const multimodalTestOrchestrator = createMultimodalTestOrchestrator();
   apiRouter.use('/internal', createMultimodalTestRouter(multimodalTestOrchestrator));
@@ -364,17 +327,6 @@ export function registerRoutes(
   const analyticsService = new AnalyticsService(analyticsRepository);
   const analyticsController = new AnalyticsController(analyticsService);
   apiRouter.use('/analytics', createAnalyticsRouter(analyticsController, deps.prisma));
-
-  // ── Analytics de Precampaña (Promovidos) ─────────────────────────────────────
-  const precampanaAnalyticsRepository = new PrecampanaAnalyticsRepository(deps.prisma);
-  const precampanaAnalyticsService = new PrecampanaAnalyticsService(precampanaAnalyticsRepository);
-  const precampanaAnalyticsController = new PrecampanaAnalyticsController(
-    precampanaAnalyticsService,
-  );
-  apiRouter.use(
-    '/analytics',
-    createPrecampanaAnalyticsRouter(precampanaAnalyticsController, deps.prisma),
-  );
 
   app.get('/health', (_req: Request, res: Response) => {
     res.json({ status: 'ok', ts: new Date().toISOString() });
@@ -406,7 +358,7 @@ export function registerRoutes(
   });
 
   app.get('/', (_req: Request, res: Response) => {
-    res.json({ message: 'Bienvenido a la API de Voz Ciudadana', version: env.APP_VERSION });
+    res.json({ message: 'Bienvenido a la API de Nexo Comercial', version: env.APP_VERSION });
   });
 
   app.use('/api/v1', apiRouter);

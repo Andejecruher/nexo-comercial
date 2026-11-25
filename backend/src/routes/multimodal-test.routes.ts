@@ -8,8 +8,8 @@
  *   POST /api/v1/internal/test/video/process
  *   POST /api/v1/internal/multimodal/test   (unified, auto-detect)
  *
- * Guards mirror the INE OCR workflow criterion (JWT + SUPER_ADMIN|COORDINADOR
- * role guard) and the layer can be disabled with MULTIMODAL_TEST_ENABLED=false.
+ * Guards require JWT plus the internal test roles, and the layer can be disabled
+ * with MULTIMODAL_TEST_ENABLED=false.
  */
 import express, { Router } from 'express';
 import { env } from '../config/env.config';
@@ -18,7 +18,6 @@ import { authMiddleware } from '../middlewares/auth.middleware';
 import { requireRole } from '../middlewares/rbac';
 import type { MultimodalTestOrchestrator } from '../services/multimodal-test/multimodal-test.orchestrator';
 
-// Same role criterion as the INE OCR workflow (system.routes precedent).
 const TEST_ROLES = ['SUPER_ADMIN', 'COORDINADOR'] as const;
 
 export function createMultimodalTestRouter(orchestrator: MultimodalTestOrchestrator): Router {

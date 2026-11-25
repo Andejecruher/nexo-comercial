@@ -5,7 +5,7 @@ jest.mock('../../../config/env.config', () => ({
     MAILTRAP_API_TOKEN: 'test-token',
     MAILTRAP_API_URL: 'https://send.api.mailtrap.test/api/send',
     MAIL_FROM_ADDRESS: 'no-reply@example.test',
-    MAIL_FROM_NAME: 'Voz Ciudadana',
+    MAIL_FROM_NAME: 'Nexo Comercial',
     MAIL_REPLY_TO_ADDRESS: 'soporte@example.test',
     MAIL_SEND_TIMEOUT_MS: 1000,
   },

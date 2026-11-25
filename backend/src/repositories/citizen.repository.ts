@@ -39,22 +39,6 @@ const tagSelect = {
   createdAt: true,
 } as const;
 
-/**
- * Solo columnas en claro del promovido. Se excluyen `dataEncrypted` y los
- * fingerprints: el perfil del ciudadano no descifra ni expone PII electoral.
- */
-const promovidoSelect = {
-  id: true,
-  isActive: true,
-  leaderNameSnapshot: true,
-  sectionCodeSnapshot: true,
-  districtCodeSnapshot: true,
-  stateNameSnapshot: true,
-  uploadRecordId: true,
-  createdAt: true,
-  updatedAt: true,
-} as const;
-
 export type CitizenRecord = Prisma.CitizenGetPayload<{ select: typeof citizenSelect }>;
 
 export type CitizenTagWithTag = Prisma.CitizenTagGetPayload<{
@@ -70,7 +54,6 @@ export type CitizenProfileRecord = Prisma.CitizenGetPayload<{
         tag: { select: typeof tagSelect };
       };
     };
-    promovido: { select: typeof promovidoSelect };
   };
 }>;
 
@@ -296,7 +279,6 @@ export class CitizenRepository {
             },
           },
         },
-        promovido: { select: promovidoSelect },
       },
     });
   }

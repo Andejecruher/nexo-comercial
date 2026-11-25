@@ -1,4 +1,4 @@
-# Voz Ciudadana — Arquitectura simplificada FSM V2
+# Nexo Comercial — Arquitectura simplificada FSM V2
 
 ## Componentes clave
 

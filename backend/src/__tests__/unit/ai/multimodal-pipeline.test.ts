@@ -87,7 +87,7 @@ function setup() {
     lineId: 'line-1',
     agent: {
       id: 'agent-1',
-      name: 'Voz Ciudadana',
+      name: 'Nexo Comercial',
       provider: 'openai',
       model: NVIDIA_MODELS.chat,
       stream: false,

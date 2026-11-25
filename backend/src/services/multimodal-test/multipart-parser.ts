@@ -1,11 +1,9 @@
 /**
  * multipart-parser.ts — Minimal multipart/form-data file extraction.
  *
- * Mirrors the manual boundary parsing approach used by the INE OCR controller
- * (backend/src/controllers/ine-ocr.controller.ts, `multipartAssets`), which is
- * the repo's established pattern for raw multipart bodies (no multer dependency).
- * This parser is stricter about binary safety: contents are handled as latin1
- * buffers end-to-end so arbitrary bytes survive the round-trip.
+ * Uses manual boundary parsing for raw multipart bodies without a multer
+ * dependency. Contents are handled as latin1 buffers end-to-end so arbitrary
+ * bytes survive the round-trip.
  */
 import { AppError } from '../../utils/app-error';
 

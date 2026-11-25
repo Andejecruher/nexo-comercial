@@ -12,13 +12,13 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
-import { useDepartments } from '@/hooks/useDepartments';
+import { useDepartments } from '@/hooks/shared/useDepartments';
 import type {
   AiAgent,
   CommunicationLine,
   CreateLinePayload,
   UpdateLinePayload,
-} from '@/lib/ai-api';
+} from '@/lib/shared/ai-api';
 import { Phone, Wifi, WifiOff } from 'lucide-react';
 import { useEffect, useState } from 'react';
 

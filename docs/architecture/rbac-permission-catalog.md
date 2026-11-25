@@ -1,4 +1,4 @@
-# RBAC Permission Catalog — Voz Ciudadana
+# RBAC Permission Catalog — Nexo Comercial
 
 > **Source of truth:** `backend/prisma/seed/core/permissions.seed.ts`
 > **Role matrix:** `backend/prisma/seed/core/role-permissions.seed.ts`
@@ -13,10 +13,10 @@
 | Metric | Value |
 |--------|-------|
 | Permission groups | 3 |
-| Modules | 20 |
-| Permissions | 76 |
+| Modules | 18 |
+| Permissions | 70 |
 | Roles | 5 |
-| Role-permission assignments | 169 |
+| Role-permission assignments | 141 |
 
 **Slug convention:** `{module}.{action}` (e.g. `tickets.view`, `users.create`).
 
@@ -27,7 +27,7 @@
 | Group | Label | Modules |
 |-------|-------|---------|
 | `whatsapp` | Gestion de WhatsApp | 7 |
-| `campana` | Gestion de Campana | 3 |
+| `campana` | Gestion de Campana | 1 |
 | `configuracion` | Configuracion de Plataforma | 10 |
 
 ---
@@ -71,25 +71,12 @@
 
 | Module | Slug | Name | Description |
 |--------|------|------|-------------|
-| `indicadores_precampana` | `indicadores_precampana.view` | Ver indicadores de precampana | Listar y consultar registros del modulo indicadores de precampana. |
-| `indicadores_precampana` | `indicadores_precampana.export` | Exportar indicadores de precampana | Exportar registros del modulo indicadores de precampana. |
-| `indicadores_precampana` | `indicadores_precampana.create` | Crear indicadores de precampana | Crear registros del modulo indicadores de precampana. |
-| `indicadores_precampana` | `indicadores_precampana.update` | Actualizar indicadores de precampana | Editar registros del modulo indicadores de precampana. |
-| `promovidos` | `promovidos.view` | Ver promovidos | Listar y consultar registros del modulo promovidos. |
-| `promovidos` | `promovidos.create` | Crear promovidos | Crear registros del modulo promovidos. |
-| `promovidos` | `promovidos.update` | Actualizar promovidos | Editar registros del modulo promovidos. |
-| `promovidos` | `promovidos.delete` | Eliminar promovidos | Eliminar o desactivar registros del modulo promovidos. |
 | `eventos` | `eventos.view` | Ver eventos | Listar y consultar registros del modulo eventos. |
 | `eventos` | `eventos.create` | Crear eventos | Crear registros del modulo eventos. |
 | `eventos` | `eventos.update` | Actualizar eventos | Editar registros del modulo eventos. |
 | `eventos` | `eventos.delete` | Eliminar eventos | Eliminar o desactivar registros del modulo eventos. |
 
-**Subtotal: 12 permissions across 3 modules.**
-
-> **Note on `indicadores_precampana`:** The `create` and `update` actions
-> are scoped to goal management (create/update/deactivate goals in the
- precampana analytics dashboard). They are assigned only to `SUPER_ADMIN`
-> and `COORDINADOR`. `CAPTURISTA` and `LIDER` receive only `view` + `export`.
+**Subtotal: 4 permissions across 1 module.**
 
 ### 1.3 Configuracion de Plataforma (`configuracion`)
 
@@ -113,10 +100,6 @@
 | `etiquetas` | `etiquetas.create` | Crear etiquetas | Crear registros del modulo etiquetas. |
 | `etiquetas` | `etiquetas.update` | Actualizar etiquetas | Editar registros del modulo etiquetas. |
 | `etiquetas` | `etiquetas.delete` | Eliminar etiquetas | Eliminar o desactivar registros del modulo etiquetas. |
-| `catalogo_electoral` | `catalogo_electoral.view` | Ver catalogo electoral | Listar y consultar registros del modulo catalogo electoral. |
-| `catalogo_electoral` | `catalogo_electoral.create` | Crear catalogo electoral | Crear registros del modulo catalogo electoral. |
-| `catalogo_electoral` | `catalogo_electoral.update` | Actualizar catalogo electoral | Editar registros del modulo catalogo electoral. |
-| `catalogo_electoral` | `catalogo_electoral.delete` | Eliminar catalogo electoral | Eliminar o desactivar registros del modulo catalogo electoral. |
 | `ai` | `ai.view` | Ver canales e IA | Listar y consultar registros del modulo canales e IA. |
 | `ai` | `ai.create` | Crear canales e IA | Crear registros del modulo canales e IA. |
 | `ai` | `ai.update` | Actualizar canales e IA | Editar registros del modulo canales e IA. |
@@ -134,7 +117,7 @@
 | `permissions` | `permissions.manage` | Administrar permisos | Administrar asignaciones de permisos a roles. |
 | `permissions` | `permissions.deactivate` | Activar o desactivar permisos | Activar o desactivar permisos. |
 
-**Subtotal: 38 permissions across 10 modules.**
+**Subtotal: 40 permissions across 10 modules.**
 
 ---
 
@@ -144,11 +127,11 @@
 
 | Role name | Slug | Description | Permission count |
 |-----------|------|-------------|-----------------|
-| `SUPER_ADMIN` | `super-admin` | Acceso total al sistema. Gestion de usuarios, roles y configuracion. | 76 |
-| `COORDINADOR` | `coordinador` | Coordina operadores y gestiona WhatsApp, campana y configuracion operativa del territorio. | 55 |
-| `CAPTURISTA` | `capturista` | Captura y gestiona datos de precampana: promovidos y eventos. | 10 |
+| `SUPER_ADMIN` | `super-admin` | Acceso total al sistema. Gestion de usuarios, roles y configuracion. | 70 |
+| `COORDINADOR` | `coordinador` | Coordina operadores y gestiona WhatsApp, eventos y configuracion operativa. | 40 |
+| `CAPTURISTA` | `capturista` | Captura y gestiona jornadas y eventos. | 4 |
 | `OPERADOR_CHAT` | `operador-chat` | Atiende conversaciones de ciudadanos y gestiona WhatsApp. | 26 |
-| `LIDER` | `lider` | Consulta los indicadores de precampana de su zona. | 2 |
+| `LIDER` | `lider` | Consulta jornadas y eventos. | 1 |
 
 ### 2.2 Matrix (permission per role)
 
@@ -182,15 +165,7 @@ Legend: **Y** = assigned, **-** = not assigned.
 | `plantillas.create` | Y | Y | - | Y | - |
 | `plantillas.update` | Y | Y | - | Y | - |
 | `plantillas.delete` | Y | Y | - | Y | - |
-| `indicadores_precampana.view` | Y | Y | Y | - | Y |
-| `indicadores_precampana.export` | Y | Y | Y | - | Y |
-| `indicadores_precampana.create` | Y | Y | - | - | - |
-| `indicadores_precampana.update` | Y | Y | - | - | - |
-| `promovidos.view` | Y | Y | Y | - | - |
-| `promovidos.create` | Y | Y | Y | - | - |
-| `promovidos.update` | Y | Y | Y | - | - |
-| `promovidos.delete` | Y | Y | Y | - | - |
-| `eventos.view` | Y | Y | Y | - | - |
+| `eventos.view` | Y | Y | Y | - | Y |
 | `eventos.create` | Y | Y | Y | - | - |
 | `eventos.update` | Y | Y | Y | - | - |
 | `eventos.delete` | Y | Y | Y | - | - |
@@ -212,10 +187,6 @@ Legend: **Y** = assigned, **-** = not assigned.
 | `etiquetas.create` | Y | Y | - | - | - |
 | `etiquetas.update` | Y | Y | - | - | - |
 | `etiquetas.delete` | Y | Y | - | - | - |
-| `catalogo_electoral.view` | Y | Y | - | - | - |
-| `catalogo_electoral.create` | Y | Y | - | - | - |
-| `catalogo_electoral.update` | Y | Y | - | - | - |
-| `catalogo_electoral.delete` | Y | Y | - | - | - |
 | `ai.view` | Y | - | - | - | - |
 | `ai.create` | Y | - | - | - | - |
 | `ai.update` | Y | - | - | - | - |
@@ -236,15 +207,11 @@ The matrix is built programmatically in `role-permissions.seed.ts`:
 
 | Role | Logic |
 |------|-------|
-| `SUPER_ADMIN` | All 73 permissions (`PERMISSIONS.map(p => p.slug)`) |
-| `COORDINADOR` | All `whatsapp` group + all `campana` group + `departamentos.*` + `barrios.*` + `etiquetas.*` + `catalogo_electoral.*` + `analytics.view` |
-| `CAPTURISTA` | `indicadores_precampana.{view,export}` (read-only) + all `promovidos.*` + all `eventos.*` |
+| `SUPER_ADMIN` | All 70 permissions (`PERMISSIONS.map(p => p.slug)`) |
+| `COORDINADOR` | All `whatsapp` group + `eventos.view` + `departamentos.*` + `barrios.*` + `etiquetas.*` + `analytics.view` |
+| `CAPTURISTA` | All `eventos.*` |
 | `OPERADOR_CHAT` | All `whatsapp` group |
-| `LIDER` | `indicadores_precampana.{view,export}` (read-only) |
-
-> `CAPTURISTA` and `LIDER` use `slugsForModuleActions('indicadores_precampana', ['view', 'export'])`
-> to exclude `create`/`update` (goal management), which are reserved for
-> `SUPER_ADMIN` and `COORDINADOR`.
+| `LIDER` | `eventos.view` |
 
 ---
 
@@ -313,33 +280,7 @@ The backend uses two guard mechanisms:
 | | `GET /tickets` | `requirePermissions` (all) | `analytics.view` |
 | | `GET /agents` | `requirePermissions` (all) | `analytics.view` |
 | | `GET /departments` | `requirePermissions` (all) | `analytics.view` |
-| `precampana-analytics.routes.ts` | `GET /precampana/dashboard` | `requirePermissions` (all) | `indicadores_precampana.view` |
-| | `GET /precampana/goals` | `requirePermissions` (all) | `indicadores_precampana.view` |
-| | `POST /precampana/goals` | `requirePermissions` (all) | `indicadores_precampana.create` |
-| | `PATCH /precampana/goals/:id` | `requirePermissions` (all) | `indicadores_precampana.update` |
-| | `PATCH /precampana/goals/:id/deactivate` | `requirePermissions` (all) | `indicadores_precampana.update` |
 | `admin-ai.routes.ts` | `router.use` (all routes) | `requirePermissions` (all) | `ai.view` AND `ai.create` |
-| `ine-ocr.routes.ts` | `GET /promovidos` | `requirePermissions` (all) | `promovidos.view` |
-| | `GET /promovidos/check-voter-key` | `requirePermissions` (all) | `promovidos.view` |
-| | `POST /promovidos` | `requirePermissions` (all) | `promovidos.create` |
-| | `GET /promovidos/:id` | `requirePermissions` (all) | `promovidos.view` |
-| | `PATCH /promovidos/:id` | `requirePermissions` (all) | `promovidos.update` |
-| | `GET /catalog/states` | `requirePermissions` (all) | `catalogo_electoral.view` |
-| | `GET /catalog/districts` | `requirePermissions` (all) | `catalogo_electoral.view` |
-| | `GET /catalog/sections` | `requirePermissions` (all) | `catalogo_electoral.view` |
-| | `GET /catalog/leaders` | `requirePermissions` (all) | `catalogo_electoral.view` |
-| | `POST /catalog/states` | `requirePermissions` (all) | `catalogo_electoral.create` |
-| | `PATCH /catalog/states/:id` | `requirePermissions` (all) | `catalogo_electoral.update` |
-| | `DELETE /catalog/states/:id` | `requirePermissions` (all) | `catalogo_electoral.delete` |
-| | `POST /catalog/districts` | `requirePermissions` (all) | `catalogo_electoral.create` |
-| | `PATCH /catalog/districts/:id` | `requirePermissions` (all) | `catalogo_electoral.update` |
-| | `DELETE /catalog/districts/:id` | `requirePermissions` (all) | `catalogo_electoral.delete` |
-| | `POST /catalog/sections` | `requirePermissions` (all) | `catalogo_electoral.create` |
-| | `PATCH /catalog/sections/:id` | `requirePermissions` (all) | `catalogo_electoral.update` |
-| | `DELETE /catalog/sections/:id` | `requirePermissions` (all) | `catalogo_electoral.delete` |
-| | `POST /catalog/leaders` | `requirePermissions` (all) | `catalogo_electoral.create` |
-| | `PATCH /catalog/leaders/:id` | `requirePermissions` (all) | `catalogo_electoral.update` |
-| | `DELETE /catalog/leaders/:id` | `requirePermissions` (all) | `catalogo_electoral.delete` |
 | `roles-permissions.routes.ts` | `GET /permissions` | `requirePermissions` | `permissions.view` |
 | | `GET /permissions/assignable` | `requirePermissions` | `permissions.view` |
 | | `GET /permissions/:id` | `requirePermissions` | `permissions.view` |
@@ -378,14 +319,6 @@ seed catalog. The decision to keep them role-based was approved per route.
 | | `GET /outbox-events` | `requireRole` | `SUPER_ADMIN` |
 | | `POST /outbox-events/:id/retry` | `requireRole` | `SUPER_ADMIN` |
 | | `POST /inbox-events/:id/reprocess` | `requireRole` | `SUPER_ADMIN` |
-| `ine-ocr.routes.ts` | `POST /uploads` | `requireRole` | `SUPER_ADMIN` OR `COORDINADOR` |
-| | `GET /uploads/:id` | `requireRole` | `SUPER_ADMIN` OR `COORDINADOR` |
-| | `PATCH /uploads/:id/review` | `requireRole` | `SUPER_ADMIN` OR `COORDINADOR` |
-| | `POST /uploads/:id/confirm` | `requireRole` | `SUPER_ADMIN` OR `COORDINADOR` |
-| | `POST /uploads/:id/retry` | `requireRole` | `SUPER_ADMIN` OR `COORDINADOR` |
-| | `POST /uploads/:id/section-candidates` | `requireRole` | `SUPER_ADMIN` OR `COORDINADOR` |
-| | `POST /neighborhood-match` | `requireRole` | `SUPER_ADMIN` OR `COORDINADOR` |
-| | `GET /uploads/:id/candidates` | `requireRole` | `SUPER_ADMIN` OR `COORDINADOR` |
 
 ### 3.3 Legacy permission slugs (in route code, NOT in seed catalog)
 
@@ -456,8 +389,6 @@ Each sidebar item gates visibility via `requiredPermissions`. The
 | Mensajes Masivos | `/admin/mensajes-masivos` | `mensajes_masivos.view` |
 | Plantillas | `/admin/plantillas` | `plantillas.view` |
 | **Gestion de Campana** | | *(group — no own permission)* |
-| Indicadores de precampana | `/admin/indicadores/precampana` | `indicadores_precampana.view` |
-| Promovidos y simpatizantes | `/admin/promovidos` | `promovidos.view` |
 | Jornadas y Eventos | `/admin/eventos` | `eventos.view` |
 | **Configuracion de Plataforma** | | *(group — no own permission)* |
 | Configuracion | `/admin/configuracion` | `configuracion.view` |
@@ -465,7 +396,6 @@ Each sidebar item gates visibility via `requiredPermissions`. The
 | Departamentos | `/admin/departamentos` | `departamentos.view` |
 | Territorio | `/admin/barrios` | `barrios.view` |
 | Etiquetas | `/admin/etiquetas` | `etiquetas.view` |
-| Catalogo electoral | `/admin/catalogo-electoral` | `catalogo_electoral.view` |
 | Canales e IA | `/admin/ai` | `ai.view` |
 | Roles | `/admin/accesos/roles` | `roles.view` AND `permissions.view` |
 | Permisos | `/admin/accesos/permissions` | `permissions.view` |
@@ -540,7 +470,7 @@ DB query per guarded request.
 | `backend/src/middlewares/permission.middleware.ts` | `requirePermissions` middleware |
 | `backend/src/services/authorization.service.ts` | `getAuthenticatedUserProfile` |
 | `backend/src/services/auth.service.ts` | `login()` / `me()` return permissions |
-| `frontend/lib/auth-guards.ts` | Guard factory (server-driven) |
-| `frontend/lib/auth-storage.ts` | `UserRole` type, `StoredUser.permissions` |
-| `frontend/hooks/usePermissions.ts` | Hook exposing `can()`, `guards`, `roles` |
-| `frontend/components/admin/sidebar.tsx` | `NAV_ITEMS` with `requiredPermissions` |
+| `frontend/lib/shared/auth-guards.ts` | Guard factory (server-driven) |
+| `frontend/lib/shared/auth-storage.ts` | `UserRole` type, `StoredUser.permissions` |
+| `frontend/hooks/shared/usePermissions.ts` | Hook exposing `can()`, `guards`, `roles` |
+| `frontend/components/shared/sidebar.tsx` | `NAV_ITEMS` with `requiredPermissions` |

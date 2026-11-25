@@ -8,7 +8,7 @@
  * Reutiliza el mismo patrón que useAssignments existente.
  */
 
-import { ticketsApi, type AssignPayload, type TransferPayload } from '@/lib/tickets-api';
+import { ticketsApi, type AssignPayload, type TransferPayload } from '@/lib/shared/tickets-api';
 import { useCallback, useState } from 'react';
 import { toast } from 'sonner';
 

@@ -26,8 +26,8 @@ export const fontStack = 'Arial, Helvetica, sans-serif';
 
 export const CONTENT_WIDTH = 600;
 
-export const BRAND_NAME = 'KAB | Voz Ciudadana';
-export const BRAND_LOCATION = 'Cintalapa de Figueroa, Chiapas';
+export const BRAND_NAME = 'Nexo Comercial';
+export const BRAND_LOCATION = 'Canales y operación';
 
 /** `Content-ID` del logo adjunto en línea. */
 export const LOGO_CID = 'brand-logo';

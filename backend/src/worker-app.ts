@@ -2,7 +2,6 @@ import express, { Express, Request, Response } from 'express';
 import { z, ZodError } from 'zod';
 import { InboxProcessorService } from './services/events/inbox-processor.service';
 import { OutboxProcessorService } from './services/events/outbox-processor.service';
-import { IneOcrService } from './services/ine/ine-ocr.service';
 import { PrismaService } from './services/prisma.service';
 import { RealtimeOutboxRelay } from './services/realtime/realtime-outbox-relay.service';
 import { BackgroundTaskReconciliationResult } from './services/tasks/background-task-reconciler.service';
@@ -47,7 +46,6 @@ function isUniqueViolation(error: unknown): boolean {
 
 type WorkerAppDependencies = {
   prisma: PrismaService;
-  ineOcrService: IneOcrService;
   inboxProcessor: InboxProcessorService;
   outboxProcessor: OutboxProcessorService;
   realtimeRelay?: RealtimeOutboxRelay;
@@ -88,7 +86,6 @@ export function createWorkerApp(deps: WorkerAppDependencies): Express {
 
   // Authentication is enforced by private Cloud Run ingress plus IAM/OIDC.
   // Cloud Tasks retries every non-2xx response, including the 4xx responses below.
-  registerTaskRoute(app, '/tasks/process-ocr', (id) => deps.ineOcrService.processJobById(id));
   registerTaskRoute(app, '/tasks/process-inbox', (id) => deps.inboxProcessor.processEventById(id));
   registerTaskRoute(app, '/tasks/process-outbox', (id) =>
     deps.outboxProcessor.processEventById(id),

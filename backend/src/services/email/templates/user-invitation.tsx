@@ -15,8 +15,8 @@ export type UserInvitationProps = {
 
 export const userInvitationSubject = (props: UserInvitationProps): string =>
   props.isResend
-    ? 'Nueva invitación para acceder a Voz Ciudadana'
-    : 'Te invitaron a formar parte de Voz Ciudadana';
+    ? 'Nueva invitación para acceder a Nexo Comercial'
+    : 'Te invitaron a formar parte de Nexo Comercial';
 
 export function UserInvitationEmail(props: UserInvitationProps): React.ReactElement {
   const recipientName = props.recipientName || 'integrante del equipo';

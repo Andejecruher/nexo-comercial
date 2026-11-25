@@ -103,22 +103,7 @@ export const envSchema = z.object({
   TASKS_SERVICE_ACCOUNT_EMAIL: optionalString,
   TASKS_RECONCILE_MAX_PER_TYPE: z.coerce.number().int().min(101).max(5000).default(250),
 
-  // ── INE OCR / Google providers ─────────────────────────────────────────────
-  INE_OCR_ENABLED: envBoolean(false),
-  INE_UPLOAD_MAX_BYTES: z.coerce.number().int().min(1).max(10485760).default(10485760),
-  INE_UPLOAD_ALLOWED_MIME_TYPES: z
-    .string()
-    .trim()
-    .default('image/jpeg,image/png,application/pdf')
-    .refine(
-      (value) =>
-        value
-          .split(',')
-          .map((item) => item.trim())
-          .sort()
-          .join(',') === 'application/pdf,image/jpeg,image/png',
-      'INE_UPLOAD_ALLOWED_MIME_TYPES must contain exactly image/jpeg,image/png,application/pdf',
-    ),
+  // ── Google providers ───────────────────────────────────────────────────────
   GOOGLE_CLOUD_PROJECT_ID: optionalString,
   DOCUMENT_AI_LOCATION: optionalString,
   DOCUMENT_AI_PROCESSOR_ID: optionalString,
@@ -126,9 +111,6 @@ export const envSchema = z.object({
   GOOGLE_OAUTH_CLIENT_ID: optionalString,
   GOOGLE_OAUTH_CLIENT_SECRET: optionalString,
   GOOGLE_DRIVE_REFRESH_TOKEN: optionalString,
-  INE_OCR_JOB_POLL_INTERVAL_MS: z.coerce.number().int().min(250).default(2000),
-  INE_OCR_JOB_BATCH_SIZE: z.coerce.number().int().min(1).max(50).default(5),
-  INE_OCR_JOB_MAX_ATTEMPTS: z.coerce.number().int().min(1).max(10).default(3),
   ENABLE_XLSX_EXPORT: envBoolean(false),
   EXPORT_JOB_TTL_MS: z.coerce.number().int().min(60_000).default(86_400_000),
   EXPORT_JOB_POLL_INTERVAL_MS: z.coerce.number().int().min(250).default(2000),
@@ -168,8 +150,8 @@ export const envSchema = z.object({
    *
    * Así el orquestador (que vive dentro de InboxProcessorService) corre en el
    * mismo proceso que el WebSocket gateway, y el puente legacy eventBus → socket
-   * funciona sin necesidad de Pub/Sub. El worker se queda con outbox + INE OCR
-   * + exports. Sin doble polling gracias al claim atómico por status.
+   * funciona sin necesidad de Pub/Sub. El worker se queda con outbox + exports.
+   * Sin doble polling gracias al claim atómico por status.
    */
   INBOX_POLLING_ENABLED: envBoolean(true),
   OUTBOX_POLLING_ENABLED: envBoolean(true),
@@ -353,10 +335,10 @@ export const envSchema = z.object({
   MAILTRAP_API_TOKEN: optionalString,
   MAILTRAP_API_URL: optionalString,
   MAIL_FROM_ADDRESS: optionalString,
-  MAIL_FROM_NAME: z.string().trim().default('Voz Ciudadana'),
+  MAIL_FROM_NAME: z.string().trim().default('Nexo Comercial'),
   MAIL_REPLY_TO_ADDRESS: optionalString,
   MAIL_SUPPORT_EMAIL: optionalString,
-  MAIL_PLATFORM_NAME: z.string().trim().default('Voz Ciudadana'),
+  MAIL_PLATFORM_NAME: z.string().trim().default('Nexo Comercial'),
   /**
    * Fallback HTTP del logo cuando el cliente bloquea el adjunto inline (cid:brand-logo).
    * Si se omite, se deriva de FRONTEND_URL.

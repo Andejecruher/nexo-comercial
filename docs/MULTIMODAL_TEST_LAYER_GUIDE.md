@@ -16,7 +16,7 @@ Puedes obtenerlo vía login o desde tests. Ejemplo con endpoint de auth (ajusta 
 ```bash
 curl -X POST "http://localhost:8000/api/v1/auth/login" \
   -H "Content-Type: application/json" \
-  -d '{"email":"admin@vozcuidadana.mx","password":"changeme_in_production_123!"}'
+  -d '{"email":"admin@nexocomercial.mx","password":"changeme_in_production_123!"}'
 # Copia el token del response
 TOKEN="eyJhbGci..."
 ```

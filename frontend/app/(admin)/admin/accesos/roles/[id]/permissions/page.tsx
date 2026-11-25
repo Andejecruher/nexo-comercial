@@ -1,4 +1,4 @@
-import { RolePermissionsManager } from '@/components/admin/access-control/RolePermissionsManager';
+import { RolePermissionsManager } from '@/components/accesos/RolePermissionsManager';
 
 interface PageProps {
   params: Promise<{ id: string }>;
